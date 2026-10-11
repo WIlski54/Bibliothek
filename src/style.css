@@ -96,3 +96,20 @@ button { font: inherit; color: inherit; }
 
 /* ---- Laden */
 body.calm * { animation-duration: 0s !important; }
+
+/* ---- Buch auf dem Lesetisch (Leiste unten) */
+#hud.focus #roombar { display: none; }
+#bookbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + var(--safe-b)); z-index: 6; width: min(680px, calc(100vw - 24px)); display: flex; gap: 16px; align-items: center; padding: 14px 18px; border-radius: 16px; background: linear-gradient(180deg, #f6ebd0, #ecdcb8); color: var(--ink); border: 3px solid var(--ink2); box-shadow: 0 0 0 2px var(--brass), 0 12px 40px rgba(0,0,0,.6); animation: pop .35s ease-out; }
+#bookbar .bb-text { flex: 1; min-width: 0; } #bookbar b { display: block; font: 700 21px/1.15 var(--serif); color: var(--wine); } #bookbar span { display: block; font: italic 15px var(--serif); color: #6a4a35; margin: 2px 0 6px; }
+#bookbar p { margin: 0; font: 15px/1.4 var(--serif); } #bookbar p.note { margin-top: 6px; padding: 6px 10px; border-radius: 8px; background: rgba(123,31,38,.1); border: 1px dashed var(--wine); font-style: italic; }
+#bookbar .bb-acts { display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+#bookbar .primary, #bookbar .ghost { min-height: 46px; padding: 0 18px; border-radius: 12px; border: 2px solid var(--ink2); font: 700 16px var(--serif); cursor: pointer; white-space: nowrap; }
+#bookbar .primary { background: var(--wine); color: var(--brass2); } #bookbar .ghost { background: transparent; color: var(--ink2); }
+@media (max-width: 560px) { #bookbar { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; } #bookbar .bb-acts { flex-direction: row; } #bookbar .bb-acts button { flex: 1; } #bookbar p { font-size: 14px; } }
+/* ---- Buchansicht: sanftes Einblenden mit Ladeanzeige */
+#viewer { opacity: 0; transition: opacity .9s ease; } #viewer.show { opacity: 1; }
+#viewer iframe { transition: opacity .7s ease .1s; } #viewer.loading iframe { opacity: 0; }
+#v-load { position: absolute; left: 0; right: 0; top: 60px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--paper2); font: italic 18px var(--serif); pointer-events: none; opacity: 0; transition: opacity .5s ease; }
+#viewer.loading #v-load { opacity: 1; }
+#v-load .spin { width: 46px; height: 46px; border-radius: 50%; border: 4px solid rgba(217,164,65,.25); border-top-color: var(--brass2); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

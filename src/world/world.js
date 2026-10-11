@@ -28,7 +28,7 @@ export class World {
     const ids = ['foyer', ...DEPTS]; let n = 0;
     for (const id of ids) {
       const r = MODS[id].build(this.ctx); const off = ROOMS[id].offset; r.group.position.set(off[0], off[1], off[2]); r.offset = new THREE.Vector3(...off); this.scene.add(r.group); this.rooms[id] = r;
-      for (const s of r.stations) this.rig.addStation({ ...s, pos: [s.pos[0] + off[0], s.pos[1], s.pos[2] + off[2]], look: [s.look[0] + off[0], s.look[1], s.look[2] + off[2]], catSpot: s.catSpot && [s.catSpot[0] + off[0], s.catSpot[1], s.catSpot[2] + off[2]] });
+      for (const s of r.stations) this.rig.addStation({ ...s, pos: [s.pos[0] + off[0], s.pos[1], s.pos[2] + off[2]], look: [s.look[0] + off[0], s.look[1], s.look[2] + off[2]], catSpot: s.catSpot && [s.catSpot[0] + off[0], s.catSpot[1], s.catSpot[2] + off[2]], bookSpot: s.bookSpot && [s.bookSpot[0] + off[0], s.bookSpot[1] + off[2]] });
       r.group.updateMatrixWorld(true);
       for (const b of r.blockers) mergeStatic(b);
       r.merged = mergeStatic(r.group, { exclude: r.blockers });

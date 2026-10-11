@@ -27,9 +27,11 @@
     <span class="stepper"><button id="prev" aria-label="Vorherige Station">&#8249;</button><span id="stname"></span><button id="next" aria-label="Nächste Station">&#8250;</button></span>
   </nav>
 </div>
+<div id="bookbar" hidden><div class="bb-text"><b id="bb-title"></b><span id="bb-sub"></span><p id="bb-blurb"></p><p id="bb-note" hidden></p></div><div class="bb-acts"><button id="bb-read" class="primary">Lesen</button><button id="bb-back" class="ghost">Zurück ins Regal</button></div></div>
 <div id="card" class="overlay" hidden role="dialog" aria-modal="true"><div class="sheet"><button class="x" aria-label="Schließen">&times;</button><div class="body"></div></div></div>
 <div id="viewer" hidden>
   <header><button id="v-back">&#8592; Zurück zur Bibliothek</button><span id="v-title"></span><a id="v-new" target="_blank" rel="noopener">In neuem Tab öffnen</a></header>
+  <div id="v-load"><div class="spin"></div><span>Das Buch wird aufgeschlagen …</span></div>
   <iframe id="v-frame" title="Popup-Buch" referrerpolicy="no-referrer"></iframe>
 </div>
 <div id="menu" class="overlay" hidden role="dialog" aria-modal="true"><div class="sheet small"><button class="x" aria-label="Schließen">&times;</button><div class="body">

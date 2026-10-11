@@ -34,7 +34,7 @@ await page.evaluate(() => document.querySelector('#card .x').click());
 await page.evaluate(() => window.__lib.ui.openBook(window.__lib.ctx.books[0])); await step(1);
 check('Viewer offen', await page.evaluate(() => !document.getElementById('viewer').hidden));
 await page.screenshot({ path: out('viewer.png') });
-await page.evaluate(() => document.getElementById('v-back').click()); check('Viewer zu', await page.evaluate(() => document.getElementById('viewer').hidden));
+await page.evaluate(() => document.getElementById('v-back').click()); await page.waitForTimeout(1300); check('Viewer zu', await page.evaluate(() => document.getElementById('viewer').hidden));
 // 6) Buch ohne URL
 await page.evaluate(() => window.__lib.ui.openBook(window.__lib.ctx.books[1])); await step(1);
 await page.screenshot({ path: out('card-nourl.png') });

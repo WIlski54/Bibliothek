@@ -1,0 +1,27 @@
+// Buch-Auftritt: Buch antippen -> fliegt auf den Tisch, Kamera fährt heran, Leiste; Lesen -> Buchansicht blendet ein; zurück; Zurück ins Regal
+import { open, ready, out } from './harness.mjs';
+const { browser, page, logs } = await open({ w: 1000, h: 640, query: '?q=low&quiet=1&manual=1' });
+await ready(page, 120000);
+await page.evaluate(() => { document.getElementById('go').click(); window.__lib.ctx.books[0].url = 'data:text/html;charset=utf-8,<body style="margin:0;background:%23274;color:%23fff;font:32px Georgia;display:grid;place-items:center">Testbuch</body>'; });
+await page.waitForTimeout(900);
+const step = (n, dt = 0.1) => page.evaluate(([n, dt]) => { try { window.__lib.step(dt, n); } catch (e) { const t = window.__lib.rig.travel; return "ERR " + e.message + " travel=" + JSON.stringify(t && { free: t.free, t: t.t, dur: t.dur, sn: t.sn, calm: t.calm }); } }, [n, dt]).then((r) => { if (r) console.log(r); });
+const proj = (x, y, z) => page.evaluate(([x, y, z]) => { const L = window.__lib; const v = new L.THREE.Vector3(x, y, z).project(L.camera); const r = document.getElementById('gl').getBoundingClientRect(); return [(v.x + 1) / 2 * r.width + r.left, (1 - v.y) / 2 * r.height + r.top]; }, [x, y, z]);
+let ok = true; const check = (n, c) => { console.log(c ? 'OK  ' : 'FAIL', n); if (!c) ok = false; };
+await page.evaluate(() => window.__lib.goStation('foyer-neu')); await step(60);
+const bp = await page.evaluate(() => { const L = window.__lib; let p = null; L.world.rooms.foyer.group.traverse((o) => { if (o.userData.tap?.kind === 'book' && !p) { const v = new L.THREE.Vector3(); o.getWorldPosition(v); p = [v.x, v.y + 0.3, v.z]; } }); return p; });
+const [x, y] = await proj(...bp); await page.mouse.click(x, y); await step(1);
+check('Showcase aktiv', await page.evaluate(() => window.__lib.showcase.active));
+await step(5, 0.1); await page.screenshot({ path: out('show-1-flug.png') });
+await step(12, 0.1); await page.screenshot({ path: out('show-2-ankunft.png') });
+check('Leiste sichtbar', await page.evaluate(() => !document.getElementById('bookbar').hidden));
+await page.evaluate(() => document.getElementById('bb-read').click()); await step(8, 0.1); await page.screenshot({ path: out('show-3-lesen.png') });
+await page.waitForTimeout(900); await step(10, 0.1);
+check('Viewer offen', await page.evaluate(() => !document.getElementById('viewer').hidden && document.getElementById('viewer').classList.contains('show')));
+await page.waitForTimeout(1500); await page.screenshot({ path: out('show-4-viewer.png') });
+await page.evaluate(() => document.getElementById('v-back').click()); await page.waitForTimeout(1200); await step(14, 0.1);
+check('Leiste wieder da', await page.evaluate(() => !document.getElementById('bookbar').hidden));
+await page.evaluate(() => document.getElementById('bb-back').click()); await step(8, 0.1); await page.screenshot({ path: out('show-5-zurueck.png') }); await step(25, 0.1);
+console.log(JSON.stringify(await page.evaluate(() => { const L = window.__lib; return { active: L.showcase.active, phase: L.showcase.phase, outT: L.showcase.outT, cur: L.rig.cur, last: L.rig.lastCur, moving: L.rig.moving, st: L.showcase.station }; })));
+check('Showcase beendet, Kamera an Station', await page.evaluate(() => !window.__lib.showcase.active && window.__lib.rig.cur === 'foyer-neu'));
+const errs = logs.filter((l) => /pageerror|error/i.test(l) && !/permissions policy|Failed to load/.test(l)); if (errs.length) console.log(errs.slice(0, 6).join('\n'));
+console.log(ok ? 'ALLES OK' : 'FEHLER'); await browser.close(); process.exit(ok ? 0 : 1);

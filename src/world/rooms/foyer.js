@@ -120,7 +120,7 @@ export function build(ctx) {
   // ---------------- Stationen
   stations.push(
     { id: 'foyer-eingang', room: 'foyer', name: 'Eingangshalle', pos: [0, 1.6, 4.7], look: [0, 1.9, -6] },
-    { id: 'foyer-neu', room: 'foyer', name: 'Neu im Regal', pos: [0.9, 1.6, 3.2], look: [3.0, 1.3, 1.3] },
+    { id: 'foyer-neu', room: 'foyer', name: 'Neu im Regal', pos: [0.9, 1.6, 3.2], look: [3.0, 1.3, 1.3], bookSpot: [1.6, 2.2] },
     { id: 'foyer-plan', room: 'foyer', name: 'Lageplan', pos: [4.3, 1.6, -3.0], look: [4.75, 1.75, -6] },
   );
   const lights = [

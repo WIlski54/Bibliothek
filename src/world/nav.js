@@ -29,7 +29,7 @@ export class Rig {
   // sofort setzen (Start, Tests)
   jump(id) {
     const st = this.stations.get(id); if (!st) return; this.travel = null; this.cur = id; this.room = st.room;
-    this.camera.position.copy(st.P); this.setBase(st.L.clone().sub(st.P)); this.yaw = this.yawT = 0; this.pitch = this.pitchT = 0; this.applyView();
+    this.lastCur = id; this.camera.position.copy(st.P); this.setBase(st.L.clone().sub(st.P)); this.yaw = this.yawT = 0; this.pitch = this.pitchT = 0; this.applyView();
   }
   setBase(f, snap = true) {
     f = f.clone().normalize(); const ry = Math.atan2(-f.x, -f.z), rx = Math.asin(clamp(f.y, -1, 1));
@@ -86,8 +86,8 @@ export class Rig {
   goTo(id, { onDone } = {}) {
     const B = this.stations.get(id); if (!B) return false;
     this.yaw = wrapPI(this.yaw - this.yawT) + wrapPI(this.yawT); this.yawT = wrapPI(this.yawT);
-    const from = this.cur ?? id; if (from === id && !this.travel) { this.recenter(); onDone?.(); return true; }
-    const A = this.travel ? null : this.stations.get(from);
+    const from = this.cur ?? this.lastCur ?? id; if (this.cur === id && !this.travel) { this.recenter(); onDone?.(); return true; }
+    const A = this.travel || this.cur === null ? null : this.stations.get(from); // freie Pose (nach flyTo) oder laufende Fahrt: direkt von der Kameraposition weiter
     let pts;
     if (A) pts = this.route(from, id);
     else { // Fahrt unterbrechen: von der aktuellen Kameraposition direkt weiter
@@ -114,6 +114,16 @@ export class Rig {
     return true;
   }
 
+  // Freie Kamerafahrt (ohne Station): gerade Linie von der aktuellen Pose zu pos/look, optional mit Zoomziel. Danach ist cur = null (freie Pose); goTo(station) fährt von dort weiter.
+  flyTo(pos, look, { dur = 1.6, zoom = null, onDone } = {}) {
+    const d1 = look.clone().sub(pos).normalize(), ry0 = this.ry + this.yaw, rx0 = this.rx + this.pitch;
+    const ry1 = ry0 + wrapPI(Math.atan2(-d1.x, -d1.z) - ry0), rx1 = Math.asin(clamp(d1.y, -1, 1));
+    this.ry = ry0; this.rx = rx0; this.yaw = this.pitch = this.yawT = this.pitchT = 0; this.cur = null;
+    if (this.calm) { this.camera.position.copy(pos); this.ry = ry1; this.rx = rx1; if (zoom != null) this.zoomT = this.zoom = zoom; onDone?.(); return; }
+    const p0 = this.camera.position.clone();
+    this.travel = { free: true, calm: false, p0, ry: [ry0, ry1], rx: [rx0, rx1], sn: [0, 1], t: 0, dur, zoomTo: zoom, pos: pos.clone(), onDone };
+  }
+
   update(dt) {
     const k = 1 - Math.exp(-dt * 9);
     const tr = this.travel;
@@ -125,11 +135,11 @@ export class Rig {
         if (tr.t >= 1) { this.finish(tr); }
       } else {
         const u = smoother(clamp(tr.t, 0, 1));
-        this.camera.position.copy(tr.cp.getPointAt(u));
+        if (tr.free) this.camera.position.lerpVectors(tr.p0, tr.pos, u); else this.camera.position.copy(tr.cp.getPointAt(u));
         let i = 0; while (i < tr.sn.length - 2 && u > tr.sn[i + 1]) i++;
         const f = clamp((u - tr.sn[i]) / ((tr.sn[i + 1] - tr.sn[i]) || 1), 0, 1), e = f * f * (3 - 2 * f);
         this.ry = lerp(tr.ry[i], tr.ry[i + 1], e); this.rx = lerp(tr.rx[i], tr.rx[i + 1], e);
-        this.yawT *= 1 - clamp(dt * 4, 0, 1); this.pitchT *= 1 - clamp(dt * 4, 0, 1); this.zoomT = lerp(this.zoomT, 1, clamp(dt * 4, 0, 1));
+        this.yawT *= 1 - clamp(dt * 4, 0, 1); this.pitchT *= 1 - clamp(dt * 4, 0, 1); this.zoomT = lerp(this.zoomT, tr.zoomTo ?? 1, clamp(dt * 4, 0, 1));
         if (tr.t >= 1) this.finish(tr);
       }
     }
@@ -137,7 +147,8 @@ export class Rig {
     this.applyView();
   }
   finish(tr) {
-    const st = this.stations.get(tr.id); this.travel = null; this.cur = tr.id; this.room = st.room; this.fade = 0;
+    if (tr.free) { this.travel = null; this.camera.position.copy(tr.pos); this.ry = tr.ry[1]; this.rx = tr.rx[1]; this.yaw = this.pitch = this.yawT = this.pitchT = 0; if (tr.zoomTo != null) this.zoomT = tr.zoomTo; tr.onDone?.(); return; }
+    const st = this.stations.get(tr.id); this.travel = null; this.cur = tr.id; this.lastCur = tr.id; this.room = st.room; this.fade = 0;
     this.camera.position.copy(st.P); this.setBase(st.L.clone().sub(st.P), false); this.yaw = this.pitch = this.yawT = this.pitchT = 0;
     this.onArrive(tr.id, st); tr.onDone?.();
   }

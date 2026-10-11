@@ -7,6 +7,7 @@ import { World } from './world/world.js';
 import { UI } from './ui/ui.js';
 import { clamp } from './lib/util.js';
 import { Ambient } from './audio/ambient.js';
+import { Showcase } from './world/showcase.js';
 
 const qs = new URLSearchParams(location.search);
 const touchDevice = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
@@ -28,7 +29,7 @@ rig.calm = calm;
 const ctx = { books, counts };
 const world = new World(renderer, scene, rig, ctx);
 const ambient = new Ambient();
-let ui;
+let ui, showcase;
 let paused = qs.has('manual');
 
 function size() {
@@ -40,7 +41,7 @@ addEventListener('resize', size); size();
 const roomEntry = { foyer: 'foyer-eingang', geschichte: 'geschichte-eingang', biologie: 'biologie-eingang', chemie: 'chemie-eingang' };
 function roomOf(id) { return rig.stations.get(id)?.room; }
 function goStation(id, onDone) {
-  const st = rig.stations.get(id); if (!st) return; if (rig.moving) return;
+  const st = rig.stations.get(id); if (!st) return; if (rig.moving || showcase.active) return;
   ui.setWhere(st.room, st.name); ui.hush();
   rig.goTo(id, { onDone });
 }
@@ -50,7 +51,7 @@ function goRoom(r) {
   goStation(roomEntry[r]);
 }
 function step(dir) {
-  if (rig.moving) return; const list = rig.roomStations(rig.room); if (list.length < 2) return;
+  if (rig.moving || showcase.active) return; const list = rig.roomStations(rig.room); if (list.length < 2) return;
   const i = Math.max(0, list.findIndex((s) => s.id === rig.cur)); goStation(list[(i + dir + list.length) % list.length].id);
 }
 rig.onArrive = (id, st) => { ui.setWhere(st.room, st.name); window.__arrived = id; ambient.setRoom(st.room); world.cat?.arrive(id); };
@@ -61,7 +62,7 @@ function handleTap(tap, hit) {
   if (!tap) return;
   const act = () => {
     switch (tap.kind) {
-      case 'book': ui.openCard({ kind: 'book', book: tap.book }); break;
+      case 'book': if (tap.book.status === 'fertig') showcase.open(tap.book, hit?.obj, rig.stations.get(rig.cur)?.bookSpot); else ui.openCard({ kind: 'book', book: tap.book }); break;
       case 'info': ui.openCard(tap); break;
       case 'nav': goRoom(tap.to); break;
       case 'goto': if (rig.cur !== tap.station) goStation(tap.station); break;
@@ -84,7 +85,7 @@ canvas.addEventListener('pointerdown', (e) => {
 canvas.addEventListener('pointermove', (e) => {
   const p = ptr.get(e.pointerId);
   if (!p) { // Hover (nur Maus)
-    if (e.pointerType === 'mouse' && !ui.blocking && !rig.moving && performance.now() - lastHover > 90) {
+    if (e.pointerType === 'mouse' && !ui.blocking && !rig.moving && !showcase.active && performance.now() - lastHover > 90) {
       lastHover = performance.now(); const [x, y] = ndc(e); const h = world.pick(x, y);
       canvas.classList.toggle('hot', !!h); const label = h && (h.tap.label || h.tap.book?.title || h.tap.title); ui.tip(label, e.clientX, e.clientY - 4);
     }
@@ -97,14 +98,14 @@ canvas.addEventListener('pointermove', (e) => {
 });
 const up = (e) => {
   const had = ptr.delete(e.pointerId); if (!had) return; canvas.classList.remove('grabbing'); if (ptr.size < 2) pinch = null;
-  if (down && ptr.size === 0 && down.moved < 10 && performance.now() - down.t < 600 && !ui.blocking && !rig.moving) { const [x, y] = ndc(e); const h = world.pick(x, y); if (h) handleTap(h.tap, h); }
+  if (down && ptr.size === 0 && down.moved < 10 && performance.now() - down.t < 600 && !ui.blocking && !rig.moving && !showcase.active) { const [x, y] = ndc(e); const h = world.pick(x, y); if (h) handleTap(h.tap, h); }
   if (ptr.size === 0) down = null;
 };
 canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
 canvas.addEventListener('pointerleave', () => ui.tip(null));
 canvas.addEventListener('wheel', (e) => { e.preventDefault(); if (!ui.blocking) rig.zoomBy(e.deltaY > 0 ? 1.08 : 1 / 1.08); }, { passive: false });
 addEventListener('keydown', (e) => {
-  if (ui.blocking) return; const k = e.key;
+  if (ui.blocking || showcase.active) return; const k = e.key;
   if (k === 'ArrowLeft') rig.look(-60, 0, 0.004 * 1); else if (k === 'ArrowRight') rig.look(60, 0, 0.004); else if (k === 'ArrowUp') rig.look(0, -40, 0.004); else if (k === 'ArrowDown') rig.look(0, 40, 0.004);
   else if (k === 'n' || k === 'PageDown') step(1); else if (k === 'p' || k === 'PageUp') step(-1); else if (k === ' ') rig.recenter(); else if (k === '+' || k === '=') rig.zoomBy(0.9); else if (k === '-') rig.zoomBy(1.1);
 });
@@ -119,16 +120,18 @@ ui = new UI({
     if ('quality' in o) { if (o.quality === 'auto') { tierLocked = false; tierName = touchDevice ? 'mid' : 'high'; size(); } else setTier(o.quality, true); }
   },
 });
+showcase = new Showcase({ scene, rig, ui, ambient });
 ctx.ui = ui; ui.onCardOpen = () => ambient.page();
-ui.onViewerChange = (open) => { paused = open; if (!open) last = performance.now(); };
-document.addEventListener('visibilitychange', () => { paused = document.hidden || ui.viewerOpen; if (!paused) last = performance.now(); });
+let viewerPaused = false;
+ui.onViewerChange = (st) => { viewerPaused = st === 'open'; paused = document.hidden || viewerPaused; if (!paused) last = performance.now(); showcase?.onViewer(st); };
+document.addEventListener('visibilitychange', () => { paused = document.hidden || viewerPaused; if (!paused) last = performance.now(); });
 
 // ---------------------------------------------------------------- Schleife
 let last = performance.now(), frames = 0, acc = 0;
 function frame(now) {
   requestAnimationFrame(frame); if (paused) return;
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  rig.update(dt); world.update(dt);
+  rig.update(dt); world.update(dt); showcase.update(dt);
   const f = document.getElementById('gl'); void f;
   renderer.render(scene, camera);
   // Automatische Qualität: bei dauerhaft langsamen Bildern eine Stufe tiefer
@@ -137,10 +140,11 @@ function frame(now) {
 
 (async () => {
   await world.build((p) => { const b = document.getElementById('go'); b.textContent = `Bibliothek wird aufgebaut … ${Math.round(p * 100)} %`; });
+  { const b = document.getElementById('go'); b.textContent = 'Lichter werden angezündet …'; try { await (renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera))); } catch (e) { /* Vorwärmen ist nur eine Hilfe */ } }
   world.cat?.place?.('foyer-eingang'); rig.jump('foyer-eingang'); ui.setWhere('foyer', rig.stations.get('foyer-eingang').name);
   rig.onTravel = (from, to, fr, tr) => { ambient.whoosh(); if (tr && tr !== fr) setTimeout(() => ambient.setRoom(tr), 900); world.cat?.follow(from, to, rig.travel?.route); };
   requestAnimationFrame((t) => { last = t; frame(t); });
   ui.ready(() => { if (!qs.has('quiet')) setTimeout(() => ui.say('Miau! Ich bin Archimedes. Komm, ich zeige dir die Bibliothek. Tippe auf eine Tür oder auf die Knöpfe unten.', { ms: 9000 }), 700); });
-  window.__lib = { rig, world, ui, THREE, renderer, scene, camera, goStation, goRoom, handleTap, setTier, ctx, step: (dt, n = 1) => { for (let i = 0; i < n; i++) { rig.update(dt); world.update(dt); } renderer.render(scene, camera); } };
+  window.__lib = { rig, world, ui, showcase, THREE, renderer, scene, camera, goStation, goRoom, handleTap, setTier, ctx, step: (dt, n = 1) => { for (let i = 0; i < n; i++) { rig.update(dt); world.update(dt); showcase.update(dt); } renderer.render(scene, camera); } };
   window.__bookReady = true;
 })();
