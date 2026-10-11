@@ -3,7 +3,7 @@
 // ein Mausklick auf die Katze löst poke() aus (Sprechblase). Außerdem: Start (schlafend auf dem Tisch), Antippen im Schlaf, ruhiger Modus, Zeichenaufrufe.
 // Aufruf: BOOK_HTML=... OUT_DIR=... node tools/test-cat.mjs
 import { open, ready, out } from './harness.mjs';
-const { browser, page, logs } = await open({ w: 1024, h: 640, query: '?q=low&quiet=1&manual=1' });
+const { browser, page, logs } = await open({ w: +(process.env.W || 1024), h: +(process.env.H || 640), query: '?q=low&quiet=1&manual=1' });
 page.setDefaultTimeout(240000);
 await ready(page, 180000);
 await page.evaluate(() => { document.getElementById('go').click(); });

@@ -4,7 +4,10 @@ import * as THREE from 'three';
 import { ROOMS, FOYER_DOORS } from '../../layout.js';
 
 const CELL = 0.1;
-const X0 = -21, X1 = 21, Z0 = -20, Z1 = 7.5;
+// Rastergrenzen aus dem Grundriss (alle Räume plus 1 m Rand)
+let bx0 = 1e9, bx1 = -1e9, bz0 = 1e9, bz1 = -1e9;
+for (const r of Object.values(ROOMS)) { bx0 = Math.min(bx0, r.offset[0] - r.size.w / 2); bx1 = Math.max(bx1, r.offset[0] + r.size.w / 2); bz0 = Math.min(bz0, r.offset[2] - r.size.d / 2); bz1 = Math.max(bz1, r.offset[2] + r.size.d / 2); }
+const X0 = Math.floor(bx0) - 1, X1 = Math.ceil(bx1) + 1, Z0 = Math.floor(bz0) - 1, Z1 = Math.ceil(bz1) + 1;
 const NX = Math.round((X1 - X0) / CELL), NZ = Math.round((Z1 - Z0) / CELL);
 const YMIN = 0.06, YMAX = 1.8;      // Höhenband, das erfasst wird
 const BLOCK_LO = 0.08, BLOCK_HI = 0.9; // Zelle ist für die Katze gesperrt, wenn Geometrie in diesem Band liegt
@@ -222,7 +225,7 @@ export class Space {
       const cx = (r.x0 + r.x1) / 2, hgt = r.y1 - r.y0;
       let cost = Math.abs(Math.abs(cx) - 0.66) * 2.2 + Math.abs(feet[1] + 0.82) * 0.8 + Math.max(0, d - 2.6) * 0.3 + Math.max(0, 0.3 - hgt) * 6 + (l < 0 ? 0.35 : 0) + (1 - vis) * 3;
       if (hit(r, bar)) { if (!relax) return null; cost += 3; }
-      if (hit(r, bub)) cost += 0.9;
+      if (hit(r, bub)) cost += 1.6;
       if (Math.abs(cx) < 0.42) cost += (0.42 - Math.abs(cx)) * 4;
       if (this.occluded(P, x, 0.3, z) || this.occluded(P, x, 0.08, z)) { if (!relax) return null; cost += 4; }
       return { x, z, cost };

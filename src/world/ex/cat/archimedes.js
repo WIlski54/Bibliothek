@@ -7,11 +7,10 @@ import { walkParts, WALK_HEAD as WH } from './art-walk.js';
 import { sleepParts, SLEEP_HEAD as LH } from './art-sleep.js';
 import { whiskerMesh, shadowMesh, symbolMesh, setSymbol } from './fx.js';
 import { Space } from './space.js';
-import { TIPS, LINES, MEOWS } from './talk.js';
+import { TIPS, LINES } from './talk.js';
 
 const TAU = Math.PI * 2;
 const TABLE_SPOT = [0, 0.805, -0.6];   // Foyer-Lesetisch (Mitte, Platte oben)
-const wrap = (a) => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
 const smooth = (t) => t * t * (3 - 2 * t);
 // Wegprofil: kurz anlaufen, laufen, etwas länger abbremsen (Anteil 0..1 des Weges nach Zeitanteil u)
 const TA = 0.14, TD = 0.2, TV = 1 / (1 - (TA + TD) / 2);
@@ -40,16 +39,15 @@ export class Archimedes {
     this.hit = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ visible: false })); this.hit.name = 'hitbox'; this.bbf.add(this.hit);
     this.zs = [0, 1, 2].map(() => { const m = symbolMesh('z', 0.1); m.visible = false; this.bbn.add(m); return m; });
     this.pop = symbolMesh('bulb', 0.13); this.pop.visible = false; this.bbn.add(this.pop);
-    this.poses = {}; this.warm = ['sleep', 'sit', 'walk'];
+    this.poses = {};
     this.space = new Space({ world: ctx.world, rig: this.rig });
     // Zustand
     this.pos = new THREE.Vector3(...TABLE_SPOT); this.ground = TABLE_SPOT[1]; this.lift = 0;
     this.pose = 'sleep'; this.mode = 'sleep'; this.modeT = 0; this.clock = 0; this.face = 1; this.yaw = 0;
-    this.flip = null; this.travel = null; this.teleport = null; this.react = null; this.speakT = 0; this.popT = -1; this.stretchT = -1; this.bow = 0;
-    this.speed = 0; this.phase = 0; this.vel = new THREE.Vector3(); this.heading = new THREE.Vector3(1, 0, 0);
+    this.flip = null; this.travel = null; this.teleport = null; this.react = null; this.speakT = 0; this.popT = -1;
+    this.speed = 0; this.phase = 0; this.heading = new THREE.Vector3(1, 0, 0);
     this.visited = new Set(['foyer']); this.tipped = new Set(['foyer']); this.lineIdx = {}; this.lineOrder = {}; this.wakeLines = 0;
-    this.t = { blink: rr(1.5, 3), ear: rr(2, 5), look: rr(2, 5), wag: rr(6, 12), groom: rr(18, 30), sleep: rr(70, 100), stretch: rr(30, 50), blinkT: -1, earT: -1, earSide: 0, wagT: -1, lookX: 0, lookTo: 0, double: false };
-    this.sitHead = 0; this.dbg = {};
+    this.t = { blink: rr(1.5, 3), ear: rr(2, 5), look: rr(2, 5), wag: rr(6, 12), groom: rr(18, 30), sleep: rr(70, 100), stretch: rr(30, 50), blinkT: -1, blinkLen: 0.13, dbl: false, earT: -1, earSide: 0, wagT: -1, lookX: 0, lookTo: 0 };
     this.getPose('sleep'); this.showPose('sleep');
     this.apply();
     this.scheduleWarm();
@@ -89,7 +87,6 @@ export class Archimedes {
     if (first && (!stationId || stationId === 'foyer-eingang')) { this.pos.set(...TABLE_SPOT); this.ground = TABLE_SPOT[1]; this.setSleep(); return; }
     const spot = this.space.spotFor(stationId); if (!spot) return;
     this.pos.copy(spot); this.ground = spot.y; this.lift = 0; this.setSit(true);
-    this.tipped.add(this.rig.stations.get(stationId)?.room);
   }
   setSleep() { this.mode = 'sleep'; this.modeT = 0; this.getPose('sleep'); this.showPose('sleep'); this.flip = null; this.face = this.sleepFace(); this.t.sleep = rr(70, 100); }
   setSit(instant = false) { this.mode = 'sit'; this.modeT = 0; this.switchPose('sit', instant); this.t.sleep = rr(70, 100); this.t.groom = rr(14, 26); }
@@ -116,7 +113,7 @@ export class Archimedes {
     // Katze am Ziel absetzen, falls sie noch unterwegs ist
     if (this.teleport) this.finishTeleport();
     if (this.travel) { const rest = this.travel.L - (this.curS || 0); if (rest > 1.2) this.endTravel(true); else this.travel.T = Math.min(this.travel.T, this.travel.t + 0.35); }
-    this.t.blinkT = 0.5; this.t.wagT = 1.0; this.tip(room);
+    this.t.blinkT = 0; this.t.blinkLen = 0.4; this.t.wagT = 1.0; this.tip(room);
   }
   // Tipp beim ersten Besuch eines Raums (nur einmal je Raum)
   tip(room) {
@@ -127,7 +124,7 @@ export class Archimedes {
   tipFor(room) { return TIPS[room]; }
 
   say(text, { tip = false, bulb } = {}) {
-    const ms = Math.min(10500, 4500 + text.length * (tip ? 60 : 55)); this.ctx.ui?.say?.(text, { ms: tip ? Math.max(7000, ms) : ms });
+    this.ctx.ui?.say?.(text, { ms: tip ? 7000 : Math.min(10000, 4500 + text.length * 55) });
     this.speakT = Math.min(3.2, text.length * 0.045);
     if (bulb ?? /Heureka/.test(text)) this.showPop('bulb', 2.2);
   }
@@ -155,7 +152,7 @@ export class Archimedes {
   bodyCenter() { return new THREE.Vector3(this.pos.x, this.pos.y + 0.2, this.pos.z); }
 
   // ------------------------------------------------------------ Bewegung
-  finishTeleport() { const tp = this.teleport; this.teleport = null; this.travel = null; this.pos.copy(tp.pos); this.ground = tp.pos.y; this.lift = 0; this.speed = 0; this.setSit(true); this.t.blinkT = 0.4; this.tip(this.rig.stations.get(tp.id)?.room); }
+  finishTeleport() { const tp = this.teleport; this.teleport = null; this.travel = null; this.pos.copy(tp.pos); this.ground = tp.pos.y; this.lift = 0; this.speed = 0; this.setSit(true); this.t.blinkT = 0; this.t.blinkLen = 0.4; this.tip(this.rig.stations.get(tp.id)?.room); }
   endTravel(snap = false) {
     const tr = this.travel; this.travel = null; if (!tr) return;
     this.pos.copy(tr.target); this.ground = tr.endY; this.lift = 0; this.speed = 0;
@@ -212,7 +209,7 @@ export class Archimedes {
       case 'wake': { // Augen auf, kleiner Schreck, dann weiter
         if (this.modeT > 0.26) {
           if (this.wakeNext === 'go') { this.mode = 'prep'; this.modeT = 0; this.switchPose('walk', false, this.goFace); }
-          else { this.setSit(); this.t.blinkT = 0.4; }
+          else { this.setSit(); this.t.blinkT = 0; this.t.blinkLen = 0.3; }
         }
         break;
       }
@@ -251,14 +248,17 @@ export class Archimedes {
     if (this.mode === 'wake') return SH.wide;
     return SH.open;
   }
+  // Blinzeln: alle paar Sekunden kurz zu, manchmal zweimal; blinkLen = Dauer (Ankunft: langsames, zufriedenes Blinzeln)
+  tickBlink(dt) {
+    const T = this.t;
+    if (T.blinkT >= 0) { T.blinkT += dt; if (T.blinkT > T.blinkLen) { T.blinkT = -1; T.blinkLen = 0.13; if (T.dbl) { T.dbl = false; T.blink = 0.14; } } }
+    else { T.blink -= dt; if (T.blink <= 0) { T.blinkT = 0; T.blink = rr(2.2, 5.0); T.dbl = rnd() < 0.2; } }
+  }
   anim_sit(dt, calm) {
     const P = this.poses.sit, n = P.nodes, T = this.t, t = this.clock;
     const br = Math.sin(t * 1.7);
-    // Zeitgeber
-    T.blink -= dt; if (T.blink <= 0 && T.blinkT < 0) { T.blinkT = 0; T.double = rnd() < 0.2; T.blink = rr(2.2, 5.0); }
-    if (T.blinkT >= 0) { T.blinkT += dt; if (T.blinkT > 0.13) { if (T.double) { T.double = false; T.blinkT = -0.12 + 0.0; } else T.blinkT = -1; } }
-    if (T.blinkT < 0 && T.blinkT > -1) T.blinkT = -1;
-    let tailRot = 0.07 * Math.sin(t * 1.4) + 0.03 * Math.sin(t * 2.9), earL = 0, earR = 0, headRz = 0, headDx = 0, headDy = 0, headS = 1, hop = 0, bodySy = 1 + 0.01 * br;
+    this.tickBlink(dt);
+    let tailRot = calm ? 0 : 0.07 * Math.sin(t * 1.4) + 0.03 * Math.sin(t * 2.9), earL = 0, earR = 0, headRz = 0, headDx = 0, headDy = 0, headS = 1, hop = 0, bodySy = 1 + 0.01 * br;
     if (!calm) {
       T.ear -= dt; if (T.ear <= 0) { T.ear = rr(2.5, 6.5); T.earT = 0; T.earSide = rnd() < 0.5 ? -1 : 1; }
       if (T.earT >= 0) { T.earT += dt; const u = T.earT / 0.3; if (u >= 1) T.earT = -1; else { const f = Math.sin(u * Math.PI) * (1 - u * 0.3); if (T.earSide < 0) earL = 0.4 * f; else earR = -0.4 * f; } }
@@ -274,7 +274,7 @@ export class Archimedes {
       R.t += dt; const u = R.t / R.dur; if (u >= 1) this.react = null;
       else {
         const k = Math.max(0, 1 - u);
-        hop = R.t < 0.28 ? 0.05 * Math.sin((R.t / 0.28) * Math.PI) : 0;
+        hop = !calm && R.t < 0.28 ? 0.05 * Math.sin((R.t / 0.28) * Math.PI) : 0;
         headS = 1 + 0.045 * Math.max(0, 1 - R.t * 3); headRz += -0.11 * Math.sin(Math.min(1, u * 1.6) * Math.PI) * (this.face || 1);
         headDy += 0.006 * Math.sin(Math.min(1, R.t / 0.3) * Math.PI);
         if (!calm) { tailRot += 0.34 * Math.sin(R.t * 15) * k; const f = R.t < 0.2 ? -0.4 : 0.25 * Math.sin(R.t * 3) * k; earL += -f; earR += f; }
@@ -289,19 +289,18 @@ export class Archimedes {
       put(n.lickR, 0, 0, -0.08 * Math.sin(m * 9) * on + (1 - on) * 0.5, 1, 1); n.lickR.scale.set(on, on, 1);
       earL += 0.08 * on; earR += -0.1 * on; tailRot += 0.12 * Math.sin(m * 2.2) * on;
     }
-    // Flip nach dem Hinsetzen: der Schwanz bleibt ruhig bis zum Ende der Wende
     const wake = this.mode === 'wake'; if (wake) { earL -= 0.2; earR += 0.2; }
     put(n.body, 0, 0, 0, 1, bodySy); put(n.tail, 0, 0, tailRot);
     put(n.head, headDx, headDy + 0.0035 * br, headRz, headS, headS); put(n.earL, 0, 0, earL); put(n.earR, 0, 0, earR);
     P.cuts.head.setVariant(this.headVariantSit());
     P.root.position.y = hop;
-    this.bbfOffset = 0; this.poseW = 0.5; this.poseH = 0.5;
+    this.poseW = 0.5; this.poseH = 0.5;
   }
 
   anim_sleep(dt, calm) {
     const P = this.poses.sleep, n = P.nodes, T = this.t, t = this.clock;
     const br = Math.sin(t * 1.35);
-    put(n.body, 0, 0, 0, 1, 1 + 0.028 * br); put(n.head, 0, 0.0045 * br, 0.01 * br, 1, 1 + 0.01 * br); put(n.tail, 0, 0, 0.02 * Math.sin(t * 0.8));
+    put(n.body, 0, 0, 0, 1, 1 + 0.028 * br); put(n.head, 0, 0.0045 * br, 0.01 * br, 1, 1 + 0.01 * br); put(n.tail, 0, 0, calm ? 0 : 0.02 * Math.sin(t * 0.8));
     let earR = 0, earL = 0;
     if (!calm) { T.ear -= dt; if (T.ear <= 0) { T.ear = rr(4, 9); T.earT = 0; T.earSide = rnd() < 0.5 ? -1 : 1; } if (T.earT >= 0) { T.earT += dt; const u = T.earT / 0.35; if (u >= 1) T.earT = -1; else { const f = Math.sin(u * Math.PI) * 0.35; if (T.earSide < 0) earL = f; else earR = -f; } } }
     put(n.earL, 0, 0, earL); put(n.earR, 0, 0, earR);
@@ -316,7 +315,7 @@ export class Archimedes {
     const gait = sp > 2.2 ? 'gallop' : sp > 0.7 ? 'trot' : sp > 0.05 ? 'walk' : 'stand';
     const ph = this.phase;
     const sw = (off, amp) => amp * Math.sin(TAU * (ph + off));
-    let fN = 0, fF = 0, hN = 0, hF = 0, bob = 0, tail = 0.1 * Math.sin(t * 1.6), pitch = 0, headRz = 0, headDy = 0, hopRise = 0, lift = [1, 1, 1, 1], bodySx = 1;
+    let fN = 0, fF = 0, hN = 0, hF = 0, bob = 0, tail = calm ? 0 : 0.1 * Math.sin(t * 1.6), pitch = 0, headRz = 0, headDy = 0, bodySx = 1;
     if (gait === 'walk') { const a = 0.32; fN = sw(0, a); hN = sw(0.25, a); fF = sw(0.5, a); hF = sw(0.75, a); bob = 0.003 * Math.abs(Math.sin(TAU * ph * 2)); tail += 0.1; }
     else if (gait === 'trot') { const a = 0.5; fN = sw(0, a); hF = sw(0, a); fF = sw(0.5, a); hN = sw(0.5, a); bob = 0.008 * Math.abs(Math.sin(TAU * ph * 2)); tail += 0.15 * Math.sin(ph * TAU); headRz = 0.05 * Math.sin(TAU * ph * 2); }
     else if (gait === 'gallop') { const a = 0.78; fN = sw(0, a); fF = sw(0.08, a); hN = sw(0.5, a * 0.9); hF = sw(0.58, a * 0.9); bob = 0.022 * Math.max(0, Math.sin(TAU * ph)) ; pitch = -0.06 * Math.sin(TAU * ph); tail = 0.95 + 0.12 * Math.sin(ph * TAU * 2); bodySx = 1 + 0.05 * Math.sin(TAU * ph); headRz = 0.1 * Math.sin(TAU * ph); }
@@ -336,11 +335,11 @@ export class Archimedes {
     putAbout(n.tail, hipX, hipY, a, tail - 0.35 * bw, 0, bob);
     putAbout(n.head, hipX, hipY, a, headRz + 0.2 * bw, 0, bob + headDy);
     put(n.earNear, 0, 0, 0); put(n.earFar, 0, 0, 0);
+    if (!this.travel || this.mode !== 'walk') this.tickBlink(dt);
     const blink = this.t.blinkT >= 0;
-    if (!this.travel || this.mode !== 'walk') { this.t.blink -= dt; if (this.t.blink <= 0 && this.t.blinkT < 0) { this.t.blinkT = 0; this.t.blink = rr(2.2, 5); } if (this.t.blinkT >= 0) { this.t.blinkT += dt; if (this.t.blinkT > 0.13) this.t.blinkT = -1; } }
     const talk = this.speakT > 0 && Math.sin(this.clock * 17) > 0;
     P.cuts.head.setVariant(blink ? WH.closed : (gait === 'gallop' ? WH.meow : talk ? WH.speak : WH.open));
-    P.root.position.y = this.lift * 0 + hopRise; P.root.rotation.z = pitch;
+    P.root.position.y = 0; P.root.rotation.z = pitch;
     this.poseW = 0.7; this.poseH = 0.46;
   }
 

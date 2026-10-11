@@ -4,7 +4,7 @@ import { cutFlat } from './cutbuild.js';
 
 export const Z_STEP = 0.0065;   // Abstand der Papierlagen (m), von vorn gesehen kaum sichtbar, aber ohne Z-Fighting
 
-export function buildPose(parts, { name = 'pose', border = 0.007, maxTex = 512, ppu = 1500 } = {}) {
+export function buildPose(parts, { name = 'pose', border = 0.007, maxTex = 512, ppu = 1150 } = {}) {
   const root = new THREE.Group(); root.name = name;
   const nodes = {}, cuts = {}, byName = Object.fromEntries(parts.map((p) => [p.name, p]));
   for (const p of parts) {
