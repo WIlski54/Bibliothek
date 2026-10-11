@@ -141,7 +141,7 @@ Normalen und Umgebungsverdeckung kommen aus dem Feld, die Hautgewichte aus dem A
 (`cattex.py`: getigert, weiße Brust, Söckchen, Schnauze, Augenlinie, Ohr innen, Nase, Mundlinie) per Python in die UV-Karte gebacken, samt AO. Augen: Kugeln mit azimutaler Karte (Iris, Pupille, Glanzlichter), Lider als Halbkugelschalen an Lidknochen (Blinzeln, Schlafen, Schreck).
 Zubehör (ein Netz, Atlas 64²): Halsband (rot), Messingmarke, 8 Schnurrhaare. 3 Materialien (Fell, Augen, Zubehör), 3 Netze.
 
-**Zahlen:** 12 080 Dreiecke (Fell 10 672, Augen 648, Zubehör 760), 33 Knochen, GLB 1,16 MB (Fellkarte 205 KB, Animationen 270 KB), Fell-Textur 1024 x 1024.
+**Zahlen:** 12 080 Dreiecke (Fell 10 672, Augen 648, Zubehör 760), 33 Knochen, GLB 1,15 MB (Fellkarte 165 KB, Animationen 280 KB), Fell-Textur 1024 x 1024.
 
 **Skelett:** root, pelvis, spine1, spine2, neck, head, jaw, earL1/2, earR1/2, eyeL/R, lidL/R (Oberlid), tail1–6, je Bein (foreUp/foreLow/forePaw, thigh/shin/hindPaw) links (L, +x) und rechts (R).
 

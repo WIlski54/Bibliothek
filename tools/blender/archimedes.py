@@ -1,7 +1,10 @@
 """Archimedes, die Bibliothekskatze: Modell, Skelett, Animationen und glTF-Export per Skript.
 
 Aufruf (reproduzierbar, ohne Oberfläche):
-    /home/user/blenv/bin/python tools/blender/archimedes.py [--out assets/cat/archimedes.glb] [--cache DIR] [--render DIR] [--no-export]
+    /home/user/blenv/bin/python tools/blender/archimedes.py [--out assets/cat/archimedes.glb] [--cache DIR] [--no-export]
+        [--render DIR]                       Dreh- und Posenbögen (PNG) zur Kontrolle
+        [--portrait assets/cat/portrait.jpg] Gemälde „Archimedes, Hausherr“ rendern
+        [--save-blend FILE]                  gebautes Modell als .blend (Entwicklung)
 
 Ablauf: Distanzfeld (catshape) -> Netze (catmesh, Surface Nets) -> Ausdünnen (Blender) -> Normalen/Gewichte/Ambient Occlusion aus dem Feld
 -> UV-Entfaltung (Blender) -> Fellfarbe aus der 3D-Funktion in die Textur backen (cattex) -> Augen, Lider, Halsband, Marke, Schnurrhaare (catparts)
@@ -151,7 +154,7 @@ def bake_fur(me, f, V, N, ao, Pc, rim, wr, tail_u, piece_t, img_path, size=TEX):
         col[lm] = col[lm] * (1 - t[:, None]) + np.array(TX.COL['liner']) * t[:, None]
     img = np.zeros((size, size, 3), np.float32); img[mask] = col
     img, m2 = TX.dilate(img, mask, 8)
-    Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).save(img_path, quality=88, subsampling=0 if img_path.endswith('.png') else 2)
+    Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).save(img_path, quality=82, subsampling=0 if img_path.endswith('.png') else 2, optimize=True)
     log('Fellkarte', img_path, 'Abdeckung', f'{mask.mean() * 100:.0f}%')
     return img
 
