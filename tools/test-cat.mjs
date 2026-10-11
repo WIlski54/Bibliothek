@@ -1,9 +1,11 @@
 // Archimedes-Test: Rundgang Foyer -> Geschichte -> Biologie -> Chemie -> Foyer im Handbetrieb (?manual=1, __lib.step).
 // Prüft nach jeder Ankunft: Katze sitzt, ist im Bild (NDC), frei von Wänden und Möbeln, nicht verdeckt; der Tipp erscheint genau einmal;
 // ein Mausklick auf die Katze löst poke() aus (Sprechblase). Außerdem: Start (schlafend auf dem Tisch), Antippen im Schlaf, ruhiger Modus, Zeichenaufrufe.
-// Aufruf: BOOK_HTML=... OUT_DIR=... node tools/test-cat.mjs
+// Standard ist die 3D-Katze (Modell geladen, Clips, <= 8 Zeichenaufrufe, <= 14000 Dreiecke); mit CAT=paper läuft dieselbe Prüfung für die Papierkatze (?cat=paper, <= 30 Aufrufe).
+// Aufruf: BOOK_HTML=... OUT_DIR=... [CAT=paper] node tools/test-cat.mjs
 import { open, ready, out } from './harness.mjs';
-const { browser, page, logs } = await open({ w: +(process.env.W || 1024), h: +(process.env.H || 640), query: '?q=low&quiet=1&manual=1' });
+const paper = process.env.CAT === 'paper';
+const { browser, page, logs } = await open({ w: +(process.env.W || 1024), h: +(process.env.H || 640), query: '?q=low&quiet=1&manual=1' + (paper ? '&cat=paper' : '') });
 page.setDefaultTimeout(240000);
 await ready(page, 180000);
 await page.evaluate(() => { document.getElementById('go').click(); });
@@ -33,6 +35,16 @@ const click = async (info) => {
   await page.mouse.click(x, y); await step(2);
 };
 
+// ---- 3D-Modell geladen?
+if (!paper) {
+  await page.waitForFunction(() => window.__lib.world.cat.cat.ready === true || window.__lib.world.cat.cat.failed, null, { timeout: 60000 }).catch(() => {});
+  const m = await page.evaluate(() => { const a = window.__lib.world.cat.cat; return { cls: a.constructor.name, ready: a.ready, clips: a.clipNames?.() || [], bones: Object.keys(a.bones || {}).length }; });
+  check('3D-Katze: Modell geladen (Archimedes3D)', m.cls === 'Archimedes3D' && m.ready, JSON.stringify(m.cls));
+  const need = ['sit_idle', 'blink', 'groom', 'meow', 'scared', 'talk', 'walk', 'trot', 'run', 'jump_up', 'jump_down', 'stretch', 'sleep_idle', 'wake'];
+  check('3D-Katze: alle Clips vorhanden', need.every((c) => m.clips.includes(c)), m.clips.join(','));
+  check('3D-Katze: Skelett mit höchstens 45 Knochen', m.bones > 20 && m.bones <= 45, String(m.bones));
+}
+const played = () => page.evaluate(() => window.__lib.world.cat.cat.playLog?.slice() || []);
 // ---- Start: schläft auf dem Lesetisch
 await step(2);
 let I = await catInfo();
@@ -44,6 +56,7 @@ await step(3); await click(I); await step(8);
 let B = await bubble();
 check('Antippen (schlafend): Sprechblase', !B.hidden && /Mrrau|Hm\?|Miau/.test(B.text), B.text);
 I = await catInfo(); check('Antippen (schlafend): sitzt danach', I.mode === 'sit' || I.mode === 'wake', I.mode);
+if (!paper) { const pl = await played(); check('Antippen (schlafend): Clips sleep_idle, wake', pl.includes('sleep_idle') && pl.includes('wake'), pl.join(',')); }
 await step(10);
 
 // ---- Hausherr-Gemälde an der Foyer-Nordwand antippen: Karte
@@ -69,6 +82,7 @@ for (const [id, room] of tour) {
   await step(18, 0.1);
   I = await catInfo();
   check(`${id}: Katze ist unterwegs gerannt`, sawWalk);
+  if (!paper) { const pl = await played(); check(`${id}: Laufclip gespielt`, pl.some((c) => ['walk', 'trot', 'run'].includes(c)), pl.slice(-6).join(',')); }
   check(`${id}: Katze sitzt`, I.mode === 'sit' && I.pose === 'sit', `${I.mode}/${I.pose}`);
   const inView = Math.abs(I.body[0]) <= 0.98 && I.body[1] > -0.98 && I.body[1] < 0.9 && I.body[2] > -1 && I.body[2] < 1 && I.top[1] > -0.98;
   check(`${id}: Katze im Blickfeld`, inView, `ndc body ${I.body.map((v) => v.toFixed(2))} top ${I.top[1].toFixed(2)}`);
@@ -90,6 +104,7 @@ for (const [id, room] of tour) {
   await click(I); await step(3);
   B = await bubble();
   check(`${id}: Antippen löst poke() aus`, !B.hidden && B.text.length > 10 && B.text !== talk[room], B.text.slice(0, 60));
+  if (!paper) { const pl = await played(); check(`${id}: Antippen spielt meow oder scared`, pl.slice(-6).some((c) => c === 'meow' || c === 'scared'), pl.slice(-6).join(',')); }
   await step(10); await page.screenshot({ path: out(`cat-${room}-${id}-poke.png`) });
   await page.evaluate(() => window.__lib.ui.hush());
 }
@@ -135,9 +150,14 @@ check(`Katzenplatz: an mindestens 65 % von ${all.length} Stationen sichtbar und 
   const calls = await page.evaluate(() => {
     const L = window.__lib; L.rig.jump('foyer-neu'); L.world.cat.place('foyer-neu'); L.world.cat.cat.mode = 'sit'; L.world.setWant('foyer', true); L.world.update(0.3); L.world.update(0.3);
     const cnt = (vis) => { L.world.cat.group.visible = vis; L.renderer.info.reset(); L.world.update(0.1); L.renderer.render(L.scene, L.camera); return L.renderer.info.render.calls; };
-    const a = cnt(true), b = cnt(false); L.world.cat.group.visible = true; return [a, b];
+    const a = cnt(true), b = cnt(false); L.world.cat.group.visible = true;
+    // Dreiecke der Katze: Szene mit und ohne Katze zeichnen
+    const tr = (vis) => { L.world.cat.group.visible = vis; L.renderer.info.reset(); L.renderer.render(L.scene, L.camera); return L.renderer.info.render.triangles; };
+    const ta = tr(true), tb = tr(false); L.world.cat.group.visible = true;
+    return [a, b, ta - tb];
   });
-  check('Zeichenaufrufe der Katze <= 30', calls[0] - calls[1] <= 30, `mit ${calls[0]}, ohne ${calls[1]}`);
+  check(paper ? 'Zeichenaufrufe der Katze <= 30' : 'Zeichenaufrufe der Katze <= 8', calls[0] - calls[1] <= (paper ? 30 : 8), `mit ${calls[0]}, ohne ${calls[1]}`);
+  check('Dreiecke der Katze <= 14000', calls[2] <= 14000, `${calls[2]}`);
 }
 const errs = logs.filter((l) => /error|pageerror|warn/i.test(l) && !/permissions policy|Failed to load resource|ERR_|KHR_parallel_shader_compile/i.test(l));
 check('keine Konsolenfehler', errs.length === 0, errs.slice(0, 5).join('\n'));

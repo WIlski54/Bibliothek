@@ -59,7 +59,7 @@ class Pose:
 
 # ----------------------------------------------------------------------------- Hilfen
 LID_OPEN = 0.0
-LID_REST = 0.14            # leicht gesenkte Oberlider: schlau, ein wenig von oben herab
+LID_REST = 0.2            # leicht gesenkte Oberlider: schlau, ein wenig von oben herab
 def lids(p, k):
     """Lidschluss k in 0..1 (0 = weit offen, 1 = geschlossen)"""
     for s in 'LR':

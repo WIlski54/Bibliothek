@@ -216,6 +216,8 @@ def main():
     ap.add_argument('--cache', default=None)
     ap.add_argument('--render', default=None, help='Ordner für Kontrollbilder')
     ap.add_argument('--no-export', action='store_true')
+    ap.add_argument('--portrait', default=None, help='Gemälde (Katze im Sessel mit Buch) als Bild rendern, z. B. assets/cat/portrait.jpg')
+    ap.add_argument('--portrait-samples', type=int, default=110)
     ap.add_argument('--save-blend', default=None, help='gebautes Modell als .blend ablegen (Entwicklung)')
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
     args = ap.parse_args(argv)
@@ -226,6 +228,7 @@ def main():
     res = build_all(args, work)
     if args.save_blend: bpy.ops.wm.save_as_mainfile(filepath=args.save_blend)
     if not args.no_export: export(args, res)
+    if args.portrait: make_portrait(args, res, work)
     log('fertig in %.1f s' % (time.time() - t0))
 
 
@@ -330,6 +333,18 @@ def build_all(args, work):
     log('Dreiecke gesamt:', tris)
     np.savez(os.path.join(work, 'fur_data.npz'), V=V, T=T, W=Wfull, names=np.array(names), piece=piece, nfur=len(f.V))
     return dict(arm=arm, fur=fur, eyes=eyes, acc=acc, f=f)
+
+
+def make_portrait(args, res, work):
+    import portrait as PO
+    arm = res['arm']
+    if arm.animation_data: arm.animation_data.use_nla = False; arm.animation_data.action = None
+    png = os.path.join(work, 'portrait.png')
+    PO.build_scene(res, work, png, samples=args.portrait_samples)
+    im = Image.open(png).convert('RGB')
+    os.makedirs(os.path.dirname(os.path.abspath(args.portrait)), exist_ok=True)
+    im.save(args.portrait, quality=90, subsampling=0, optimize=True)
+    log('Gemälde:', args.portrait, f'{os.path.getsize(args.portrait) / 1024:.0f} KB', im.size)
 
 
 def export(args, res):

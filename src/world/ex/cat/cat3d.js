@@ -43,7 +43,7 @@ export class Archimedes3D extends Archimedes {
     this.mixer = null; this.mixB = null; this.act = {}; this.cur = null; this.curAct = null; this.gaits = GAIT_FALLBACK;
     this.bodyYaw = 0; this.snapYaw = true; this.gait = 'walk'; this.shot = null; this.seenReact = null; this.lastPoke = -9; this.blinking = false;
     this.look = { yaw: 0, pitch: 0, w: 0, ex: 0, ey: 0 };
-    this.bones = {}; this.q0 = {};
+    this.bones = {}; this.q0 = {}; this.playLog = [];   // Namen der gespielten Clips (Tests)
     this.group.visible = true;
     loadCatModel().then((g) => this.attach(g)).catch((e) => this.fail(e));
   }
@@ -134,7 +134,7 @@ export class Archimedes3D extends Archimedes {
     if (prev) { next.fadeIn(fade); prev.fadeOut(fade); } else next.weight = 1;
     next.play();
     if (at != null) { next.paused = true; next.time = at; }
-    this.cur = name; this.curAct = next;
+    this.cur = name; this.curAct = next; this.playLog.push(name); if (this.playLog.length > 400) this.playLog.splice(0, 200);
   }
 
   gaitFor(sp) {
@@ -217,6 +217,17 @@ export class Archimedes3D extends Archimedes {
       this.lookAt(dt, calm);
     }
     this.runFx(dt, calm);
+    this.fixShadow();
+  }
+
+  // Bodenschatten: weiche Scheibe, längs zum Körper beim Laufen und Liegen
+  fixShadow() {
+    const m = this.mode, long = (m === 'walk' && this.travel) || m === 'prep' || m === 'sleep' || m === 'sleepin';
+    const k = 1 / (1 + this.lift * 3);
+    const [w, d] = this.pose === 'sleep' ? [0.58, 0.42] : (m === 'walk' || m === 'prep' || m === 'stretch') ? [0.64, 0.26] : [0.5, 0.36];
+    this.shadow.scale.set(w * k, d * k, 1);
+    this.sh.rotation.y = long ? this.bodyYaw - Math.PI / 2 : this.yaw;
+    this.shadow.position.set(0, 0.017 - this.lift, 0);
   }
 
   apply() {
