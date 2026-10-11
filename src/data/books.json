@@ -9,7 +9,7 @@
     "id": "dinos", "title": "Das große Dinosaurier-Popup-Buch", "subtitle": "Eine Reise durch die Erdzeitalter", "department": "biologie",
     "grades": "Klasse 5/6", "color": "#2f6b52", "accent": "#e6c262", "motif": "dino",
     "blurb": "Von der Erduhr über Trias, Jura und Kreide bis zum Einschlag und zu den ersten Vormenschen: neun Stationen zum Anfassen.",
-    "url": "", "status": "fertig"
+    "url": "https://wilski54.github.io/dinobuch/", "status": "fertig"
   },
   { "id": "roemer", "title": "Die Römer", "subtitle": "Bald", "department": "geschichte", "grades": "", "color": "#6a2230", "accent": "#d8d2c2", "motif": "book", "blurb": "", "url": "", "status": "bald" },
   { "id": "mittelalter", "title": "Das Mittelalter", "subtitle": "Bald", "department": "geschichte", "grades": "", "color": "#4a3a2a", "accent": "#d8d2c2", "motif": "book", "blurb": "", "url": "", "status": "bald" },

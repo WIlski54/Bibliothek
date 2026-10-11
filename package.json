@@ -11,7 +11,8 @@
   "license": "MIT",
   "dependencies": {
     "clipper-lib": "^6.4.2",
-    "three": "^0.186.1"
+    "three": "^0.186.1",
+    "topojson-client": "^3.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

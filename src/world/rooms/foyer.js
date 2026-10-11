@@ -7,6 +7,7 @@ import { makeBook } from '../books.js';
 import { bannerTex, planTex, DEPT_NAME } from '../signs.js';
 import { catPortrait } from '../cat.js';
 import { archWindow, lightShaft, dust } from '../ex/windows.js';
+import { globeTexture } from '../ex/worldmap.js';
 
 export function build(ctx) {
   const R = FOYER, g = new THREE.Group(); g.name = 'foyer';
@@ -75,8 +76,8 @@ export function build(ctx) {
   const lamp = deskLamp({ light: false }); lamp.position.set(0.45, 0.81, -0.85); lamp.scale.setScalar(0.9); g.add(lamp);
   for (const a of [1.9, 3.6, 4.9]) { const c = chair(); c.position.set(Math.sin(a) * 1.35, 0, Math.cos(a) * 1.35); c.rotation.y = a + Math.PI; c.position.z -= 0.6; g.add(c); }
   const open = new THREE.Group(); { const pgM = M.plain(0xf0e6cc, 0.95), cvM = M.plain(0x7b1f26, 0.7); const c1 = box(0.48, 0.02, 0.34, cvM); c1.position.y = 0.01; open.add(c1); for (const sx of [-1, 1]) { const pg = box(0.22, 0.03, 0.31, pgM); pg.position.set(sx * 0.115, 0.035, 0); pg.rotation.z = -sx * 0.09; open.add(pg); } open.position.set(-0.35, 0.81, -0.3); open.rotation.y = 0.5; g.add(open); }
-  const gl = globe({ r: 0.33 }); gl.position.set(-3.0, 0, 1.3); g.add(gl);
-  gl.userData.tap = { kind: 'info', title: 'Der Globus', sub: 'Die Welt im Kleinen', paras: ['Ägypten liegt in Nordostafrika am Nil. Die Dinosaurier lebten auf allen Kontinenten, die damals noch ganz anders angeordnet waren.', 'Dreh den Globus im Kopf: Wo liegt dein Wohnort?'] };
+  const gl = globe({ r: 0.36, map: globeTexture() }); gl.position.set(-3.0, 0, 1.3); g.add(gl); gl.userData.sphere.rotation.y = -1.2;
+  gl.userData.tap = { kind: 'info', title: 'Der Globus', sub: 'Die Erde im Kleinen', paras: ['Der Globus zeigt die Erde so, wie sie ist: rund. Auf einer flachen Karte muss man sie immer ein bisschen verzerren.', 'Die gestrichelten Linien sind der Äquator, die beiden Wendekreise und die beiden Polarkreise. Ägypten liegt in Nordostafrika am Nil, knapp nördlich des Wendekreises des Krebses.'], fact: 'Die Erdachse ist um rund 23,4 Grad geneigt. Deshalb haben wir Jahreszeiten, und deshalb ist der Globus schräg aufgehängt.', src: 'Kartendaten: Natural Earth (gemeinfrei).' };
 
   // ---------------- Neuzugänge: Vitrine mit den fertigen Büchern
   const vit = vitrine({ w: 1.5, d: 0.8, plinthH: 0.85, glassH: 0.95 }); vit.position.set(3.0, 0, 1.3); vit.rotation.y = -0.45; g.add(vit);
@@ -127,5 +128,5 @@ export function build(ctx) {
     { pos: [0, 3.0, 4.2], color: 0xffd9a0, intensity: 9, distance: 0, decay: 2 },
     { pos: [0, 3.0, -4.2], color: 0xffd9a0, intensity: 9, distance: 0, decay: 2 },
   ];
-  return { group: g, stations, lights, blockers, update(dt, t) { ch.rotation.y = Math.sin(t * 0.3) * 0.04; motes.userData.tick(t); } };
+  return { group: g, stations, lights, blockers, update(dt, t) { ch.rotation.y = Math.sin(t * 0.3) * 0.04; motes.userData.tick(t); if (!ctx.rig?.calm) gl.userData.sphere.rotation.y += dt * 0.1; } };
 }
