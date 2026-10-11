@@ -27,13 +27,20 @@ export function worldProject(w, h, o = {}) {
 }
 
 let DATA = null;
+// Ringe/Linien, die den Längengrad ±180 überschreiten, entfalten (Längen laufen dann über ±180 hinaus); beim Zeichnen mit Versatz -360/0/+360 wiederholt
+function unwrap(pts) {
+  const out = new Array(pts.length); let off = 0, prev = pts[0][0], lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < pts.length; i++) { let lon = pts[i][0] + off; if (i) { while (lon - prev > 180) { off -= 360; lon -= 360; } while (lon - prev < -180) { off += 360; lon += 360; } } prev = lon; out[i] = [lon, pts[i][1]]; if (lon < lo) lo = lon; if (lon > hi) hi = lon; }
+  out.lo = lo; out.hi = hi; return out;
+}
 function data() {
   if (DATA) return DATA;
   const countries = feature(topo, topo.objects.countries).features, nb = neighbors(topo.objects.countries.geometries);
   // Greedy-Färbung: benachbarte Staaten bekommen verschiedene Farben
   const col = new Array(countries.length).fill(-1), order = countries.map((_, i) => i).sort((a, b) => nb[b].length - nb[a].length);
   for (const i of order) { const used = new Set(nb[i].map((j) => col[j])); let c = 0; while (used.has(c)) c++; col[i] = c; }
-  DATA = { countries, col, borders: mesh(topo, topo.objects.countries, (a, b) => a !== b), coast: mesh(topo, topo.objects.land) };
+  const rings = countries.map((f) => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).flat().map(unwrap));
+  DATA = { countries, rings, col, borders: mesh(topo, topo.objects.countries, (a, b) => a !== b).coordinates.map(unwrap), coast: mesh(topo, topo.objects.land).coordinates.map(unwrap) };
   return DATA;
 }
 
@@ -42,7 +49,7 @@ const STYLES = {
   parchment: { sea: ['#e6d29c', '#dcc68a'], land: ['#d3b36f', '#cfae68', '#d8ba7a', '#cdb070'], ice: '#efe3be', border: 'rgba(90,58,26,.45)', coast: '#4d3216', grid: 'rgba(90,58,26,.16)', line: 'rgba(125,38,38,.55)', label: 'rgba(90,58,26,.75)', labelLand: 'rgba(70,42,16,.8)', labelShadow: 'rgba(255,245,215,.6)' },
 };
 const LABELS = [
-  ['Pazifischer Ozean', -150, 8, 1, 'sea'], ['Pazifischer Ozean', 165, -12, 1, 'sea'], ['Atlantischer Ozean', -35, 22, 1, 'sea'], ['Atlantischer Ozean', -22, -22, 1, 'sea'], ['Indischer Ozean', 78, -22, 1, 'sea'], ['Arktischer Ozean', 0, 83, 0.8, 'sea'], ['Südlicher Ozean', 50, -62, 0.9, 'sea'],
+  ['Pazifischer Ozean', -150, 8, 1, 'sea'], ['Pazifischer Ozean', -128, -28, 1, 'sea'], ['Atlantischer Ozean', -35, 22, 1, 'sea'], ['Atlantischer Ozean', -22, -22, 1, 'sea'], ['Indischer Ozean', 78, -22, 1, 'sea'], ['Arktischer Ozean', 0, 83, 0.8, 'sea'], ['Südlicher Ozean', 50, -62, 0.9, 'sea'],
   ['Nordamerika', -102, 46, 1, 'land'], ['Südamerika', -60, -14, 1, 'land'], ['Europa', 16, 52, 0.7, 'land'], ['Afrika', 20, 3, 1, 'land'], ['Asien', 88, 50, 1.1, 'land'], ['Australien', 134, -25, 0.85, 'land'], ['Antarktis', 20, -80, 0.9, 'land'], ['Mittelmeer', 18, 34.5, 0.42, 'sea'],
 ];
 
@@ -57,14 +64,20 @@ export function drawWorld(g, w, h, o = {}) {
   // Gradnetz
   const step = o.grid ?? 30; g.lineWidth = Math.max(1, 1.3 * s); g.strokeStyle = st.grid;
   if (step) { g.beginPath(); for (let lon = -180; lon <= 180; lon += step) { for (let lat = -90; lat <= 90; lat += 3) { const [x, y] = P(lon, lat); lat === -90 ? g.moveTo(x, y) : g.lineTo(x, y); } } for (let lat = -90 + step; lat < 90; lat += step) { for (let lon = -180; lon <= 180; lon += 4) { const [x, y] = P(lon, lat); lon === -180 ? g.moveTo(x, y) : g.lineTo(x, y); } } g.stroke(); }
-  // Staaten
-  const ring = (r) => { for (let i = 0; i < r.length; i++) { const [x, y] = P(r[i][0], r[i][1]); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
+  // Staaten (Ringe, die über ±180 hinausreichen, dreifach zeichnen)
+  const offs = (r) => (r.lo < -180 ? [0, 360] : r.hi > 180 ? [0, -360] : [0]);
+  const ring = (r, d) => { for (let i = 0; i < r.length; i++) { const [x, y] = P(r[i][0] + d, r[i][1]); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
   D.countries.forEach((f, i) => {
-    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-    g.beginPath(); for (const poly of polys) for (const r of poly) ring(r);
+    g.beginPath(); for (const r of D.rings[i]) for (const d of offs(r)) ring(r, d);
     g.fillStyle = f.properties.name === 'Antarctica' ? st.ice : st.land[D.col[i] % st.land.length]; g.fill('evenodd');
   });
-  const lines = (m, style, lw) => { g.beginPath(); for (const ls of m.coordinates) for (let i = 0; i < ls.length; i++) { const [x, y] = P(ls[i][0], ls[i][1]); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.strokeStyle = style; g.lineWidth = lw; g.lineJoin = 'round'; g.stroke(); };
+  // Antarktis reicht in den Daten nicht ganz bis zum Pol: Streifen auffüllen
+  { const [x0, y0] = P(-180, -84.2), [, y1] = P(-180, -90.5); if (o.proj !== 'robinson') { g.fillStyle = st.ice; g.fillRect(0, y0, w, y1 - y0 + 2); } }
+  const lines = (list, style, lw) => {
+    g.beginPath();
+    for (const ls of list) for (const d of offs(ls)) { let pen = false; for (let i = 0; i < ls.length; i++) { const a = ls[i - 1], b = ls[i]; const skip = a && ((Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(b[0]) >= 179.99) || (Math.abs(a[1] - b[1]) < 0.01 && b[1] < -84 && Math.abs(a[0] - b[0]) > 20)); const [x, y] = P(b[0] + d, b[1]); if (!pen || skip) g.moveTo(x, y); else g.lineTo(x, y); pen = true; } }
+    g.strokeStyle = style; g.lineWidth = lw; g.lineJoin = 'round'; g.stroke();
+  };
   lines(D.borders, st.border, Math.max(0.6, 1.1 * s)); lines(D.coast, st.coast, Math.max(0.8, 1.7 * s));
   // Äquator, Wendekreise, Polarkreise
   if (o.lines !== false) {
