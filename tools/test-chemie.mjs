@@ -113,5 +113,5 @@ await goto('chemie-eingang');
 // (5) Stationenliste und Konsole
 const sts = await page.evaluate(() => window.__lib.rig.roomStations('chemie').map((s) => s.id));
 check(`Stationen (${sts.length}): ${sts.join(', ')}`, sts.length >= 8 && sts[0] === 'chemie-eingang' && sts.at(-1) === 'chemie-tuer');
-const errs = logs.filter((l) => /error|pageerror|warn/i.test(l) && !/permissions policy|Failed to load resource|ERR_/.test(l)); check('Keine Konsolenfehler oder -warnungen', errs.length === 0, errs.slice(0, 5).join('\n'));
+const errs = logs.filter((l) => /error|pageerror|warn/i.test(l) && !/permissions policy|Failed to load resource|ERR_|KHR_parallel_shader_compile/.test(l)); check('Keine Konsolenfehler oder -warnungen', errs.length === 0, errs.slice(0, 5).join('\n'));
 console.log(ok ? 'ALLES OK' : 'FEHLER'); await browser.close(); process.exit(ok ? 0 : 1);

@@ -27,7 +27,7 @@ export function build(ctx) {
     wainscot: { h: 1.05, mat: M.wood(0x4a2a18, { planks: 4, seed: 8 }), tile: 1.3 },
     wallTile: 1.2, floorTile: 2.4,
     palette: [0x2b6f77, 0x7b1f26, 0x2c4a6e, 0x8a5a2b, 0x2f6a4a, 0x9a7b30, 0x4a2c5a, 0x1f3f3a, 0xa8552f, 0x20303a, 0x6a8a8a, 0x8c2d3a],
-    shelfWood: M.wood(0x4a2a18), shelfBack: M.wood(0x2f1a10, { planks: 2 }),
+    shelfWood: M.wood(0x4a2a18), shelfBack: M.wood(0x2f1a10, { planks: 2 }), tableWood: M.wood(0x4a2a18),
     lightColor: 0xfff4e2, plants: false,
   };
   return buildDept(ctx, 'chemie', style, (api) => {
