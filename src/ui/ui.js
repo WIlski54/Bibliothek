@@ -19,7 +19,7 @@ export class UI {
       ov.addEventListener('pointerdown', (e) => { if (e.target === ov) this.close(ov); });
     }
     $('#v-back').addEventListener('click', () => this.closeViewer());
-    addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (this.viewerOpen) this.closeViewer(); else if (!this.menu.hidden) this.close(this.menu); else if (this.cardOpen) this.close(this.card); } });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (this.viewerOpen) this.closeViewer(); else if (!this.menu.hidden) this.close(this.menu); else if (this.cardOpen) this.close(this.card); else if (this.bookbarOpen) this.onBookBack?.(); } });
     $('#o-calm').addEventListener('change', (e) => this.onSettings({ calm: e.target.checked }));
     $('#o-sound').addEventListener('change', (e) => this.setSound(e.target.checked));
     $('#b-sound').addEventListener('click', () => this.setSound(!this.sound));
@@ -80,11 +80,28 @@ export class UI {
     this.openCard({ title: 'So geht’s', paras: ['Zum Umschauen ziehst du mit dem Finger oder der Maus. Mit zwei Fingern oder dem Mausrad zoomst du.', 'Tippe auf Türen, Regale oder die Knöpfe unten, dann fährt die Kamera dorthin. Mit den Pfeilen ‹ › gehst du zur nächsten Station im Raum.', 'Tippe auf ein Buch, ein Bild oder ein Ausstellungsstück, um mehr zu erfahren. Mit „Buch öffnen“ schlägst du ein Popup-Buch auf.', 'Archimedes, die Hauskatze, begleitet dich. Tippe sie an, dann verrät sie dir etwas.'] });
   }
 
-  // ---- Buchansicht (iframe), Bibliothek wird währenddessen angehalten
+  // ---- Buch auf dem Lesetisch: Leiste mit Titel, Lesen, Zurück ins Regal
+  showBookBar(def, { onRead, onBack }) {
+    const bar = $('#bookbar'); $('#bb-title').textContent = def.title; $('#bb-sub').textContent = [def.subtitle, def.grades].filter(Boolean).join(' · '); $('#bb-blurb').textContent = def.blurb || '';
+    const note = $('#bb-note'); note.hidden = !!def.url; note.className = 'note'; note.textContent = def.url ? '' : 'Dieses Buch ist fertig, aber die Adresse ist noch nicht eingetragen. Sobald es online ist, kannst du es hier lesen.';
+    const rd = $('#bb-read'); rd.hidden = !def.url; rd.onclick = onRead; $('#bb-back').onclick = onBack; this.onBookBack = onBack;
+    bar.hidden = false; bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; this.bookbarOpen = true;
+  }
+  hideBookBar() { $('#bookbar').hidden = true; this.bookbarOpen = false; }
+
+  // ---- Buchansicht (iframe): weich einblenden, Ladeanzeige bis das Buch geladen ist; Bibliothek wird währenddessen angehalten
   openBook(def) {
     if (!def.url) { this.openCard({ kind: 'book', book: def }); return; }
-    this.close(this.card); $('#v-title').textContent = def.title; const a = $('#v-new'); a.href = def.url;
-    const fr = $('#v-frame'); fr.allow = 'fullscreen; autoplay'; fr.src = def.url; this.viewer.hidden = false; this.viewerOpen = true; this.onViewerChange?.(true);
+    this.close(this.card); $('#v-title').textContent = def.title; $('#v-new').href = def.url;
+    const fr = $('#v-frame'); fr.allow = 'fullscreen; autoplay'; this.viewer.classList.add('loading');
+    fr.onload = () => { clearTimeout(this.loadTimer); this.viewer.classList.remove('loading'); };
+    this.loadTimer = setTimeout(() => this.viewer.classList.remove('loading'), 25000);
+    fr.src = def.url; this.viewer.hidden = false; void this.viewer.offsetWidth; this.viewer.classList.add('show'); this.viewerOpen = true; this.onViewerChange?.('opening');
+    clearTimeout(this.pauseTimer); this.pauseTimer = setTimeout(() => { if (this.viewerOpen) this.onViewerChange?.('open'); }, 1000);
   }
-  closeViewer() { $('#v-frame').src = 'about:blank'; this.viewer.hidden = true; this.viewerOpen = false; this.onViewerChange?.(false); }
+  closeViewer() {
+    if (!this.viewerOpen) return; clearTimeout(this.pauseTimer); clearTimeout(this.loadTimer); this.viewerOpen = false; this.onViewerChange?.('closing');
+    this.viewer.classList.remove('show'); const fr = $('#v-frame'); fr.onload = null;
+    setTimeout(() => { if (!this.viewerOpen) { fr.src = 'about:blank'; this.viewer.hidden = true; this.viewer.classList.remove('loading'); } }, 950);
+  }
 }
