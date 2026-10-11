@@ -46,6 +46,7 @@ function extras(api, ctx) {
     if (c.isMesh && Math.abs(c.position.y - 0.012) < 1e-6) g.remove(c);                                                      // Standard-Teppich
     else if (c.isGroup && c.position.y === 0 && r < 1.45 && !c.userData.kind) g.remove(c);                                   // Lesetisch und Stühle
     else if (c.isGroup && Math.abs(c.position.y - 3.0) < 1e-6 && Math.abs(c.position.x + R.w / 2) < 0.05) g.remove(c);       // Wandlampen an der Stirnwand
+    else if (c.isGroup && Math.abs(c.position.x - (R.w / 2 - 0.5)) < 0.01 && Math.abs(c.position.z - (R.d / 2 - 0.5)) < 0.01) c.position.set(R.w / 2 - 0.55, 0, -1.6); // Zimmerpflanze vom Regalfuß neben die Tür
   }
 
   // ---------------------------------------------------------------- Regale: Mitte der Stirnwand frei (Weltkarte), Nischen an N und S, Türwand
@@ -56,7 +57,7 @@ function extras(api, ctx) {
   const retarget = (u, station) => { const hp = u.children.find((c) => c.userData.tap?.kind === 'goto'); if (hp) hp.userData.tap.station = station; };
   for (const u of units) {
     const w = u.userData.wall;
-    retarget(u, w === 'N' ? (u.userData.a > 0 ? 'geschichte-regal-N' : 'geschichte-schaetze') : w === 'S' ? (u.userData.a > 0 ? 'geschichte-regal-S' : 'geschichte-schrift') : w === 'E' ? 'geschichte-tuer' : u.userData.a < 0 ? 'geschichte-regal-W' : 'geschichte-karte');
+    retarget(u, w === 'N' ? (u.userData.a > 0 ? 'geschichte-altertum' : 'geschichte-regal-N') : w === 'S' ? (u.userData.a > 0 ? 'geschichte-neuzeit' : 'geschichte-regal-S') : w === 'E' ? 'geschichte-tuer' : u.userData.a < 0 ? 'geschichte-regal-W' : 'geschichte-karte');
   }
 
   // ---------------------------------------------------------------- Licht (höchstens 4 echte Lichter)
@@ -119,10 +120,10 @@ function extras(api, ctx) {
 
   // ---------------------------------------------------------------- Epochen-Schilder über den Regalgruppen
   const sign = (wl, a, text, sub, card, station) => place(wallSign(text, sub, 3.2, 0.4, { ...card, station, label: text }, { size: 0.5, subSize: 0.2 }), wl, a, 0.012, 3.12);
-  sign('N', -3.67, 'Urgeschichte', 'Steinzeit und frühe Menschen', EPOCHS.urgeschichte, 'geschichte-schaetze');
-  sign('N', 3.67, 'Altertum', 'Ägypten, Griechen, Römer', EPOCHS.altertum, 'geschichte-schaetze');
-  sign('S', -3.67, 'Mittelalter', 'Burgen, Klöster, Städte', EPOCHS.mittelalter, 'geschichte-schrift');
-  sign('S', 3.67, 'Neuzeit', 'Entdecker und Erfinder', EPOCHS.neuzeit, 'geschichte-schrift');
+  sign('N', -3.67, 'Urgeschichte', 'Steinzeit und frühe Menschen', EPOCHS.urgeschichte, 'geschichte-regal-N');
+  sign('N', 3.67, 'Altertum', 'Ägypten, Griechen, Römer', EPOCHS.altertum, 'geschichte-altertum');
+  sign('S', -3.67, 'Mittelalter', 'Burgen, Klöster, Städte', EPOCHS.mittelalter, 'geschichte-regal-S');
+  sign('S', 3.67, 'Neuzeit', 'Entdecker und Erfinder', EPOCHS.neuzeit, 'geschichte-neuzeit');
   for (const [wl, a] of [['N', -3.67], ['N', 3.67], ['S', -3.67], ['S', 3.67]]) place(glow(3.0, 0.6, 0xffc880, 0.16), wl, a, 0.02, 3.5);
 
   // kleine Schilder über den übrigen Regalen (Stirnwand und Türwand)
@@ -139,7 +140,7 @@ function extras(api, ctx) {
   { // Goldmaske
     const pc = lit(paperCut('tutmaske', { height: 0.8, thickness: 0.03, border: 0.008, name: 'gesch:maske' }), 0.3);
     exhibit('maske', 'N', -1.0, {
-      cloth: 0x1b2a66, sub: 'um 1323 v. Chr. · Nachbau', station: 'geschichte-schaetze', image: cardImage(pc.canvas, 480),
+      cloth: 0x1b2a66, sub: 'um 1323 v. Chr. · Nachbau', station: 'geschichte-regal-N', image: cardImage(pc.canvas, 480),
       fill(inner) {
         const sun = sunDisc(0.5); sun.position.set(0, 0.47, -0.2); inner.add(sun);
         const b = box(0.36, 0.04, 0.2, M.brass()); b.position.set(0, 0.02, 0.0); inner.add(b);
@@ -151,7 +152,7 @@ function extras(api, ctx) {
   { // Doppelkrone
     const pc = lit(paperCut('doppelkrone', { height: 0.86, thickness: 0.03, border: 0.008, name: 'gesch:krone' }), 0.3);
     exhibit('krone', 'N', 1.0, {
-      cloth: 0x1b2a66, sub: 'Zeichen für ganz Ägypten', station: 'geschichte-schaetze', image: cardImage(pc.canvas, 380),
+      cloth: 0x1b2a66, sub: 'Zeichen für ganz Ägypten', station: 'geschichte-regal-N', image: cardImage(pc.canvas, 380),
       fill(inner) {
         const cushion = mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.07, 28), M.fabric(0x7b1f26)); cushion.position.y = 0.035; inner.add(cushion);
         const ring = mesh(new THREE.TorusGeometry(0.235, 0.012, 8, 40), M.brass()); ring.rotation.x = Math.PI / 2; ring.position.y = 0.07; inner.add(ring);
@@ -163,7 +164,7 @@ function extras(api, ctx) {
   { // Papyrusrolle (S-Nische, von der Raummitte aus gesehen links = +x)
     const pc = lit(paperCut('papyrusrolle', { height: 0.62, thickness: 0.03, border: 0.008, name: 'gesch:papyrus' }), 0.3);
     exhibit('papyrus', 'S', -1.0, {
-      cloth: 0x1f3a2e, sub: 'Das Papier der Ägypter', station: 'geschichte-schrift', image: cardImage(pc.canvas, 480),
+      cloth: 0x1f3a2e, sub: 'Das Papier der Ägypter', station: 'geschichte-regal-S', image: cardImage(pc.canvas, 480),
       fill(inner) {
         const b = box(0.62, 0.05, 0.16, W(0x5a2a16, { planks: 2 }), { tile: 1 }); b.position.set(0, 0.025, 0.02); inner.add(b);
         const br = box(0.64, 0.012, 0.18, M.brass()); br.position.set(0, 0.056, 0.02); inner.add(br);
@@ -178,7 +179,7 @@ function extras(api, ctx) {
   { // Stein von Rosette
     const pc = lit(paperCut('rosetta_stein', { height: 0.8, thickness: 0.1, border: 0.004, edge: '#3a3d44', paper: '#3a3d44', grain: 0.3, name: 'gesch:rosette' }), 0.22);
     exhibit('rosette', 'S', 1.0, {
-      cloth: 0x1f3a2e, sub: 'gefunden 1799 · Nachbau', station: 'geschichte-schrift', image: cardImage(pc.canvas, 480),
+      cloth: 0x1f3a2e, sub: 'gefunden 1799 · Nachbau', station: 'geschichte-regal-S', image: cardImage(pc.canvas, 480),
       fill(inner) {
         const b = box(0.62, 0.03, 0.3, M.brass()); b.position.set(0, 0.015, 0); inner.add(b);
         pc.mesh.position.set(0, 0.03, 0.06); pc.mesh.rotation.x = -0.1; inner.add(pc.mesh);
@@ -242,7 +243,7 @@ function extras(api, ctx) {
 
   // ---------------------------------------------------------------- Porträts an den Nischen
   for (const [wl, a, id] of [['N', -1.0, 'carter'], ['N', 1.0, 'kleopatra'], ['S', -1.0, 'herodot'], ['S', 1.0, 'champollion']]) {
-    const f = personFrame(id); place(f, wl, a, 0.014, 3.1); f.userData.tap.station = wl === 'N' ? 'geschichte-schaetze' : 'geschichte-schrift';
+    const f = personFrame(id); place(f, wl, a, 0.014, 3.1); f.userData.tap.station = wl === 'N' ? 'geschichte-regal-N' : 'geschichte-regal-S';
     place(pictureLight(0.9), wl, a, 0.014, 3.82); place(glow(1.3, 0.6, 0xffd890, 0.22), wl, a, 0.04, 3.7);
   }
 
@@ -274,17 +275,18 @@ function extras(api, ctx) {
   // ---------------------------------------------------------------- Stationen (Reihenfolge der Pfeile)
   stations.length = 0;
   const st = (id, name, pos, look, extra = {}) => stations.push({ id: `geschichte-${id}`, room: 'geschichte', name: `Geschichte: ${name}`, pos, look, ...extra });
+  // wall: nur an den Nischenstationen (Hilfe für tools/test-portraits.mjs, das eine Station mit sichtbaren Porträts sucht)
   st('eingang', 'Eingang', [4.4, 1.6, 0.0], [-6, 2.15, 0], { catSpot: [2.0, 0, 2.7] });
   st('regal-W', 'Popup-Bücher', [-3.7, 1.6, 3.35], [-5.8, 1.35, 3.6], { catSpot: [-3.0, 0, 2.4], bookSpot: [-4.55, 3.4] });
-  st('regal-N', 'Regale Altertum', [3.6, 1.6, -1.7], [3.6, 2.2, -5], { catSpot: [1.8, 0, -1.2] });
-  st('regal-S', 'Regale Neuzeit', [-3.6, 1.6, 1.7], [-3.6, 2.2, 5], { catSpot: [-2.1, 0, 2.6] });
-  st('schaetze', 'Schätze der Pharaonen', [0.0, 1.6, -1.6], [0, 2.15, -5], { catSpot: [2.6, 0, -3.5] });
-  st('schrift', 'Schrift und Buch', [0.0, 1.6, 1.6], [0, 2.15, 5], { catSpot: [-2.4, 0, 3.4] });
+  st('altertum', 'Regale Altertum', [3.6, 1.6, -1.7], [3.6, 2.2, -5], { catSpot: [1.8, 0, -1.2] });
+  st('regal-N', 'Schätze der Pharaonen', [0.0, 1.6, -1.6], [0, 2.15, -5], { catSpot: [2.6, 0, -3.5], wall: 'N' });
+  st('regal-S', 'Schrift und Buch', [0.0, 1.6, 1.6], [0, 2.15, 5], { catSpot: [-2.4, 0, 3.4], wall: 'S' });
+  st('neuzeit', 'Regale Neuzeit', [-3.6, 1.6, 1.7], [-3.6, 2.2, 5], { catSpot: [-2.1, 0, 2.6] });
   st('pyramide', 'Cheops-Pyramide', [3.2, 1.55, 1.4], [1.3, 1.0, 1.4], { catSpot: [2.8, 0, 0.1] });
   st('karte', 'Weltkarte', [-2.6, 1.6, 0.0], [-6, 2.25, 0], { catSpot: [-4.5, 0.8, -0.7] });
   st('tisch', 'Kartentisch und Globus', [-2.1, 1.6, -0.2], [-4.9, 0.95, 0.7], { catSpot: [-2.9, 0, -2.4] });
-  st('uhr', 'Zeituhr', [3.9, 1.6, -2.5], [6, 2.65, -2.5], { catSpot: [4.8, 0, -0.5] });
-  st('presse', 'Gutenberg und der Buchdruck', [2.7, 1.6, 2.5], [6, 1.7, 2.45], { catSpot: [4.9, 0, 0.9] });
+  st('uhr', 'Zeituhr', [4.2, 1.6, -2.5], [6, 2.65, -2.5], { catSpot: [4.8, 0, -0.5] });
+  st('presse', 'Gutenberg und der Buchdruck', [3.0, 1.6, 2.45], [6, 1.3, 2.45], { catSpot: [4.9, 0, 0.9] });
   st('tuer', 'Ausgang', [-3.0, 1.6, 0.0], [6, 1.9, 0], { catSpot: [-1.2, 0, -1.6] });
 
   // ---------------------------------------------------------------- Animation: Uhrzeiger

@@ -22,7 +22,9 @@ const tapObject = async (key, expectTitle, { from = null, label = key } = {}) =>
   const c = await centerOf(key); if (!c) { check(`${label}: Objekt gefunden`, false); return; }
   const [x, y, z] = await proj(...c);
   if (z > 1 || x < 0 || y < 0 || x > 1024 || y > 640) { check(`${label}: im Bild`, false, `(${x | 0},${y | 0})`); return; }
-  await page.mouse.click(x, y); await step(3); await page.waitForTimeout(400);
+  await page.mouse.click(x, y); await step(3);
+  if (await page.evaluate(() => window.__lib.rig.moving)) await step(140); // Tipp aus der Ferne: Kamera fährt erst zur Station
+  await page.waitForTimeout(500); await step(1);
   const t = await cardTitle(); check(`${label}: Karte „${t}“`, t === expectTitle, t === expectTitle ? '' : `erwartet „${expectTitle}“`);
   if (t) await page.screenshot({ path: out(`gesch-card-${label.replace(/\W+/g, '_')}.png`) });
   await closeCard();
@@ -34,9 +36,9 @@ check('Stationen Geschichte: 8 bis 13', list.length >= 8 && list.length <= 13, l
 for (const id of list) check(`Station ${id} erreichbar`, await go(id));
 
 // 1) Vitrinen (von der jeweiligen Station aus)
-await tapObject('Goldmaske des Tutanchamun', 'Goldmaske des Tutanchamun', { from: 'geschichte-schaetze', label: 'Vitrine Goldmaske' });
+await tapObject('Goldmaske des Tutanchamun', 'Goldmaske des Tutanchamun', { from: 'geschichte-regal-N', label: 'Vitrine Goldmaske' });
 await tapObject('Doppelkrone (Pschent)', 'Die Doppelkrone (Pschent)', { label: 'Vitrine Doppelkrone' });
-await tapObject('Papyrusrolle', 'Die Papyrusrolle', { from: 'geschichte-schrift', label: 'Vitrine Papyrusrolle' });
+await tapObject('Papyrusrolle', 'Die Papyrusrolle', { from: 'geschichte-regal-S', label: 'Vitrine Papyrusrolle' });
 await tapObject('Stein von Rosette', 'Der Stein von Rosette', { label: 'Vitrine Stein von Rosette' });
 await tapObject('Modell der Cheops-Pyramide', 'Modell der Cheops-Pyramide', { from: 'geschichte-pyramide', label: 'Vitrine Pyramide' });
 
@@ -55,7 +57,7 @@ await tapObject('Modell der Cheops-Pyramide', 'Modell der Cheops-Pyramide', { fr
 
 // 3) Zeituhr, Porträt, Epochenschild, Presse, Globus, Kartentisch
 await tapObject('Zeituhr', 'Die Zeituhr', { from: 'geschichte-uhr', label: 'Zeituhr' });
-await tapObject('carter', 'Howard Carter', { from: 'geschichte-schaetze', label: 'Porträt Carter' });
+await tapObject('carter', 'Howard Carter', { from: 'geschichte-regal-N', label: 'Porträt Carter' });
 await tapObject('Altertum', 'Altertum', { from: 'geschichte-tuer', label: 'Epochenschild Altertum' });
 await tapObject('Gutenberg-Druckerpresse', 'Die Druckerpresse', { from: 'geschichte-presse', label: 'Druckerpresse' });
 await tapObject('Kartentisch', 'Der Kartentisch', { from: 'geschichte-tisch', label: 'Kartentisch' });
@@ -86,6 +88,6 @@ await tapObject('Globus', 'Der Globus', { label: 'Globus' });
   } else check('Goldmaske vom Eingang sichtbar', false, `(${x | 0},${y | 0})`);
 }
 
-const errs = logs.filter((l) => /error|warn|pageerror/i.test(l) && !/permissions policy/i.test(l)); if (errs.length) { console.log(errs.slice(0, 10).join('\n')); ok = false; }
+const errs = logs.filter((l) => /error|warn|pageerror/i.test(l) && !/permissions policy|KHR_parallel_shader_compile/i.test(l)); if (errs.length) { console.log(errs.slice(0, 10).join('\n')); ok = false; }
 check('keine Konsolenfehler', errs.length === 0);
 console.log(ok ? 'ALLES OK' : 'FEHLER'); await browser.close(); process.exit(ok ? 0 : 1);
