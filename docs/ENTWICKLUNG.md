@@ -103,3 +103,12 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01YCGN1AuzeMnckiFhEuVvoS
 ```
 Nicht pushen (es gibt noch kein Remote). `node_modules` nie committen oder verlinken. Am Ende: kurzer Bericht (was gebaut, Stationen, Messwerte, bekannte Mängel, Fehler in fremden Dateien).
+
+## Nachträge (Stand nach Integration der Räume)
+
+- **Weltkarte:** `src/world/ex/worldmap.js` zeichnet eine echte Karte aus Natural-Earth-Daten (gemeinfrei, `src/data/world-50m.json`): `drawWorld(g, w, h, {proj:'robinson'|'equirect', style:'atlas'|'parchment', ...})`, `worldProject(...)` für Markierungen, `globeTexture()` für Globen (gecacht, geteilt). `kit.globe({map})` hat eine geneigte Erdachse; `g.userData.sphere.rotation.y` ist die Drehung.
+- **Buch-Auftritt:** `src/world/showcase.js`. Antippen eines fertigen Buchs lässt es aus dem Regal auf einen kleinen Lesetisch fliegen, die Kamera fährt heran (`rig.flyTo`), unten erscheint die Leiste „Lesen / Zurück ins Regal“, „Lesen“ blendet das Buch (iframe) sanft ein. Der Tisch steht standardmäßig 2 m vor der Kamera; Stationen können mit `bookSpot: [x, z]` (lokal) einen Platz vorgeben (wichtig, wenn die Station nah an einer Wand oder Vitrine steht).
+- **Archimedes:** `src/world/cat.js` + `src/world/ex/cat/`. Platz je Station: `catSpot: [x, y, z]` (lokal, y = Höhe der Fläche) wird nur übernommen, wenn die Katze dort im Bild sitzt und frei steht; sonst wählt `ex/cat/space.js` automatisch aus der echten Raumgeometrie (Belegungsraster aus allen sichtbaren Meshes). Neue Exponate müssen nichts tun.
+- **Zusammenfassen:** `merge.js` lässt Objekte mit `visible === false` aus. Alles Animierte braucht `userData.dynamic = true`.
+- **Ruhiger Modus:** `rig.calm` → Überblenden statt Kamerafahrt (`#fade`), keine drehenden/laufenden Animationen außer Atmen und Blinzeln.
+- **Tests:** `tools/test-*.mjs` (tap, showcase, nav, layout, portraits, cat, chemie, geschichte, biologie). Unter hoher Rechnerlast kann ein Screenshot-Timeout auftreten (Software-Rendering); `harness.mjs` setzt 240 s.
