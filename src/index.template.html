@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1d120c">
+<title>Die große Bibliothek</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+<canvas id="gl" aria-label="Die große Bibliothek (3D-Ansicht)" role="img"></canvas>
+<div id="hud" hidden>
+  <div id="brand"><b>Die große Bibliothek</b><span id="where">Foyer</span></div>
+  <div id="topbtns">
+    <button id="b-help" aria-label="Hilfe">?</button>
+    <button id="b-menu" aria-label="Einstellungen">&#9881;</button>
+  </div>
+  <div id="tip" hidden></div>
+  <div id="bubble" hidden><b id="bubble-who">Archimedes</b><span id="bubble-text"></span></div>
+  <nav id="roombar" aria-label="Räume">
+    <button data-go="foyer">Foyer</button>
+    <button data-go="geschichte" class="geschichte">Geschichte</button>
+    <button data-go="biologie" class="biologie">Biologie</button>
+    <button data-go="chemie" class="chemie">Chemie</button>
+    <span class="stepper"><button id="prev" aria-label="Vorherige Station">&#8249;</button><span id="stname"></span><button id="next" aria-label="Nächste Station">&#8250;</button></span>
+  </nav>
+</div>
+<div id="card" class="overlay" hidden role="dialog" aria-modal="true"><div class="sheet"><button class="x" aria-label="Schließen">&times;</button><div class="body"></div></div></div>
+<div id="viewer" hidden>
+  <header><button id="v-back">&#8592; Zurück zur Bibliothek</button><span id="v-title"></span><a id="v-new" target="_blank" rel="noopener">In neuem Tab öffnen</a></header>
+  <iframe id="v-frame" title="Popup-Buch" referrerpolicy="no-referrer"></iframe>
+</div>
+<div id="menu" class="overlay" hidden role="dialog" aria-modal="true"><div class="sheet small"><button class="x" aria-label="Schließen">&times;</button><div class="body">
+  <h2>Einstellungen</h2>
+  <label class="row"><input type="checkbox" id="o-calm"> <span><b>Ruhiger Modus</b><br><small>Weniger Bewegung: Kamera blendet über statt zu fahren.</small></span></label>
+  <label class="row"><input type="checkbox" id="o-sound"> <span><b>Ton</b><br><small>Leises Raumrauschen und Geräusche (kommt noch).</small></span></label>
+  <div class="row"><span><b>Bildqualität</b><br><small>Wenn es ruckelt, wähle „Sparsam“.</small></span>
+    <select id="o-q"><option value="auto">Automatisch</option><option value="low">Sparsam</option><option value="mid">Mittel</option><option value="high">Schön</option></select></div>
+  <p class="fine">Die große Bibliothek · Code MIT · Texte CC BY-SA 4.0</p>
+</div></div></div>
+<div id="intro" class="overlay"><div class="sheet intro"><div class="body">
+  <h1>Die große Bibliothek</h1>
+  <p class="lead">Willkommen! Hier stehen meine Popup-Bücher zum Stöbern: nach Fächern sortiert, mit Bildern berühmter Menschen und besonderen Fundstücken.</p>
+  <ul class="how">
+    <li><b>Umschauen:</b> mit dem Finger oder der Maus ziehen, mit zwei Fingern oder dem Mausrad zoomen.</li>
+    <li><b>Hingehen:</b> auf Türen, Regale oder die Knöpfe unten tippen.</li>
+    <li><b>Entdecken:</b> auf Bücher, Bilder und Ausstellungsstücke tippen.</li>
+  </ul>
+  <button id="go" class="primary" disabled>Bibliothek wird aufgebaut …</button>
+</div></div></div>
+<script>/*__JS__*/</script>
+</body>
+</html>
