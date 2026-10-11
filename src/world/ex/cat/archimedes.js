@@ -98,7 +98,7 @@ export class Archimedes {
     const target = this.space.spotFor(toId); if (!target) return;
     this.react = null; this.speakT = 0; this.popT = -1; this.teleport = null;
     const rt = this.rig.travel;
-    if (this.rig.calm || rt?.calm) { this.travel = null; this.teleport = { t: 0, at: 0.27, pos: target }; if (this.mode === 'sleep') this.mode = 'sit'; return; }
+    if (this.rig.calm || rt?.calm) { this.travel = null; this.teleport = { t: 0, at: 0.27, pos: target, id: toId }; if (this.mode === 'sleep') this.mode = 'sit'; return; }
     const guide = (route || []).map((p) => new THREE.Vector3(p.x, 0, p.z));
     const path = this.space.plan(this.pos, target, guide);
     let L = 0; const lens = [0]; for (let i = 1; i < path.length; i++) { L += Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z); lens.push(L); }
@@ -116,9 +116,12 @@ export class Archimedes {
     // Katze am Ziel absetzen, falls sie noch unterwegs ist
     if (this.teleport) this.finishTeleport();
     if (this.travel) { const rest = this.travel.L - (this.curS || 0); if (rest > 1.2) this.endTravel(true); else this.travel.T = Math.min(this.travel.T, this.travel.t + 0.35); }
-    this.t.blinkT = 0.5; this.t.wagT = 1.0;
+    this.t.blinkT = 0.5; this.t.wagT = 1.0; this.tip(room);
+  }
+  // Tipp beim ersten Besuch eines Raums (nur einmal je Raum)
+  tip(room) {
     if (room && !this.tipped.has(room) && TIPS[room]) { this.tipped.add(room); this.say(TIPS[room], { tip: true }); }
-    this.visited.add(room);
+    if (room) this.visited.add(room);
   }
   greet() { this.tipped.add('foyer'); this.say(TIPS.foyer, { tip: true }); }
   tipFor(room) { return TIPS[room]; }
@@ -133,6 +136,7 @@ export class Archimedes {
   poke() {
     const room = this.rig.room || 'foyer';
     if (this.mode === 'walk' || this.mode === 'prep') return;
+    if (this.mode === 'stretch' || this.mode === 'sleepin' || this.mode === 'settle') { this.mode = 'sit'; this.modeT = 0; this.switchPose('sit', true); }
     const was = this.mode;
     if (was === 'sleep') { // aufwecken, erster Satz ist eine Ausrede
       const w = ['Mrrau? Ich habe nur die Augen ausgeruht.', 'Hm? Ich war nicht eingeschlafen. Ich habe nachgedacht.', 'Miau … ach, du bist es. Gut, dass du da bist.'];
@@ -151,7 +155,7 @@ export class Archimedes {
   bodyCenter() { return new THREE.Vector3(this.pos.x, this.pos.y + 0.2, this.pos.z); }
 
   // ------------------------------------------------------------ Bewegung
-  finishTeleport() { const tp = this.teleport; this.teleport = null; this.travel = null; this.pos.copy(tp.pos); this.ground = tp.pos.y; this.lift = 0; this.speed = 0; this.setSit(true); }
+  finishTeleport() { const tp = this.teleport; this.teleport = null; this.travel = null; this.pos.copy(tp.pos); this.ground = tp.pos.y; this.lift = 0; this.speed = 0; this.setSit(true); this.t.blinkT = 0.4; this.tip(this.rig.stations.get(tp.id)?.room); }
   endTravel(snap = false) {
     const tr = this.travel; this.travel = null; if (!tr) return;
     this.pos.copy(tr.target); this.ground = tr.endY; this.lift = 0; this.speed = 0;
@@ -342,6 +346,7 @@ export class Archimedes {
 
   // ------------------------------------------------------------ Zusatzlagen
   runFx(dt, calm) {
+    const dist = this.cam.position.distanceTo(this.group.position), sf = clamp(dist / 2.6, 1, 2.4);   // aus der Ferne etwas größer, damit man Zzz und Ausrufezeichen noch sieht
     // Zzz
     const sleeping = this.pose === 'sleep' && !this.flip;
     for (let i = 0; i < 3; i++) {
@@ -349,7 +354,7 @@ export class Archimedes {
       if (!sleeping) continue;
       const ph = calm ? 0.25 + i * 0.28 : ((this.clock * 0.32 + i / 3) % 1);
       const f = this.face;
-      z.position.set(0.14 * f + ph * 0.1 * f, 0.22 + ph * 0.3, 0.04); z.scale.setScalar(0.45 + ph * 0.75);
+      z.position.set((0.14 + ph * 0.1) * f * sf, (0.22 + ph * 0.3) * (0.6 + 0.4 * sf), 0.04); z.scale.setScalar((0.45 + ph * 0.75) * sf);
       z.material.opacity = 1; z.material.transparent = true; z.material.opacity = Math.sin(Math.PI * Math.min(1, ph * 1.08)) ** 0.6;
     }
     // Symbol über dem Kopf (Glühbirne, Ausrufe-, Fragezeichen)
@@ -360,7 +365,7 @@ export class Archimedes {
       else {
         p.visible = true; const e = easeOutBack(clamp(this.popT / 0.35)); const s = Math.max(0.01, e);
         const top = this.pose === 'sleep' ? 0.32 : this.pose === 'walk' ? 0.6 : 0.6;
-        p.position.set(this.pose === 'sit' ? 0.13 : 0.0, top + 0.03 * Math.sin(this.clock * 6), 0.05); p.scale.setScalar(s);
+        p.position.set(this.pose === 'sit' ? 0.13 : 0.0, top + 0.03 * Math.sin(this.clock * 6), 0.05); p.scale.setScalar(s * Math.min(sf, 1.6));
         p.material.opacity = 1; p.material.transparent = true; p.material.opacity = u > 0.8 ? (1 - u) / 0.2 : 1;
       }
     } else p.visible = false;
@@ -368,7 +373,6 @@ export class Archimedes {
     // Schatten und Tippfläche
     const lift = this.lift, shw = this.pose === 'walk' ? 0.74 : this.pose === 'sleep' ? 0.62 : 0.5, shd = this.pose === 'walk' ? 0.26 : 0.28, k = 1 / (1 + lift * 3);
     this.shadow.scale.set(shw * k, shd * k, 1); this.shadow.material.opacity = 0.9 * k; this.shadow.position.set(0, 0.017 - lift, -0.06);
-    const dist = this.cam.position.distanceTo(this.group.position);
     const w = Math.max(this.poseW + 0.1, 0.085 * dist), h = Math.max(this.poseH + 0.08, 0.085 * dist * 1.1);
     this.hit.scale.set(w, h, 0.4); this.hit.position.set(0, h / 2 - 0.04, 0);
   }

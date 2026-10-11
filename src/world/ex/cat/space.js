@@ -94,12 +94,17 @@ export class Space {
     for (const d of Object.values(FOYER_DOORS)) { const R = 1.7; for (let j = cj(d.world[2] - R); j <= cj(d.world[2] + R); j++) for (let i = ci(d.world[0] - R); i <= ci(d.world[0] + R); i++) if (inGrid(i, j) && Math.hypot(X0 + (i + 0.5) * CELL - d.world[0], Z0 + (j + 0.5) * CELL - d.world[2]) < R) this.avoid[j * NX + i] = 1; }
   }
   warm(ms = 3) {
-    if (this.done) return true;
+    if (this.done) { this.warmSpot(); return true; }
     if (!this.job) { this.job = this.rasterJob(); this.t0 = performance.now(); }
     const end = performance.now() + ms;
     while (performance.now() < end) { if (this.job.next().done) break; }
     if (this.done) this.stats.ms = performance.now() - this.t0;
     return this.done;
+  }
+  // nach dem Raster: je Aufruf einen Katzenplatz vorausberechnen, damit der Start einer Kamerafahrt nichts kostet
+  warmSpot() {
+    if (!this.queue) this.queue = [...this.rig.stations.keys()];
+    const id = this.queue.shift(); if (id !== undefined) this.spotFor(id);
   }
   ensure() { if (!this.done) { if (!this.job) { this.job = this.rasterJob(); this.t0 = performance.now(); } while (!this.job.next().done); this.stats.ms = performance.now() - this.t0; } }
 
