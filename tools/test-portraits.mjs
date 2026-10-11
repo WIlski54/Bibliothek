@@ -36,7 +36,7 @@ for (const f of frames.filter((q) => q.room === f0.room)) {
   const [x, y, z] = await proj(...f.pos); if (z > 1 || x < 20 || y < 20 || x > 1080 || y > 680) continue;
   await page.mouse.click(x, y); await step(2);
   tapped = await page.evaluate(() => !document.getElementById('card').hidden);
-  if (tapped) { const title = await page.evaluate(() => document.querySelector('#card h2')?.textContent); check(`Antippen öffnet Karte (${f.id})`, title && title.length > 2, title); await page.screenshot({ path: out('portraet-karte.png') }); await page.keyboard.press('Escape'); break; }
+  if (tapped) { const title = await page.evaluate(() => document.querySelector('#card h2')?.textContent); check(`Antippen öffnet Karte (${f.id})`, title && title.length > 2, title); await page.waitForTimeout(700); await page.screenshot({ path: out('portraet-karte.png') }); await page.keyboard.press('Escape'); break; }
 }
 if (!tapped) check('Antippen öffnet Karte', false, 'kein Rahmen im Bild getroffen');
 const errs = logs.filter((l) => /error|pageerror/i.test(l) && !/Failed to load resource|ERR_/.test(l)); if (errs.length) { console.log(errs.slice(0, 10).join('\n')); ok = false; }

@@ -100,13 +100,19 @@ export function mirrorPts(pts, cx) { return pts.map(([x, y]) => [2 * cx - x, y])
 export const lerp = (a, b, t) => a + (b - a) * t;
 export function bez(p0, p1, p2, n = 10) { const o = []; for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; o.push([u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]]); } return o; }
 export function bez3(p0, p1, p2, p3, n = 12) { const o = []; for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; o.push([u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]]); } return o; }
-// Band entlang einer Mittellinie (Breite je Punkt), z. B. Stängel, Locken, Bart-Strähnen
-export function ribbon(ctrl, { step = 6, caps = true } = {}) {
-  const S = spline(ctrl.map((c) => [c[0], c[1]]), false, step), W = spline(ctrl.map((c, i) => [i, c[2] ?? 6]), false, step);
+// Band entlang einer Mittellinie (Breite je Kontrollpunkt), z. B. Stängel, Hörner, Schneckenhaus
+export function ribbon(ctrl, { step = 6 } = {}) {
+  const n = ctrl.length, S = [];
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = ctrl[Math.max(0, i - 1)], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[Math.min(n - 1, i + 2)];
+    const k = Math.max(1, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let j = 0; j < k; j++) { const t = j / k, a = cr(p0, p1, p2, p3, t); const w = cr([0, p0[2] ?? 6], [0, p1[2] ?? 6], [0, p2[2] ?? 6], [0, p3[2] ?? 6], t)[1]; S.push([a[0], a[1], Math.max(0, w)]); }
+  }
+  S.push([ctrl[n - 1][0], ctrl[n - 1][1], ctrl[n - 1][2] ?? 6]);
   const L = [], R = [];
   for (let i = 0; i < S.length; i++) {
     const a = S[Math.max(0, i - 1)], b = S[Math.min(S.length - 1, i + 1)]; let tx = b[0] - a[0], ty = b[1] - a[1]; const m = Math.hypot(tx, ty) || 1; tx /= m; ty /= m;
-    const h = (W[Math.min(i, W.length - 1)][1] || 0) / 2; L.push([S[i][0] - ty * h, S[i][1] + tx * h]); R.push([S[i][0] + ty * h, S[i][1] - tx * h]);
+    const h = S[i][2] / 2; L.push([S[i][0] - ty * h, S[i][1] + tx * h]); R.push([S[i][0] + ty * h, S[i][1] - tx * h]);
   }
   return L.concat(R.reverse());
 }

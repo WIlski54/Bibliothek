@@ -145,7 +145,7 @@ export function drawGlasses(P, G, kind = 'round') {
   for (const s of [-1, 1]) {
     const x = fx(s);
     ctx.save();
-    ctx.beginPath(); if (kind === 'round') ctx.arc(x, y, r, 0, TAU); else ctx.roundRect(x - r, y - r * 0.72, r * 2, r * 1.42, [r * 0.28, r * 0.28, r * 0.55, r * 0.55]);
+    ctx.beginPath(); if (kind === 'round') ctx.arc(x, y, r, 0, TAU); else ctx.rect(x - r, y - r * 0.72, r * 2, r * 1.42);
     ctx.fillStyle = 'rgba(210,235,245,0.22)'; ctx.fill();
     ctx.shadowColor = 'rgba(30,14,4,0.38)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 2; ctx.shadowOffsetX = 0.8; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.stroke();
     ctx.restore();

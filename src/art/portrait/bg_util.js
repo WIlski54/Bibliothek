@@ -54,7 +54,6 @@ export function flask(P, x, y, r, liquid, o = {}) {
   const neckW = r * 0.34, neckH = r * (o.neck ?? 1.0);
   const glass = o.glass || '#e6f2f2';
   const body = ell(x, y, r, r, 28);
-  const outline = [[x - neckW, y - r - neckH], [x + neckW, y - r - neckH], [x + neckW, y - r * 0.85]].concat(ell(x, y, r, r, 28).filter((p) => p[1] > y - r * 0.8 || Math.abs(p[0] - x) > neckW * 1.1)).concat([[x - neckW, y - r * 0.85]]);
   // Glasform: Kreis + Hals
   P.cut(body, glass, { lift: 0.7, grad: false, deco: (ctx) => { const g = ctx.createLinearGradient(x - r, y - r, x + r, y + r); g.addColorStop(0, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(120,170,180,0.25)'); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); } });
   P.cut([[x - neckW, y - r - neckH], [x + neckW, y - r - neckH], [x + neckW * 1.05, y - r * 0.8], [x - neckW * 1.05, y - r * 0.8]], glass, { lift: 0.5, grad: false, smooth: false, step: 30, wob: 0.3 });

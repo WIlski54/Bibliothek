@@ -15,14 +15,16 @@ const cols = +(process.env.COLS || 6), cw = +(process.env.CW || 300), ch = +(pro
 const save = (url, file) => fs.writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
 const r = await page.evaluate(([ids, cols, cw, ch]) => window.__portraits.sheet(ids, cols, cw, ch), [ids, cols, cw, ch]);
 save(r.url, out('kontaktbogen.png')); console.log('Kontaktbogen:', out('kontaktbogen.png'));
-// Zeiten: jedes Porträt einzeln, erst kalt (erster Aufruf), dann warm
+// Zeiten: jedes Porträt mehrfach (Rastern wird mit getImageData erzwungen), erster Aufruf der Seite ist wegen der Browser-Aufwärmung nicht aussagekräftig
 const all = await page.evaluate(() => window.__portraits.ids);
-const FULL = !!process.env.FULL, times = {};
+const FULL = !!process.env.FULL, RUNS = +(process.env.RUNS || 5), times = {};
+await page.evaluate(() => window.__portraits.one(window.__portraits.ids[0]));
 for (const id of (ids.length ? ids : all)) {
-  const t = await page.evaluate(([id, full]) => { const a = window.__portraits.one(id); const b = window.__portraits.one(id); return { cold: a.ms, warm: b.ms, url: full ? b.url : null }; }, [id, FULL]);
+  const t = await page.evaluate(([id, full, runs]) => { const a = []; let url = null; for (let i = 0; i < runs; i++) { const r = window.__portraits.one(id); a.push(r.ms); url = r.url; } a.sort((x, y) => x - y); return { min: a[0], med: a[a.length >> 1], url: full ? url : null }; }, [id, FULL, RUNS]);
   times[id] = t; if (t.url) save(t.url, out(`portraet-${id}.png`));
 }
-const ms = Object.values(times).map((t) => t.warm); console.log('Zeiten (ms, warm):', Object.entries(times).map(([k, v]) => `${k} ${v.warm.toFixed(0)}`).join('  '));
-console.log(`Mittel ${(ms.reduce((a, b) => a + b, 0) / ms.length).toFixed(1)} ms, Max ${Math.max(...ms).toFixed(1)} ms`);
+const med = Object.values(times).map((t) => t.med), mn = Object.values(times).map((t) => t.min);
+console.log('Zeiten je Porträt in ms (Median von ' + RUNS + ', Minimum):', Object.entries(times).map(([k, v]) => `${k} ${v.med.toFixed(0)}/${v.min.toFixed(0)}`).join('  '));
+console.log(`Mittel der Mediane ${(med.reduce((a, b) => a + b, 0) / med.length).toFixed(1)} ms, größter Median ${Math.max(...med).toFixed(1)} ms, größtes Minimum ${Math.max(...mn).toFixed(1)} ms`);
 const errs = logs.filter((l) => /error|warn/i.test(l)); if (errs.length) console.log(errs.slice(0, 20).join('\n'));
 await browser.close();

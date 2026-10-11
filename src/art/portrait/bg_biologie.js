@@ -167,9 +167,12 @@ export const BG_BIOLOGIE = {
     strata([[640, 640], [640, 300], [580, 282], [520, 320], [480, 400], [462, 470], [450, 640]]);
     // Ammoniten
     const ammo = (x, y, r) => {
-      const ctrl = []; for (let i = 0; i <= 26; i++) { const t = i / 26 * 4.2 * Math.PI, rad = r * 0.12 * Math.exp(0.2 * t) * 1.0; ctrl.push([x + Math.cos(t) * rad, y + Math.sin(t) * rad, rad * 0.62]); }
-      const shell = ribbon(ctrl.filter((_, i) => i % 2 === 0 || i === 26), { step: 4 });
-      P.cut(shell, cream, { lift: 0.8, wob: 0.5, deco: (ctx) => { ctx.strokeStyle = alpha('#7a6a48', 0.55); ctx.lineWidth = 1.6; for (let i = 0; i < ctrl.length - 1; i++) { const t = i / 26 * 4.2 * Math.PI, rad = r * 0.12 * Math.exp(0.2 * t); ctx.beginPath(); ctx.moveTo(x + Math.cos(t) * (rad - rad * 0.3), y + Math.sin(t) * (rad - rad * 0.3)); ctx.lineTo(x + Math.cos(t) * (rad + rad * 0.3), y + Math.sin(t) * (rad + rad * 0.3)); ctx.stroke(); } } });
+      const b = 0.13, N = 30, T1 = 4.7 * Math.PI, ctrl = [];
+      for (let i = 0; i <= N; i++) { const t = i / N * T1, rad = r * 0.1 * Math.exp(b * t); ctrl.push([x + Math.cos(t) * rad, y + Math.sin(t) * rad, rad * 0.84]); }
+      P.cut(ribbon(ctrl, { step: 4 }), cream, { lift: 0.8, wob: 0.5, smooth: false, step: 5, deco: (ctx) => {
+        ctx.strokeStyle = alpha('#7a6a48', 0.5); ctx.lineWidth = 1.5;
+        for (let i = 2; i < N; i++) { const t = i / N * T1, rad = r * 0.1 * Math.exp(b * t); for (const f of [0, 0.5]) { const tt = t + f * (T1 / N); const rr = r * 0.1 * Math.exp(b * tt); ctx.beginPath(); ctx.moveTo(x + Math.cos(tt) * rr * 0.62, y + Math.sin(tt) * rr * 0.62); ctx.lineTo(x + Math.cos(tt) * rr * 1.38, y + Math.sin(tt) * rr * 1.38); ctx.stroke(); } }
+        ctx.strokeStyle = alpha('#7a6a48', 0.4); ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i <= N * 6; i++) { const t = i / (N * 6) * T1, rad = r * 0.1 * Math.exp(b * t); const px = x + Math.cos(t) * rad, py = y + Math.sin(t) * rad; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); } ctx.stroke(); } });
     };
     ammo(470, 150, 70); ammo(110, 130, 40);
   },
