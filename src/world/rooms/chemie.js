@@ -14,6 +14,7 @@ import { buildLab } from '../ex/chemie/lab.js';
 import { makeNaCl, makeCuSO4, makeNatron, makeDisplayTable, labelStand } from '../ex/chemie/crystals.js';
 import { makeAtom } from '../ex/chemie/atom.js';
 import { makeScale, makeWeightBox } from '../ex/chemie/scale.js';
+import { decorateUnit } from '../ex/chemie/shelfdecor.js';
 
 const ST = { eingang: 'chemie-eingang', regalN: 'chemie-regal-N', regalE: 'chemie-regal-E', periodensystem: 'chemie-periodensystem', labortisch: 'chemie-labortisch', destillation: 'chemie-destillation', waage: 'chemie-waage', kristalle: 'chemie-kristalle', atom: 'chemie-atom', portraets: 'chemie-portraets', tuer: 'chemie-tuer' };
 
@@ -52,6 +53,10 @@ export function build(ctx) {
     for (const u of api.units.filter((u) => u.userData.wall === 'W')) { const a = Math.sign(u.userData.a) * 4.1; placeWall(u, room, 'W', a, 0.2); u.userData.a = a; }
     const target = { N: ST.regalN, E: ST.regalE, W: ST.portraets };
     for (const u of api.units) u.traverse((o) => { if (o.userData.tap?.kind === 'goto') o.userData.tap.station = target[u.userData.wall] || o.userData.tap.station; });
+
+    // ---- Regalschmuck nach Thema (Gläser, Mineralstufen, Flaschen, Haushalt); die Bücherreihen lassen dafür Lücken
+    { const nu0 = api.units.filter((u) => u.userData.wall === 'N').sort((a, b) => a.userData.a - b.userData.a); ['stoffe', 'stoffe', 'elemente', 'elemente', 'reaktionen', 'reaktionen'].forEach((th, i) => nu0[i] && decorateUnit(nu0[i], th, i + 1));
+      api.units.filter((u) => u.userData.wall === 'W').forEach((u, i) => decorateUnit(u, 'alltag', 20 + i)); }
 
     // ---- Fenster: Südwand drei große, Nordwand ein Band Oberlichter; Bordüre, Balken, Lampen
     const win = new THREE.Group();

@@ -38,6 +38,7 @@ export const MAT = {
     const m = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.12, metalness: 0, transparent: k < 1, opacity: k, depthWrite: k >= 1 });
     m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * 0.22;'); }; m.customProgramCacheKey = () => 'chemie-liquid'; return m;
   }),
+  vc: () => memo('vc', () => new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.42, metalness: 0.08 })),   // Vertexfarben, opak (Kleinkram)
   solid: (c, rough = 0.7, metal = 0) => memo(`solid${c}|${rough}|${metal}`, () => new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal })),
   emissive: (c, i = 1.5) => memo(`em${c}|${i}`, () => new THREE.MeshStandardMaterial({ color: 0x222222, emissive: c, emissiveIntensity: i })),
 };

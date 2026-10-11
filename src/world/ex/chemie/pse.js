@@ -61,7 +61,7 @@ export function createPeriodicTable({ ctx, station = 'chemie-periodensystem', w 
     g.fillStyle = '#9fc9c6'; g.font = `italic 17px ${SERIF}`; g.textAlign = 'right'; g.fillText('Hauptgruppe', X0 - 6 + 3 * CW + 2, 22); g.textAlign = 'center';
     for (let p = 1; p <= 7; p++) { const r = cellRect(1, p); g.fillStyle = '#f3e7c4'; g.font = `bold 27px ${SANS}`; g.fillText(String(p), X0 / 2 - 4, r.y + CH / 2 + 10); }
     g.save(); g.translate(18, Y0 + 3.5 * CH); g.rotate(-Math.PI / 2); g.fillStyle = '#9fc9c6'; g.font = `italic 19px ${SERIF}`; g.fillText('Periode', 0, 0); g.restore();
-    g.fillStyle = '#f3e7c4'; g.font = `bold 24px ${SANS}`; g.fillText('Gruppe', X0 / 2 - 4, Y0 - 12);
+    g.fillStyle = '#f3e7c4'; g.font = `bold 17px ${SANS}`; g.fillText('Gruppe', X0 / 2 + 1, Y0 - 12);
 
     const dimAll = (e) => selCat && e.cat !== selCat;
     for (const e of ELEMENTS) { const r = cellRect(e.col, e.row); drawCell(r, { cat: e.cat, sym: e.sym, num: e.z, name: e.name, state: e.state, dim: dimAll(e) }); zones.push({ ...r, kind: 'el', z: e.z }); }
