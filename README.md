@@ -18,7 +18,7 @@ Eine begehbare 3D-Bibliothek im Browser. Im Foyer führen drei Türen in die Fac
 | Tastatur | Pfeile (Umschauen), N / P (nächste / vorige Station), + / − (Zoom), Leertaste (Blick zurücksetzen), Esc (schließen) |
 | Einstellungen | Zahnrad: Ruhiger Modus (Überblenden statt Kamerafahrt), Ton, Bildqualität. Lautsprecher-Knopf: Ton an/aus (Standard: aus) |
 
-Adresszusatz `?q=low`, `?q=mid` oder `?q=high` erzwingt eine Bildqualität (sonst automatisch, bei Ruckeln stuft sie sich herunter). `?calm=1` startet im Ruhigen Modus.
+Adresszusatz `?q=low`, `?q=mid` oder `?q=high` erzwingt eine Bildqualität (sonst automatisch, bei Ruckeln stuft sie sich herunter). `?calm=1` startet im Ruhigen Modus. `?cat=paper` zeigt die frühere Papierkatze statt der 3D-Katze (sie springt auch ein, wenn das Modell nicht lädt).
 
 ## Ein neues Popup-Buch ins Regal stellen
 
@@ -37,6 +37,8 @@ node build.mjs --dev      # unminifiziert
 node tools/shots.mjs foyer-eingang   # Screenshot einer Station (Software-Rendering)
 node tools/test-nav.mjs && node tools/test-tap.mjs
 ```
+
+Die 3D-Katze Archimedes (`assets/cat/archimedes.glb`) wird mit Blender als Python-Modul per Skript erzeugt: `/home/user/blenv/bin/python tools/blender/archimedes.py` (Einzelheiten in `docs/ENTWICKLUNG.md`).
 
 ## Veröffentlichen mit GitHub Pages
 

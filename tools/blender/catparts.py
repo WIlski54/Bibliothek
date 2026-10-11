@@ -1,6 +1,5 @@
 """Einzelteile als reine Netze (numpy): Augäpfel, Lider, Halsband, Marke, Schnurrhaare. Maße in Metern."""
 import numpy as np
-import catshape as C
 
 CM = 0.01
 

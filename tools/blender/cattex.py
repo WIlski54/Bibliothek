@@ -71,8 +71,7 @@ def fur_color(P, N, ao, R, tail_u, aux):
 
     # --- Grundfarbe: Rücken/Oberseite etwas dunkler, Bauch/Unterseite heller
     shade = np.clip(0.5 + 0.5 * N[:, 2] * 0.6 - 0.2 * N[:, 1], 0, 1)
-    col = mix(mix(COL['baseLo'], COL['base'], sstep(0.15, 0.7, shade)), COL['baseHi'], 0.0 * shade)
-    col = mix(col, COL['base'], 0.0)
+    col = mix(COL['baseLo'], COL['base'], sstep(0.15, 0.7, shade))
 
     # --- Tabby-Muster: je Region ein eigener Streifenverlauf
     # Rumpf: Querbänder (in der Sitzpose waagerecht), zum Bauch hin ausklingend; Rückenlinie
@@ -83,10 +82,9 @@ def fur_color(P, N, ao, R, tail_u, aux):
     spine = (1 - sstep(0.6, 1.6, ax + wob * 0.4)) * sstep(0.2, 0.7, N[:, 1])
     stT = np.maximum(stT, spine * 0.9 * sstep(24.0, 21.0, z))
     # Oberschenkel: Bögen um die Hüfte
-    cx = np.sign(x) * 8.5
     rH = np.sqrt((ax - 8.5) ** 2 + (y - 7.5) ** 2 + (z - 10.5) ** 2 * 0.6)
     bH = band(rH + wob * 0.9, 3.0, 0.42, 0.2)
-    stH = bH * sstep(2.0, 5.0, ax) * sstep(0.0, 0.5, np.abs(N[:, 0]) * 0.6 + N[:, 1] * 0.5 + 0.2) * sstep(14.0, 11.0, np.hypot(ax - 8.5, y - 7.5) * 0.8 + 0 * z)
+    stH = bH * sstep(2.0, 5.0, ax) * sstep(0.0, 0.5, np.abs(N[:, 0]) * 0.6 + N[:, 1] * 0.5 + 0.2) * sstep(14.0, 11.0, np.hypot(ax - 8.5, y - 7.5) * 0.8)
     # Vorderbeine: Ringe
     bF = band(z + wob * 0.8, 2.9, 0.40, 0.2)
     stF = bF * sstep(14.0, 10.5, z)
@@ -95,8 +93,6 @@ def fur_color(P, N, ao, R, tail_u, aux):
     stTail = np.maximum(bTail * sstep(0.0, 0.1, tail_u), sstep(0.86, 0.96, tail_u))
     # Kopf: Stirnstreifen, Wangenstreifen, Augenlinie
     head = np.zeros(n)
-    fore = sstep(30.0, 33.0, z) * sstep(-3.0, -7.0, y * 1.0 + 0)                      # Stirn (vorn, oben)
-    st3 = np.maximum(band(x, 4.4, 0.20, 0.10) * 0.0, 0)
     for cxm, wd in ((0.0, 0.75), (2.7, 0.55), (-2.7, 0.55), (5.2, 0.45), (-5.2, 0.45)):
         # Streifen laufen von der Nase nach hinten über den Kopf: Mitte x = cxm * (1 + (y+8)*0.03)
         xm = cxm * (1.0 + (y + 8.0) * 0.04)
@@ -126,22 +122,19 @@ def fur_color(P, N, ao, R, tail_u, aux):
     # Schnauze/Kinn/Wangenpolster
     dm = np.sqrt(((x) / 4.9) ** 2 + ((y + 9.2) / 5.0) ** 2 + ((z - 27.0) / 3.9) ** 2)
     muzzle = 1 - sstep(0.82 + wob * 0.06, 1.0 + wob * 0.06, dm)
-    # Blesse über die Nasenwurzel
-    blaze = (1 - sstep(0.5, 1.1, np.abs(x) + wob * 0.15)) * sstep(31.8, 29.5, z) * sstep(-8.0, -9.4, y) * 0.0
     # Brust und Kehle
     db = np.sqrt((x / 5.3) ** 2 + ((y + 3.5) / 7.0) ** 2 + ((z - 15.0) / 10.5) ** 2)
     bib = (1 - sstep(0.80 + wob * 0.07, 0.98 + wob * 0.07, db)) * sstep(0.1, -0.3, N[:, 1] + 0.1)
     # Söckchen
-    sockF = R['fore'] * sstep(6.4 + wob * 0.9, 5.4 + wob * 0.9, z) + R['fore'] * 0
-    sockH = R['hind'] * sstep(4.6 + wob * 0.7, 3.8 + wob * 0.7, z) * sstep(2.0, 4.0, 100 * 0 + (-y + 12.0)) + R['hind'] * sstep(2.6, 2.2, z)
-    # Schwanzunterseite hell? nein. Bauch (unten hell)
+    sockF = R['fore'] * sstep(6.4 + wob * 0.9, 5.4 + wob * 0.9, z)
+    sockH = R['hind'] * sstep(4.6 + wob * 0.7, 3.8 + wob * 0.7, z) * sstep(2.0, 4.0, 12.0 - y) + R['hind'] * sstep(2.6, 2.2, z)
+    # Bauch (unten hell)
     belly = sstep(3.5, 1.0, z) * 0.35 * R['torso']
-    white = np.clip(np.maximum.reduce([muzzle * 1.0, blaze, bib, sockF, np.clip(sockH, 0, 1), belly]), 0, 1)
-    white = white * (1 - 0.0 * stripe_amt)
+    white = np.clip(np.maximum.reduce([muzzle, bib, sockF, np.clip(sockH, 0, 1), belly]), 0, 1)
     wc = mix(COL['white'], COL['cream'], 0.35 * nf)
     col = mix(col, wc, white * 0.97)
     # Augenlinie über Weiß hinweg
-    col = mix(col, COL['liner'], liner * 0.85)
+    col = mix(col, COL['liner'], liner * 0.62)
 
     # --- Ohr innen (Mulde) und Rand
     ei = aux['ear_inner']                                   # 1 in der Mulde

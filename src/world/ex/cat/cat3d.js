@@ -10,6 +10,9 @@ import glb from '../../../../assets/cat/archimedes.glb';
 const rnd3 = mulberry32(777);
 const rr = (a, b) => a + (b - a) * rnd3();
 const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+// Zwischenspeicher (keine Allokation je Bild)
+const TMP = { v1: new THREE.Vector3(), v2: new THREE.Vector3(), v3: new THREE.Vector3(), v4: new THREE.Vector3(), v5: new THREE.Vector3(), q1: new THREE.Quaternion(), q2: new THREE.Quaternion(), q3: new THREE.Quaternion(), q4: new THREE.Quaternion(), q5: new THREE.Quaternion(), q6: new THREE.Quaternion(), q7: new THREE.Quaternion() };
+const UP = new THREE.Vector3(0, 1, 0), RIGHT = new THREE.Vector3(1, 0, 0);
 
 // Das Modell wird einmal geparst (die Papierkatze braucht es nicht)
 let modelPromise = null;
@@ -42,7 +45,7 @@ export class Archimedes3D extends Archimedes {
     this.dur = { wake: 0.55, groom: 3.5, stretch: 1.95, sleepin: 0.85 };
     this.model = null; this.ready = false; this.failed = false;
     this.mixer = null; this.mixB = null; this.act = {}; this.cur = null; this.curAct = null; this.gaits = GAIT_FALLBACK;
-    this.bodyYaw = 0; this.snapYaw = true; this.gait = 'walk'; this.shot = null; this.seenReact = null; this.lastPoke = -9; this.blinking = false;
+    this.bodyYaw = 0; this.snapYaw = true; this.gait = 'walk'; this.shot = null; this.lastPoke = -9; this.blinking = false;
     this.look = { yaw: 0, pitch: 0, w: 0, ex: 0, ey: 0 };
     this.bones = {}; this.q0 = {}; this.playLog = [];   // Namen der gespielten Clips (Tests)
     this.group.visible = true;
@@ -97,7 +100,7 @@ export class Archimedes3D extends Archimedes {
     if (mat.name === 'Fell') {
       // Fell: matt, mit weichem Schimmer am Rand (Sheen) wie bei Plüsch; die Farbkarte kommt aus dem Modell
       if (mat.map) mat.map.anisotropy = 4;
-      const fur = new THREE.MeshPhysicalMaterial({ name: 'Fell', map: mat.map, roughness: 0.9, metalness: 0, sheen: 0.75, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xb4bfd4), envMapIntensity: 0.55 });
+      const fur = new THREE.MeshPhysicalMaterial({ name: 'Fell', map: mat.map, roughness: 0.9, metalness: 0, sheen: 0.6, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xa6b3cf), envMapIntensity: 0.55 });
       m.material = fur; mat.dispose(); return;
     }
     else if (mat.name === 'Augen') { mat.emissive = new THREE.Color(0xffffff); mat.emissiveMap = mat.map; mat.emissiveIntensity = 0.55; mat.roughness = 0.35; mat.envMapIntensity = 0.7; }
@@ -185,7 +188,7 @@ export class Archimedes3D extends Archimedes {
     if (this.shot && this.curAct && this.cur === this.shot && !this.shotActNeedsReset) {
       const a = this.curAct; if (a.time >= a.getClip().duration - 0.03) this.shot = null;
     }
-    if (this.mode !== 'sit' && this.mode !== 'settle') this.shot = null;
+    if ((this.mode !== 'sit' && this.mode !== 'settle') || (this.shot && !this.act[this.shot])) this.shot = null;
     const w = this.chooseClip(calm);
     if (this.shotActNeedsReset && w.name === this.shot) { if (this.cur === w.name && this.curAct) { this.curAct.reset(); this.curAct.play(); } this.shotActNeedsReset = false; }
     if (first) this.cur = null;
@@ -213,7 +216,11 @@ export class Archimedes3D extends Archimedes {
   updateFigure(dt, calm) {
     this.face_();
     this.updateYaw(dt);
-    this.poseW = this.pose === 'sleep' ? 0.5 : 0.5; this.poseH = this.pose === 'sleep' ? 0.26 : 0.5;
+    // Antipp-Reaktion (wie bei der Papierfigur: Zeit läuft ab, kleiner Hüpfer am Anfang)
+    let hop = 0;
+    if (this.react) { const R = this.react; R.t += dt; if (R.t >= R.dur) this.react = null; else if (!calm && R.t < 0.26) hop = 0.045 * Math.sin((R.t / 0.26) * Math.PI); }
+    this.hop = hop;
+    this.poseW = 0.5; this.poseH = this.pose === 'sleep' ? 0.26 : 0.5;
     if (this.mode === 'walk' || this.mode === 'prep' || this.mode === 'stretch') { this.poseW = 0.6; this.poseH = 0.46; }
     this.apply();
     if (this.ready) {
@@ -240,7 +247,7 @@ export class Archimedes3D extends Archimedes {
     this.group.position.set(this.pos.x, this.ground + this.lift, this.pos.z);
     this.bbf.rotation.y = this.yaw; this.bbn.rotation.y = this.yaw; this.sh.rotation.y = this.yaw;
     this.bbf.scale.set(1, 1, 1);
-    if (this.model) this.model.rotation.y = this.bodyYaw;
+    if (this.model) { this.model.rotation.y = this.bodyYaw; this.model.position.y = this.hop || 0; }
   }
 
   // Kopf (Hals) und Augen wenden sich dem Besucher zu
@@ -251,33 +258,30 @@ export class Archimedes3D extends Archimedes {
     L.w = lerp(L.w, wTarget, 1 - Math.exp(-dt * 4));
     if (L.w < 0.01 && wTarget === 0) return;
     const head = this.bones.head, neck = this.bones.neck; if (!head || !neck) return;
-    const hp = head.getWorldPosition(new THREE.Vector3());
-    const modelQ = this.model.getWorldQuaternion(new THREE.Quaternion());
-    const tgt = this.cam.position.clone(); tgt.y -= 0.12;
-    const d = tgt.sub(hp); const dl = d.clone().applyQuaternion(modelQ.clone().invert());
-    let yaw = Math.atan2(dl.x, dl.z), pitch = Math.atan2(dl.y, Math.hypot(dl.x, dl.z));
-    yaw = clamp(yaw, -0.6, 0.6); pitch = clamp(pitch * 0.6, -0.22, 0.28);
-    L.yaw = lerp(L.yaw, yaw, 1 - Math.exp(-dt * 5)); L.pitch = lerp(L.pitch, pitch, 1 - Math.exp(-dt * 5));
-    const up = new THREE.Vector3(0, 1, 0), right = new THREE.Vector3(1, 0, 0);
+    const hp = head.getWorldPosition(TMP.v1), modelQ = this.model.getWorldQuaternion(TMP.q1), modelQi = TMP.q2.copy(modelQ).invert();
+    const dl = TMP.v2.copy(this.cam.position); dl.y -= 0.12; dl.sub(hp).applyQuaternion(modelQi);     // Richtung zum Besucher im Modellraum (+z = vorn)
+    const yaw = clamp(Math.atan2(dl.x, dl.z), -0.6, 0.6), pitch = clamp(Math.atan2(dl.y, Math.hypot(dl.x, dl.z)) * 0.6, -0.22, 0.28);
+    const k = 1 - Math.exp(-dt * 5); L.yaw = lerp(L.yaw, yaw, k); L.pitch = lerp(L.pitch, pitch, k);
+    const dw = TMP.q3.copy(modelQ);                                                                    // wird je Knochen neu aufgebaut
     const applyDelta = (bone, ay, ap) => {
       if (!bone.parent) return;
-      const qp = bone.parent.getWorldQuaternion(new THREE.Quaternion());
-      const dm = new THREE.Quaternion().setFromAxisAngle(up, ay).multiply(new THREE.Quaternion().setFromAxisAngle(right, -ap));
-      const dw = modelQ.clone().multiply(dm).multiply(modelQ.clone().invert());
-      bone.quaternion.premultiply(qp.clone().invert().multiply(dw).multiply(qp)); bone.updateMatrixWorld(true);
+      const qp = bone.parent.getWorldQuaternion(TMP.q4);
+      TMP.q5.setFromAxisAngle(UP, ay); TMP.q6.setFromAxisAngle(RIGHT, -ap); TMP.q5.multiply(TMP.q6);       // Drehung im Modellraum
+      dw.copy(modelQ).multiply(TMP.q5).multiply(modelQi);                                            // ... in den Weltraum
+      TMP.q7.copy(qp).invert().multiply(dw).multiply(qp);                                            // ... in den Raum des Elternknochens
+      bone.quaternion.premultiply(TMP.q7); bone.updateMatrixWorld(true);
     };
     applyDelta(neck, L.yaw * 0.3 * L.w, L.pitch * 0.3 * L.w);
     applyDelta(head, L.yaw * 0.7 * L.w, L.pitch * 0.7 * L.w);
-    // Augen: noch ein Stück weiter zur Kamera
+    // Augen: noch ein Stück weiter zur Kamera (höchstens gut 18 Grad)
     for (const n of ['eyeL', 'eyeR']) {
       const e = this.bones[n]; if (!e || !this.eyeFwd[n]) continue;
-      const q = e.getWorldQuaternion(new THREE.Quaternion()), fw = this.eyeFwd[n].clone().applyQuaternion(q);
-      const ep = e.getWorldPosition(new THREE.Vector3()), dir = this.cam.position.clone().sub(ep).normalize();
-      const ang = Math.min(fw.angleTo(dir), 0.32);
-      const rot = new THREE.Quaternion().setFromUnitVectors(fw, dir);
-      const lim = new THREE.Quaternion().slerp(rot, fw.angleTo(dir) > 1e-4 ? ang / fw.angleTo(dir) : 0);
-      const qp = e.parent.getWorldQuaternion(new THREE.Quaternion());
-      e.quaternion.premultiply(qp.clone().invert().multiply(lim).multiply(qp));
+      const q = e.getWorldQuaternion(TMP.q4), fw = TMP.v3.copy(this.eyeFwd[n]).applyQuaternion(q);
+      const dir = TMP.v4.copy(this.cam.position).sub(e.getWorldPosition(TMP.v5)).normalize();
+      const full = fw.angleTo(dir); if (full < 1e-4) continue;
+      TMP.q5.setFromUnitVectors(fw, dir); TMP.q6.identity().slerp(TMP.q5, Math.min(full, 0.32) / full);
+      const qp = e.parent.getWorldQuaternion(TMP.q4);
+      TMP.q7.copy(qp).invert().multiply(TMP.q6).multiply(qp); e.quaternion.premultiply(TMP.q7);
     }
   }
 

@@ -325,7 +325,6 @@ def paw_to_face(k):
 
 def clip_groom(u):
     """0..0.14 Pfote hoch, bis 0.86 putzen (5 Striche), danach zurück"""
-    k = seq([(0.0, Pose()), (0.14, Pose().r('foreUpR', 1)), (1.0, Pose())], u)   # Platzhalter für die Reihenfolge
     on = pulse(u, 0.0, 0.16, 0.84, 1.0)
     p = sit_rest()
     stroke = sin(TAU * 4.5 * (u - 0.14)) * on
@@ -428,7 +427,6 @@ def clip_jump_down(u):
 def clip_stretch(u):
     sit = sit_rest()
     bow = with_lids(ik_pose(A_(46, 34, 26, -62, -46), 8.0, (-14, 3.8), (7.0, 3.4), tail=(40, 55, 62, 60, 56, 50)), 0.5)
-    hold = u > 0.30 and u < 0.68
     p = seq([(0.0, sit), (0.32, bow), (0.68, bow), (1.0, sit)], u)
     y = pulse(u, 0.38, 0.46, 0.56, 0.64)
     q = Pose().merge(p)

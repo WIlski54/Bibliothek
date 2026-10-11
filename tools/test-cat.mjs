@@ -133,6 +133,16 @@ for (const r of all) { const vis = Math.abs(r.body[0]) < 0.97 && r.top > -0.97 &
 // An Wandstationen mit Blick nach oben ist vom Boden nichts zu sehen: dort darf die Katze fehlen (höchstens gut ein Drittel der Stationen)
 if (bad.length) console.log('Hinweis: Katze nicht im Bild an', bad.length, 'Stationen:', bad.map((b) => b.split(' ')[0]).join(', '));
 check(`Katzenplatz: an mindestens 65 % von ${all.length} Stationen sichtbar und frei`, bad.length <= all.length * 0.35, `${bad.length} ohne`);
+// ---- Leerlauf (3D): Putzen, Strecken und Einschlafen kommen von selbst; danach wecken
+if (!paper) {
+  await page.evaluate(() => { const L = window.__lib; L.rig.jump('geschichte-eingang'); L.world.cat.place('geschichte-eingang'); L.world.cat.cat.playLog.length = 0; });
+  for (let i = 0; i < 6; i++) await step(400, 0.05);      // 120 s Spielzeit (je Schritt höchstens 0,05 s)
+  const pl = [...new Set(await played())];
+  check('Leerlauf: putzt sich, streckt sich, schläft ein', ['groom', 'stretch', 'sleep_idle'].every((c) => pl.includes(c)), pl.join(','));
+  const m = await page.evaluate(() => window.__lib.world.cat.cat.mode); check('Leerlauf: schläft am Ende', m === 'sleep' || m === 'sleepin', m);
+  await page.evaluate(() => { window.__lib.world.cat.poke(); }); await step(12);
+  check('Leerlauf: Antippen weckt die Katze', ['wake', 'sit'].includes(await page.evaluate(() => window.__lib.world.cat.cat.mode)));
+}
 // ---- Ruhiger Modus: kein Laufen, Teleport
 {
   await page.evaluate(() => { const L = window.__lib; L.rig.calm = true; L.rig.jump('foyer-eingang'); L.world.cat.place('geschichte-eingang'); });
@@ -143,6 +153,7 @@ check(`Katzenplatz: an mindestens 65 % von ${all.length} Stationen sichtbar und 
   I = await catInfo();
   check('Ruhiger Modus: kein Trotten, Katze am Ziel', !walked && I.mode === 'sit' && Math.hypot(I.pos[0] - 12, I.pos[2] - 2) < 4 && I.clearance >= 0.2, `walked ${walked} ${I.mode} ${I.cur} clr ${I.clearance.toFixed(2)} pos ${I.pos.map((v) => v.toFixed(1))}`);
   check('Ruhiger Modus: Katze im Bild', Math.abs(I.body[0]) <= 0.98 && I.body[1] > -0.98);
+  if (!paper) { await step(10, 0.1); const cur = await page.evaluate(() => window.__lib.world.cat.cat.cur); check('Ruhiger Modus: nur Atmen (sit_calm)', cur === 'sit_calm', cur); }
   await page.evaluate(() => { window.__lib.rig.calm = false; });
 }
 // ---- Zeichenaufrufe: Anteil der Katze

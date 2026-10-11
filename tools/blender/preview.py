@@ -1,5 +1,5 @@
 """Entwicklungswerkzeug: Szene aufbauen und Ansichten mit Cycles (CPU) rendern, zu einem Bogen zusammensetzen."""
-import math, os, sys
+import math
 import bpy
 import numpy as np
 from PIL import Image
@@ -42,7 +42,6 @@ def setup_world(strength=1.0, color=(0.75, 0.78, 0.85)):
 def add_light(loc, energy=300, size=0.6, color=(1.0, 0.95, 0.85), target=(0, 0, 0.2)):
     L = bpy.data.lights.new('l', 'AREA'); L.energy = energy; L.size = size; L.color = color
     o = bpy.data.objects.new('l', L); bpy.context.scene.collection.objects.link(o); o.location = loc
-    d = np.array(target) - np.array(loc); o.rotation_euler = (math.atan2(math.hypot(d[0], d[1]), -d[2]) if False else 0, 0, 0)
     # Blickrichtung zum Ziel
     import mathutils
     v = mathutils.Vector(target) - mathutils.Vector(loc)

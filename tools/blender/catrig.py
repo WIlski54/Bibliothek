@@ -2,7 +2,6 @@
 import numpy as np
 import bpy
 import mathutils
-import catshape as C
 
 CM = 0.01
 
@@ -75,9 +74,6 @@ class Rig:
 
 
 # ----------------------------------------------------------------------------- Gewichte
-SKIN_BONES = None
-
-
 def skin_weights(P, F, tau=0.009, maxinf=4, cut=0.02, allowed=None):
     """Hautgewichte nach Abstand zu den Teilvolumina der Knochen (weicher Wettstreit). -> (n, k) Gewichte, Namen"""
     names = list(allowed) if allowed else list(F['parts'].keys())

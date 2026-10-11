@@ -11,7 +11,7 @@ import os, sys, time, argparse, math
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import numpy as np
 import bpy
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image
 import json
 import sdfmesh as SD, catshape as C, catmesh as M, catrig as R, cattex as TX, catparts as PT, catanim as AN
 

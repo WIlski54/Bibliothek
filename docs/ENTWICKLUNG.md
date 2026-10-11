@@ -108,7 +108,57 @@ Nicht pushen (es gibt noch kein Remote). `node_modules` nie committen oder verli
 
 - **Weltkarte:** `src/world/ex/worldmap.js` zeichnet eine echte Karte aus Natural-Earth-Daten (gemeinfrei, `src/data/world-50m.json`): `drawWorld(g, w, h, {proj:'robinson'|'equirect', style:'atlas'|'parchment', ...})`, `worldProject(...)` für Markierungen, `globeTexture()` für Globen (gecacht, geteilt). `kit.globe({map})` hat eine geneigte Erdachse; `g.userData.sphere.rotation.y` ist die Drehung.
 - **Buch-Auftritt:** `src/world/showcase.js`. Antippen eines fertigen Buchs lässt es aus dem Regal auf einen kleinen Lesetisch fliegen, die Kamera fährt heran (`rig.flyTo`), unten erscheint die Leiste „Lesen / Zurück ins Regal“, „Lesen“ blendet das Buch (iframe) sanft ein. Der Tisch steht standardmäßig 2 m vor der Kamera; Stationen können mit `bookSpot: [x, z]` (lokal) einen Platz vorgeben (wichtig, wenn die Station nah an einer Wand oder Vitrine steht).
-- **Archimedes:** `src/world/cat.js` + `src/world/ex/cat/`. Platz je Station: `catSpot: [x, y, z]` (lokal, y = Höhe der Fläche) wird nur übernommen, wenn die Katze dort im Bild sitzt und frei steht; sonst wählt `ex/cat/space.js` automatisch aus der echten Raumgeometrie (Belegungsraster aus allen sichtbaren Meshes). Neue Exponate müssen nichts tun.
+- **Archimedes (Verhalten):** `src/world/cat.js` + `src/world/ex/cat/`. Platz je Station: `catSpot: [x, y, z]` (lokal, y = Höhe der Fläche) wird nur übernommen, wenn die Katze dort im Bild sitzt und frei steht; sonst wählt `ex/cat/space.js` automatisch aus der echten Raumgeometrie (Belegungsraster aus allen sichtbaren Meshes). Neue Exponate müssen nichts tun.
 - **Zusammenfassen:** `merge.js` lässt Objekte mit `visible === false` aus. Alles Animierte braucht `userData.dynamic = true`.
 - **Ruhiger Modus:** `rig.calm` → Überblenden statt Kamerafahrt (`#fade`), keine drehenden/laufenden Animationen außer Atmen und Blinzeln.
 - **Tests:** `tools/test-*.mjs` (tap, showcase, nav, layout, portraits, cat, chemie, geschichte, biologie). Unter hoher Rechnerlast kann ein Screenshot-Timeout auftreten (Software-Rendering); `harness.mjs` setzt 240 s.
+
+## Archimedes in 3D (Blender)
+
+Archimedes ist ein echtes, geskinntes 3D-Modell: `assets/cat/archimedes.glb` (eingebettet, kein Netzwerk). Die Papierkatze bleibt als Rückfall im Code.
+
+```
+src/world/cat.js                 Fassade (createCat): 3D-Katze, Rückfall auf Papier (?cat=paper oder Ladefehler; ?cat=fail simuliert einen Ladefehler)
+src/world/ex/cat/cat3d.js        Archimedes3D (erbt Verhalten/Wegsuche/Texte von Archimedes in archimedes.js, ersetzt nur die Figur)
+src/world/ex/cat/archimedes.js   Verhalten (Zustände, Wege, Tipps) + Papierfigur (Rückfall)
+assets/cat/archimedes.glb        Modell, 14 Clips + sit_calm (erzeugt, nicht von Hand ändern)
+assets/cat/portrait.jpg          Render für das Gemälde im Foyer (eingebettet als Data-URL, 720 x 960)
+tools/blender/archimedes.py      Hauptskript, dazu catshape/catmesh/sdfmesh (Form), cattex (Fellfarbe), catparts (Augen, Lider, Halsband, Marke, Schnurrhaare),
+                                 catrig (Skelett, Gewichte), catplanar/catgait/catanim (Clips), portrait/preview (Bilder)
+```
+
+**Neu bauen** (Blender als Python-Modul, keine Oberfläche, ca. 15 s; Zwischenstände in `tools/blender/.cache`, nicht im Git):
+```
+/home/user/blenv/bin/python tools/blender/archimedes.py                       # -> assets/cat/archimedes.glb
+/home/user/blenv/bin/python tools/blender/archimedes.py --no-export --render DIR   # Dreh- und Posenbögen (Cycles, CPU, ca. 70 s)
+/home/user/blenv/bin/python tools/blender/archimedes.py --no-export --portrait assets/cat/portrait.jpg   # Gemälde (ca. 100 s)
+```
+Das Ergebnis ist deterministisch (gleiches Skript, gleiche Bytes). Danach `node build.mjs` und die Tests (unten).
+
+**Modell:** Die Form steht als Distanzfeld (Ellipsoide, Rundkegel, Kugelketten; Maße in cm in `catshape.py`, Sitzpose = Bindepose, Blick nach −y). Sie besteht aus überlappenden Teilnetzen
+(Körper, Kopf, Kiefer, 2 Ohren, 2 Vorderbeine, 2 Hinterbeine, Schwanz), jedes mit Surface Nets gemeshed und in Blender ausgedünnt: wie bei einem Plüschtier, deshalb ziehen Beine und Schwanz beim Laufen keine Haut.
+Normalen und Umgebungsverdeckung kommen aus dem Feld, die Hautgewichte aus dem Abstand zu den Teilvolumina der Knochen (`catrig.skin_weights`, höchstens 4 je Punkt). Die Fellkarte (1024², JPEG) wird aus einer 3D-Funktion
+(`cattex.py`: getigert, weiße Brust, Söckchen, Schnauze, Augenlinie, Ohr innen, Nase, Mundlinie) per Python in die UV-Karte gebacken, samt AO. Augen: Kugeln mit azimutaler Karte (Iris, Pupille, Glanzlichter), Lider als Halbkugelschalen an Lidknochen (Blinzeln, Schlafen, Schreck).
+Zubehör (ein Netz, Atlas 64²): Halsband (rot), Messingmarke, 8 Schnurrhaare. 3 Materialien (Fell, Augen, Zubehör), 3 Netze.
+
+**Zahlen:** 12 080 Dreiecke (Fell 10 672, Augen 648, Zubehör 760), 33 Knochen, GLB 1,16 MB (Fellkarte 205 KB, Animationen 270 KB), Fell-Textur 1024 x 1024.
+
+**Skelett:** root, pelvis, spine1, spine2, neck, head, jaw, earL1/2, earR1/2, eyeL/R, lidL/R (Oberlid), tail1–6, je Bein (foreUp/foreLow/forePaw, thigh/shin/hindPaw) links (L, +x) und rechts (R).
+
+**Clips** (30 fps, Namen exakt): `sit_idle` (Atmen, Schwanzspitze, Ohren, Schleife 3,2 s), `sit_calm` (nur Atmen, Ruhiger Modus), `blink`, `talk`, `meow`, `scared`, `groom`, `stretch`, `walk`, `trot`, `run`, `jump_up`, `jump_down`, `sleep_idle`, `wake`.
+Laufzyklen auf der Stelle (ebene IK, Pfoten bleiben beim Aufsetzen am Boden); das Tempo steuert die Abspielrate (`gaits` in den Extras des GLB: Strecke je Zyklus). Jeder Clip führt alle Knochen (Mischen und Überblenden sind dadurch eindeutig), außer `blink`: er wird in `cat3d.js` auf Lider und Augen gekürzt und läuft in einem zweiten Mischpult.
+Neue Posen: in `catanim.py` eine Funktion `clip_<name>(u)` schreiben (u = 0..1) und in `CLIPS` eintragen; Winkel in Grad um die Skelettachsen (x quer, y nach hinten, z oben), `ik_pose(...)` für Stehen/Springen mit am Boden bleibenden Pfoten.
+
+**Verhalten → Clip** (`Archimedes3D.chooseClip`): sleep → `sleep_idle`, wake → `wake`, groom → `groom`, stretch → `stretch`, sit → `sit_idle` (Ruhiger Modus: `sit_calm`), Sprechen (`speakT`) → `talk`, Antippen → `meow` (zweimal schnell: `scared`),
+Weg → `walk`/`trot`/`run` nach Tempo (mit Hysterese, Abspielrate = Tempo / Zyklusstrecke), Sprung auf/von Möbeln → `jump_up`/`jump_down` (Zeit = Fortschritt des Sprungs). Körper dreht sich in Laufrichtung bzw. weich zur Kamera, Kopf, Hals und Augen folgen dem Besucher (`lookAt`), außer im Ruhigen Modus, beim Schlafen und Putzen. Tippfläche: unsichtbare Box (`userData.tap` an der Gruppe), die Netze selbst sind nicht antippbar.
+Material: Fell als `MeshPhysicalMaterial` mit schwachem Sheen (weicher Plüschrand), Augen leicht selbstleuchtend, Zubehör aus dem GLB (Messing mit Metall/Rauheit-Karte). Bodenschatten: weiche transparente Scheibe (`fx.js`).
+
+**Leistung:** Zeichenaufrufe der Katze 3 Netze + Schatten (+ Zzz/Symbol, höchstens 8), Dreiecke 12 080. Bundle (minifiziert) wächst um etwa 1,6 MB (GLB als Base64 1,55 MB, GLTFLoader und Code etwa 95 KB).
+
+**Werkzeuge und Tests:**
+```
+node tools/cat3d-sheet.mjs [clip ...]        Kontaktbogen der Clips aus Three.js (4 Zeitpunkte je Clip) -> $OUT_DIR/cat3d-sheet-<n>.png
+node tools/cat3d-shots.mjs [station ...]     Screenshots der Katze in den Räumen (STATE=sit|sleep|groom|stretch|meow|talk|walk|trot|run, CLOSE=front|q3|side|back, DIST=, HEAD=1)
+node tools/test-cat.mjs                      Verhalten, Sichtbarkeit, Antippen, Tipps, Ruhiger Modus, Zeichenaufrufe (<= 8), Dreiecke (<= 14 000); CAT=paper prüft die Papierkatze
+node tools/test-cat-fallback.mjs             ?cat=paper und simulierter Ladefehler (?cat=fail)
+```
