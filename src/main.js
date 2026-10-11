@@ -51,7 +51,7 @@ function step(dir) {
   if (rig.moving) return; const list = rig.roomStations(rig.room); if (list.length < 2) return;
   const i = Math.max(0, list.findIndex((s) => s.id === rig.cur)); goStation(list[(i + dir + list.length) % list.length].id);
 }
-rig.onArrive = (id, st) => { ui.setWhere(st.room, st.name); window.__arrived = id; };
+rig.onArrive = (id, st) => { ui.setWhere(st.room, st.name); window.__arrived = id; world.cat?.arrive(id); };
 
 // ---------------------------------------------------------------- Antippen
 function handleTap(tap) {
@@ -62,6 +62,7 @@ function handleTap(tap) {
       case 'info': ui.openCard(tap); break;
       case 'nav': goRoom(tap.to); break;
       case 'goto': if (rig.cur !== tap.station) goStation(tap.station); break;
+      case 'cat': world.cat?.poke(); break;
       case 'say': ui.say(tap.text, tap.who ? { who: tap.who } : {}); break;
       default: if (tap.title) ui.openCard(tap);
     }
@@ -114,6 +115,7 @@ ui = new UI({
     if ('quality' in o) { if (o.quality === 'auto') { tierLocked = false; tierName = touchDevice ? 'mid' : 'high'; size(); } else setTier(o.quality, true); }
   },
 });
+ctx.ui = ui;
 ui.onViewerChange = (open) => { paused = open; if (!open) last = performance.now(); };
 document.addEventListener('visibilitychange', () => { paused = document.hidden || ui.viewerOpen; if (!paused) last = performance.now(); });
 
@@ -131,10 +133,10 @@ function frame(now) {
 
 (async () => {
   await world.build((p) => { const b = document.getElementById('go'); b.textContent = `Bibliothek wird aufgebaut … ${Math.round(p * 100)} %`; });
-  rig.jump('foyer-eingang'); ui.setWhere('foyer', rig.stations.get('foyer-eingang').name);
-  rig.onTravel = (from, to, fr, tr) => {};
+  world.cat?.place?.('foyer-eingang'); rig.jump('foyer-eingang'); ui.setWhere('foyer', rig.stations.get('foyer-eingang').name);
+  rig.onTravel = (from, to) => { world.cat?.follow(from, to, rig.travel?.route); };
   requestAnimationFrame((t) => { last = t; frame(t); });
   ui.ready(() => { if (!qs.has('quiet')) setTimeout(() => ui.say('Miau! Ich bin Archimedes. Komm, ich zeige dir die Bibliothek. Tippe auf eine Tür oder auf die Knöpfe unten.', { ms: 9000 }), 700); });
-  window.__lib = { rig, world, ui, THREE, renderer, scene, camera, goStation, goRoom, handleTap, setTier, ctx, step: (dt) => { rig.update(dt); world.update(dt); renderer.render(scene, camera); } };
+  window.__lib = { rig, world, ui, THREE, renderer, scene, camera, goStation, goRoom, handleTap, setTier, ctx, step: (dt, n = 1) => { for (let i = 0; i < n; i++) { rig.update(dt); world.update(dt); } renderer.render(scene, camera); } };
   window.__bookReady = true;
 })();

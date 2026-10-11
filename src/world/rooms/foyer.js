@@ -5,6 +5,7 @@ import { marbleTex, plasterTex, carpetTex, woodTex } from '../tex.js';
 import { M, mesh, box, roomShell, shelfUnit, fillBooks, readingTable, chair, armchair, globe, pottedPlant, chandelier, deskLamp, sconce, framedPicture, plaque, vitrine, banner, archFrame, placeWall, wallPos, hitPlane, hitBox } from '../kit.js';
 import { makeBook } from '../books.js';
 import { bannerTex, planTex, DEPT_NAME } from '../signs.js';
+import { catPortrait } from '../cat.js';
 
 export function build(ctx) {
   const R = FOYER, g = new THREE.Group(); g.name = 'foyer';
@@ -65,7 +66,7 @@ export function build(ctx) {
   const plan = framedPicture(planTex({ counts: ctx.counts }), { w: 1.5, h: 1.07, name: 'Lageplan', sub: 'Wo geht es wohin?' });
   placeWall(plan, room, 'N', 4.75, 0.02, 1.7); g.add(plan);
   plan.userData.tap = { kind: 'info', title: 'Lageplan', sub: 'Die große Bibliothek', paras: ['Vom Foyer aus führen drei Türen in die Fachräume. Tippe auf einen Raum, dann fährt die Kamera dorthin.'], map: true, station: 'foyer-plan' };
-  const hausherr = ctx.makeCatPortrait ? ctx.makeCatPortrait() : null;
+  const hausherr = catPortrait();
   if (hausherr) { placeWall(hausherr, room, 'N', -4.75, 0.02, 1.7); g.add(hausherr); }
 
   // ---------------- Mitte: Lesetisch mit Lampe, Globus, aufgeschlagenem Buch

@@ -7,6 +7,7 @@ import * as foyer from './rooms/foyer.js';
 import * as geschichte from './rooms/geschichte.js';
 import * as biologie from './rooms/biologie.js';
 import * as chemie from './rooms/chemie.js';
+import { createCat } from './cat.js';
 
 const MODS = { foyer, geschichte, biologie, chemie };
 const DEPTS = ['geschichte', 'biologie', 'chemie'];
@@ -25,7 +26,7 @@ export class World {
     const ids = ['foyer', ...DEPTS]; let n = 0;
     for (const id of ids) {
       const r = MODS[id].build(this.ctx); const off = ROOMS[id].offset; r.group.position.set(off[0], off[1], off[2]); r.offset = new THREE.Vector3(...off); this.scene.add(r.group); this.rooms[id] = r;
-      for (const s of r.stations) this.rig.addStation({ ...s, pos: [s.pos[0] + off[0], s.pos[1], s.pos[2] + off[2]], look: [s.look[0] + off[0], s.look[1], s.look[2] + off[2]] });
+      for (const s of r.stations) this.rig.addStation({ ...s, pos: [s.pos[0] + off[0], s.pos[1], s.pos[2] + off[2]], look: [s.look[0] + off[0], s.look[1], s.look[2] + off[2]], catSpot: s.catSpot && [s.catSpot[0] + off[0], s.catSpot[1], s.catSpot[2] + off[2]] });
       r.group.updateMatrixWorld(true);
       r.group.traverse((o) => { if (o.userData.tap) this.pickRoots.push(o); });
       for (const b of r.blockers) b.traverse((o) => { if (o.isMesh) this.blockerMeshes.add(o); });
@@ -36,6 +37,7 @@ export class World {
     for (let i = 0; i < 4; i++) { const l = new THREE.PointLight(0xffe2b0, 0, 0, 2); this.scene.add(l); this.pool.push({ l, room: null, cur: 0, tgt: null }); }
     this.setWant('geschichte', true);
     this.roomsOrder = ids;
+    this.cat = createCat({ rig: this.rig, world: this, ui: this.ctx.ui, books: this.ctx.books }); this.scene.add(this.cat.group); this.pickRoots.push(this.cat.group);
     // Rücksprung-Stationen im Foyer neben jeder Tür (für "Zurück ins Foyer")
     for (const d of DEPTS) {
       const fd = FOYER_DOORS[d]; const ins = new THREE.Vector3(...fd.inside), out = new THREE.Vector3(...fd.outside); const dir = out.clone().sub(ins).setY(0).normalize();
@@ -63,7 +65,7 @@ export class World {
     return best || this.want || 'geschichte';
   }
   update(dt) {
-    this.t += dt;
+    this.t += dt; this.cat?.update(dt, this.t);
     for (const id of this.roomsOrder || []) this.rooms[id].update?.(dt, this.t, this);
     this.acc = (this.acc || 0) + dt;
     if (this.acc > 0.12) { this.acc = 0; this.setWant(this.chooseRoom()); }

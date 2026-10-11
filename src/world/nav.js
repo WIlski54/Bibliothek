@@ -16,7 +16,7 @@ export class Rig {
     this.yaw = 0; this.pitch = 0;        // Umschauen-Versatz (Nutzer)
     this.yawT = 0; this.pitchT = 0;
     this.zoom = 1; this.zoomT = 1;       // 1 = Normal, kleiner = näher
-    this.maxYaw = 1.25; this.maxPitchUp = 0.75; this.maxPitchDown = 0.55;
+    this.maxYaw = Infinity; this.maxPitchUp = 0.75; this.maxPitchDown = 0.55;
     this.aspect = 1.6; this.hfov = (88 * Math.PI) / 180;
     this.fade = 0; this.fadeCb = null;   // Ruhiger Modus: Überblenden statt Fahren
     this.camera.rotation.order = 'YXZ';
@@ -85,6 +85,7 @@ export class Rig {
 
   goTo(id, { onDone } = {}) {
     const B = this.stations.get(id); if (!B) return false;
+    this.yaw = wrapPI(this.yaw - this.yawT) + wrapPI(this.yawT); this.yawT = wrapPI(this.yawT);
     const from = this.cur ?? id; if (from === id && !this.travel) { this.recenter(); onDone?.(); return true; }
     const A = this.travel ? null : this.stations.get(from);
     let pts;
@@ -106,7 +107,7 @@ export class Rig {
     if (this.calm) { // Überblenden: kurz ausblenden, springen, einblenden
       this.travel = { calm: true, t: 0, dur: 0.5, id, toRoom, onDone, jumped: false };
     } else {
-      this.travel = { calm: false, cp, ry, rx, sn, t: 0, dur, id, toRoom, onDone, len };
+      this.travel = { calm: false, cp, ry, rx, sn, t: 0, dur, id, toRoom, onDone, len, route: clean.map((w) => w.p.clone()) };
     }
     this.cur = null; this.leaving = from; this.arrivalPending = true;
     this.onTravel?.(from, id, this.stations.get(from)?.room, toRoom);
