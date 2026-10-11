@@ -46,8 +46,8 @@ export class Archimedes3D extends Archimedes {
     this.model = null; this.ready = false; this.failed = false;
     this.mixer = null; this.mixB = null; this.act = {}; this.cur = null; this.curAct = null; this.gaits = GAIT_FALLBACK;
     this.bodyYaw = 0; this.snapYaw = true; this.gait = 'walk'; this.shot = null; this.lastPoke = -9; this.blinking = false;
-    this.look = { yaw: 0, pitch: 0, w: 0, ex: 0, ey: 0 };
-    this.bones = {}; this.q0 = {}; this.playLog = [];   // Namen der gespielten Clips (Tests)
+    this.look = { yaw: 0, pitch: 0, w: 0 };
+    this.bones = {}; this.playLog = [];   // Namen der gespielten Clips (Tests)
     this.group.visible = true;
     loadCatModel().then((g) => this.attach(g)).catch((e) => this.fail(e));
   }
@@ -76,7 +76,6 @@ export class Archimedes3D extends Archimedes {
     for (const m of meshes) this.tune(m);
     this.model = model; this.group.add(model);
     model.updateMatrixWorld(true);
-    for (const [n, b] of Object.entries(this.bones)) this.q0[n] = b.quaternion.clone();
     // Blickrichtung der Augen in ihrem Knochenraum (Modell blickt nach +z)
     this.eyeFwd = {};
     for (const n of ['eyeL', 'eyeR']) { const b = this.bones[n]; if (b) { const q = b.getWorldQuaternion(new THREE.Quaternion()); this.eyeFwd[n] = new THREE.Vector3(0, 0, 1).applyQuaternion(q.invert()); } }

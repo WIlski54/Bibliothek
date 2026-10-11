@@ -340,7 +340,7 @@ def clip_groom(u):
 
 
 # ----------------------------------------------------------------------------- Schlafen (eingerollt) und Aufwachen
-SLEEP = dict(torso=(26, 30, 26), neck=(-46, 0, 0), head=(-22, -30, -15), arm=(-52, 38, 18))
+SLEEP = dict(torso=(26, 30, 26), neck=(-46, 0, 0), head=(-6, -70, -30), arm=(-52, 38, 18))
 
 
 def sleep_pose():
