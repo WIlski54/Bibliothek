@@ -22,7 +22,7 @@ const EDGES = [
 ];
 // Spitzen: id, Knoten, Ort, Gruppenfarbe, Glyphe, Name, Zusatz
 const TIPS = [
-  ['cyano', 'b1', [95, 775], 'bak', 'cyano', 'Cyanobakterien', ''], ['darm', 'b1', [205, 690], 'bak', 'darm', 'Darmbakterien', ''], ['milch', 'b1', [320, 715], 'bak', 'milch', 'Milchsäure-', 'bakterien'],
+  ['cyano', 'b1', [112, 770], 'bak', 'cyano', 'Cyanobakterien', ''], ['darm', 'b1', [205, 690], 'bak', 'darm', 'Darmbakterien', ''], ['milch', 'b1', [320, 715], 'bak', 'milch', 'Milchsäure-', 'bakterien'],
   ['methan', 'a1', [715, 705], 'arc', 'methan', 'Methan-', 'bildner'], ['salz', 'a1', [820, 690], 'arc', 'salz', 'Salz-', 'liebende'], ['hitze', 'a1', [925, 712], 'arc', 'hitze', 'Hitze-', 'liebende'],
   ['einz', 'e1', [455, 628], 'ein', 'einz', 'Einzeller', 'z. B. Amöben'],
   ['gruen', 'p1', [120, 560], 'pfl', 'gruen', 'Grünalgen', ''], ['moos', 'p2', [120, 450], 'pfl', 'moos', 'Moose', ''], ['farn', 'p3', [190, 330], 'pfl', 'farn', 'Farne', ''], ['nadel', 'p4', [262, 205], 'pfl', 'nadel', 'Nadelbäume', ''], ['bluete', 'p4', [445, 195], 'pfl', 'bluete', 'Blüten-', 'pflanzen'],
@@ -100,22 +100,22 @@ export function treeCanvas() {
     for (const [id, node, [x, y], grp, gl, name, sub] of TIPS) {
       g.save(); g.translate(x, y); g.shadowColor = 'rgba(30,20,10,.35)'; g.shadowBlur = 6; g.shadowOffsetY = 3; g.beginPath(); g.arc(0, 0, 26, 0, TAU); g.fillStyle = '#fbf6e6'; g.fill(); g.shadowColor = 'transparent'; g.lineWidth = 4.5; g.strokeStyle = COL[grp]; g.stroke();
       g.save(); g.scale(1.05, 1.05); g.lineWidth = 1.5; g.strokeStyle = INK; g.lineJoin = 'round'; GL[gl](g, COL[grp]); g.restore(); g.restore();
-      const below = y < 700 || true; const ly = y + 42; text(g, name, x, ly, { font: 'bold 18px' }); if (sub) text(g, sub, x, ly + 19, { font: 'italic 15px', color: '#5a4630', hw: 3 });
+      const below = y < 700 || true; const ly = y + 42; text(g, name, x, ly, { font: 'bold 21px' }); if (sub) text(g, sub, x, ly + 21, { font: 'italic 17px', color: '#4a3820', hw: 3.5 });
     }
     // Gruppen-Schilder
     const regions = {};
     regions.bak = banner(g, 'Bakterien', 200, 890, COL.bak);
     regions.arc = banner(g, 'Archaeen', 880, 836, COL.arc);
-    regions.euk = banner(g, 'Eukaryoten', 690, 640, COL.euk, { size: 21 }); text(g, '(Zellen mit Zellkern)', 690, 670, { font: 'italic 15px', color: '#4a3a24' });
+    regions.euk = banner(g, 'Eukaryoten', 690, 640, COL.euk, { size: 23 }); text(g, '(Zellen mit Zellkern)', 690, 673, { font: 'italic 17px', color: '#3a2a14' });
     regions.pfl = banner(g, 'Pflanzen', 300, 492, COL.pfl);
-    regions.pil = banner(g, 'Pilze', 850, 548, COL.pil, { size: 22 });
-    regions.tie = banner(g, 'Tiere', 640, 532, COL.tie, { size: 22 });
-    regions.wir = banner(g, 'Wirbeltiere', 790, 276, COL.tie, { size: 19 });
+    regions.pil = banner(g, 'Pilze', 850, 548, COL.pil, { size: 24 });
+    regions.tie = banner(g, 'Tiere', 640, 532, COL.tie, { size: 24 });
+    regions.wir = banner(g, 'Wirbeltiere', 790, 276, COL.tie, { size: 21 });
     // Wurzelbeschriftung und Hinweise
-    text(g, 'Gemeinsame Vorfahren', 400, 950, { font: 'bold 18px', align: 'center' }); text(g, 'aller Lebewesen', 400, 970, { font: 'bold 18px', align: 'center' }); text(g, 'vor mehr als 3 Milliarden Jahren', 400, 992, { font: 'italic 15px', color: '#5a4630', align: 'center' });
-    text(g, 'Mitochondrien', 478, 786, { font: 'italic 14px', color: '#8a4a2a', hw: 3 }); text(g, 'Chloroplasten', 250, 572, { font: 'italic 14px', color: '#8a4a2a', hw: 3 });
-    text(g, 'Gestrichelte Pfeile: Mitochondrien und Chloroplasten', 800, 922, { font: 'italic 14px', color: '#5a3a20', hw: 3 }); text(g, 'stammen von Bakterien ab (Endosymbiose).', 800, 939, { font: 'italic 14px', color: '#5a3a20', hw: 3 });
-    text(g, 'Je näher zwei Zweige am gleichen Ast', 800, 966, { font: 'italic 15px', color: '#4a3a24', hw: 3 }); text(g, 'ansetzen, desto enger sind sie verwandt.', 800, 984, { font: 'italic 15px', color: '#4a3a24', hw: 3 });
+    text(g, 'Gemeinsame Vorfahren', 395, 946, { font: 'bold 20px', align: 'center' }); text(g, 'aller Lebewesen', 395, 969, { font: 'bold 20px', align: 'center' }); text(g, 'vor mehr als 3 Milliarden Jahren', 395, 993, { font: 'italic 16px', color: '#4a3820', align: 'center' });
+    text(g, 'Mitochondrien', 478, 786, { font: 'italic 16px', color: '#7a3a1a', hw: 3 }); text(g, 'Chloroplasten', 250, 572, { font: 'italic 16px', color: '#7a3a1a', hw: 3 });
+    text(g, 'Gestrichelte Pfeile: Mitochondrien und Chloroplasten', 800, 922, { font: 'italic 15px', color: '#5a3a20', hw: 3 }); text(g, 'stammen von Bakterien ab (Endosymbiose).', 800, 940, { font: 'italic 15px', color: '#5a3a20', hw: 3 });
+    text(g, 'Je näher zwei Zweige am gleichen Ast', 800, 967, { font: 'italic 16px', color: '#4a3a24', hw: 3 }); text(g, 'ansetzen, desto enger sind sie verwandt.', 800, 986, { font: 'italic 16px', color: '#4a3a24', hw: 3 });
     // Titel
     g.fillStyle = '#4a2f18'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold 46px ${SERIF}`; g.fillText('Der Stammbaum des Lebens', 512, 52); g.font = `italic 22px ${SERIF}`; g.fillStyle = '#6a4a2c'; g.fillText('Alle Lebewesen sind miteinander verwandt', 512, 85);
     g.strokeStyle = '#a07a40'; g.lineWidth = 2; g.beginPath(); g.moveTo(330, 99); g.lineTo(694, 99); g.stroke();

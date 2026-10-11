@@ -7,7 +7,7 @@ import { buildDept } from './dept.js';
 import { plasterTex } from '../tex.js';
 import { M, mesh, box, placeWall, hitPlane, hitBox, shelfUnit, fillBooks } from '../kit.js';
 import { personFrame } from '../portraits.js';
-import { floorMat, wainscotMat, trimMat, BOOK_PALETTE, brassSign, friezeTex, glassMat } from '../ex/biologie/style.js';
+import { floorMat, wainscotMat, trimMat, BOOK_PALETTE, brassSign, friezeTex, glassMat, woodDark, woodLight, woodMid } from '../ex/biologie/style.js';
 import { skylight, lightPatch } from '../ex/biologie/skylight.js';
 import * as P from '../ex/biologie/plants.js';
 import { props } from '../ex/biologie/props.js';
@@ -33,7 +33,7 @@ export function build(ctx) {
     floor: floorMat(), ceiling: new THREE.MeshStandardMaterial({ map: plasterTex({ color: [246, 244, 230], seed: 12 }), roughness: 0.95, emissive: 0xfff4dc, emissiveIntensity: 0.16, emissiveMap: plasterTex({ color: [246, 244, 230], seed: 12 }) }),
     trim: trimMat(), wainscot: { h: 1.1, mat: wainscotMat(), tile: 1.3 }, floorTile: 2.4, wallTile: 2.6,
     palette: BOOK_PALETTE, carpet: { field: [64, 118, 82], accent: [236, 218, 150], second: [30, 70, 52] }, lightColor: 0xfff1d6,
-    shelfWood: M.wood(0xc99a5e, { planks: 3, seed: 14 }), shelfBack: M.plain(0x86a889, 0.9), tall: 1, tableWood: M.wood(0xb98a55), plants: false,
+    shelfWood: woodLight(), shelfBack: M.plain(0x86a889, 0.9), tall: 1, tableWood: woodLight(), plants: false,
   };
   return buildDept(ctx, 'biologie', style, (api) => {
     const { g, R, room, st } = api;
@@ -53,7 +53,7 @@ export function build(ctx) {
     for (const h of [...N0.children]) if (h.userData.tap?.kind === 'book') { W[4].add(h); h.userData.tap.station = 'biologie-regal'; }
     W[4].userData.taken[2] = N0.userData.taken[2] || []; N0.userData.taken[2] = [];
     // Regal antippen: Kamera fährt zu der Station, von der aus es gut zu sehen ist
-    const stationFor = (u) => { const w = u.userData.wall; return w === 'N' ? 'biologie-stammbaum' : w === 'E' ? 'biologie-mikroskop' : (u === W[4] ? 'biologie-regal' : 'biologie-fossilien'); };
+    const stationFor = (u) => { const w = u.userData.wall; return w === 'N' ? 'biologie-stammbaum' : w === 'E' ? (u === E[0] ? 'biologie-herbar' : 'biologie-mikroskop') : (u === W[4] ? 'biologie-regal' : 'biologie-fossilien'); };
     for (const u of api.units) for (const c of u.children) if (c.userData.tap?.kind === 'goto') c.userData.tap.station = stationFor(u);
 
     // ------------------------------------------------------------ Licht von oben
@@ -92,8 +92,8 @@ export function build(ctx) {
     const helix = buildHelix(); helixRoot.add(helix);
     const dnaTap = card(T.dna, { wide: true, alt: 'Zwei Basenpaare von oben: A–T mit zwei und G–C mit drei Wasserstoffbrücken', station: 'biologie-dna', label: 'Doppelhelix (DNA)', get image() { return pairDiagram(); } });
     { const hb = hitBox(0.74, 2.9, 0.74, dnaTap); hb.position.set(DNA_POS[0], 1.45, DNA_POS[1]); g.add(hb); }
-    { const pq = dnaPlaque(); pq.position.set(DNA_POS[0], 0.34, DNA_POS[1] + 0.395); g.add(pq);
-      const bt = labelButton(); bt.position.set(DNA_POS[0], 0.17, DNA_POS[1] + 0.435); g.add(bt); bt.userData.tap = { label: 'Buchstaben ein/aus', resolve: () => { const l = helix.userData.labels; l.visible = !l.visible; return { kind: 'say', who: 'Doppelhelix', text: l.visible ? T.dnaLabels.on : T.dnaLabels.off }; } }; }
+    { const pq = dnaPlaque(); pq.position.set(DNA_POS[0], 0.33, DNA_POS[1] + 0.39); g.add(pq);
+      const bt = labelButton(); bt.position.set(DNA_POS[0], 0.53, DNA_POS[1] + 0.395); g.add(bt); bt.userData.tap = { label: 'Buchstaben ein/aus', resolve: () => { const l = helix.userData.labels; l.visible = !l.visible; return { kind: 'say', who: 'Doppelhelix', text: l.visible ? T.dnaLabels.on : T.dnaLabels.off }; } }; }
     // Pult mit Legende und Staffelei mit Rosalind Franklin
     const lect = buildLectern(); lect.position.set(-1.3, 0, 0.25); lect.rotation.y = 0.75; g.add(lect);
     { const hb = hitBox(0.9, 1.0, 0.6, card(T.dnaLegend, { station: 'biologie-dna', label: 'Legende' })); hb.position.set(0, 0.95, 0.0); hb.rotation.x = 0.4; lect.add(hb); }
@@ -108,7 +108,7 @@ export function build(ctx) {
     { const hp = hitPlane(3.0, 1.4, card(T.ichthyo, { station: 'biologie-fossilien', label: 'Fischsaurier' })); hp.position.set(0.0, 0.0, 0.1); ich.add(hp); const brass = M.brass(); for (const x of [-0.9, 0.8]) { const rod = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 8), brass); rod.rotation.x = Math.PI / 2; rod.position.set(x, 0.1, 0.02); ich.add(rod); } }
     // Fossilientisch
     const table = new THREE.Group(); table.position.set(-3.45, 0, -0.35); table.rotation.y = Math.PI / 2; g.add(table);
-    { const wood = M.wood(0x5a3a22, { planks: 2, seed: 9 }), brass = M.brass(), L = 1.7, D = 0.8;
+    { const wood = woodMid(), brass = M.brass(), L = 1.7, D = 0.8;
       const body = box(L, 0.74, D, wood, { tile: 1 }); body.position.y = 0.37; table.add(body);
       const cap = box(L + 0.06, 0.05, D + 0.06, wood, { tile: 1 }); cap.position.y = 0.765; table.add(cap);
       const cloth = box(L - 0.1, 0.012, D - 0.1, M.fabric(0x24402f, 1)); cloth.position.y = 0.795; table.add(cloth);
@@ -119,11 +119,11 @@ export function build(ctx) {
       const lid = box(L - 0.04, 0.012, D - 0.04, M.plain(0xf0eadb, 0.7)); lid.visible = false; table.add(lid);
       const y0 = 0.8;
       const am = buildAmmonite({ size: 0.31 }); am.position.set(-0.55, y0, 0.0); am.rotation.y = 0.15; table.add(am);
-      const stnd = box(0.12, 0.03, 0.1, M.wood(0x3a2214, { planks: 1 }), { tile: 1 }); stnd.position.set(-0.55, y0 + 0.015, 0.0); table.add(stnd); am.position.y = y0 + 0.03;
+      const stnd = box(0.12, 0.03, 0.1, woodDark(), { tile: 1 }); stnd.position.set(-0.55, y0 + 0.015, 0.0); table.add(stnd); am.position.y = y0 + 0.03;
       const tp = buildTrilobitePlate({ w: 0.3, d: 0.26 }); tp.position.set(0.1, y0 + 0.07, -0.02); tp.rotation.x = 0.5; tp.rotation.y = 0.0; table.add(tp);
-      const wedge = box(0.2, 0.09, 0.1, M.wood(0x3a2214, { planks: 1 }), { tile: 1 }); wedge.position.set(0.1, y0 + 0.04, -0.12); table.add(wedge);
+      const wedge = box(0.2, 0.09, 0.1, woodDark(), { tile: 1 }); wedge.position.set(0.1, y0 + 0.04, -0.12); table.add(wedge);
       const fp = buildFishPlate({ w: 0.34, d: 0.22 }); fp.position.set(0.6, y0 + 0.07, -0.05); fp.rotation.x = 0.5; fp.rotation.y = 0.12; table.add(fp);
-      const wedge2 = box(0.2, 0.09, 0.1, M.wood(0x3a2214, { planks: 1 }), { tile: 1 }); wedge2.position.set(0.6, y0 + 0.04, -0.14); table.add(wedge2);
+      const wedge2 = box(0.2, 0.09, 0.1, woodDark(), { tile: 1 }); wedge2.position.set(0.6, y0 + 0.04, -0.14); table.add(wedge2);
       const ur = buildUrchin(); ur.position.set(-0.1, y0 + 0.006, 0.28); table.add(ur); const sk = buildSharkTooth(); sk.position.set(0.02, y0 + 0.006, 0.3); sk.rotation.y = 0.5; table.add(sk);
       const tag = brassSign('Fossilien', { w: 0.5, h: 0.1, px: 56, sub: 'Spuren aus der Erdgeschichte' }); tag.position.set(0, 0.5, D / 2 + 0.032); table.add(tag);
       for (const [x, z, t, sub] of [[-0.55, 0.3, 'Ammonit', 'Jura'], [0.1, 0.3, 'Trilobit', 'Erdaltertum'], [0.6, 0.3, 'Fisch', 'Jura'], [-0.04, 0.34, 'Seeigel, Haizahn', '']]) { const lb = brassSign(t, { w: 0.2, h: 0.045, px: 40, sub, bg: '#3a2c18' }); lb.rotation.x = -Math.PI / 2; lb.position.set(x, y0 + 0.008, z + (x === -0.04 ? 0.06 : 0)); table.add(lb); }
@@ -137,7 +137,7 @@ export function build(ctx) {
     { const f = personFrame('darwin'); api.place(f, 'W', 2.1, 0.06, 1.75); }
 
     // ------------------------------------------------------------ Stirnwand: Stammbaum und Linné
-    { const w = 2.6, fr = new THREE.Group(), wood = M.wood(0x5a3a22, { planks: 1 }), brass = M.brass();
+    { const w = 2.6, fr = new THREE.Group(), wood = woodMid(), brass = M.brass();
       const tex = texOf(treeCanvas(), { aniso: 8 }), pic = new THREE.Mesh(new THREE.PlaneGeometry(w, w), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 })); pic.position.set(0, w / 2, 0.06); fr.add(pic);
       for (const [x, y, ww, hh] of [[0, w + 0.07, w + 0.28, 0.14], [0, -0.07, w + 0.28, 0.14]]) { const b = box(ww, hh, 0.1, wood, { tile: 1 }); b.position.set(x, y, 0.05); fr.add(b); }
       for (const s of [-1, 1]) { const b = box(0.14, w, 0.1, wood, { tile: 1 }); b.position.set(s * (w / 2 + 0.07), w / 2, 0.05); fr.add(b); const br = box(0.02, w, 0.02, brass); br.position.set(s * (w / 2 - 0.01), w / 2, 0.065); fr.add(br); }
@@ -150,7 +150,7 @@ export function build(ctx) {
     // ------------------------------------------------------------ Ostwand: Herbar, Arbeitstisch mit Mikroskop, Humboldt
     HERBAR_ORDER.forEach((key, i) => {
       const col = i % 3, row = Math.floor(i / 3), a = -2.35 + col * 0.66, y = row === 0 ? 2.58 : 1.6, f = herbarSheet(key, { w: 0.42, h: 0.588 }); api.place(f, 'E', a, 0.07, y);
-      const hp = hitPlane(0.56, 0.78, card(T.herbar[key], { src: T.herbar.src, station: 'biologie-mikroskop', label: T.herbar[key].title, get image() { return herbarCanvas(key); }, alt: 'Herbarbogen: ' + T.herbar[key].title })); hp.position.set(0, -0.04, 0.07); f.add(hp);
+      const hp = hitPlane(0.56, 0.78, card(T.herbar[key], { src: T.herbar.src, station: 'biologie-herbar', label: T.herbar[key].title, get image() { return herbarCanvas(key); }, alt: 'Herbarbogen: ' + T.herbar[key].title })); hp.position.set(0, -0.04, 0.07); f.add(hp);
     });
     { const bn = new THREE.Group(); bn.position.set(4.35, 0, 1.1); bn.rotation.y = -Math.PI / 2; g.add(bn);
       bn.add(buildWorkbench()); bn.add(bench()); const mic = buildMicroscope({ s: 1.5 }); mic.position.set(0.12, 0.804, -0.12); bn.add(mic);
@@ -163,22 +163,27 @@ export function build(ctx) {
       const sz = bc.userData.size; const bg = hitPlane(sz.w, sz.h, card(T.butterflies, { station: 'biologie-schmetterlinge', label: 'Schmetterlings-Schaukasten' })); bg.position.set(0, 0.55 + 0.0, 0.17); bc.add(bg);
       BF_ORDER.forEach((key, i) => { const f = bc.userData.figs[key], b = BUTTERFLY[key]; const hp = hitPlane(0.34, 0.26, card(T.bf[key], { station: 'biologie-schmetterlinge', label: b.name, src: T.butterflies.src })); hp.position.set(f.position.x, f.position.y, 0.2); bc.add(hp); }); }
     { const f = personFrame('merian'); api.place(f, 'S', -1.9, 0.06, 1.75); }
-    { const con = new THREE.Group(), wood = M.wood(0x6a4326, { planks: 2, seed: 4 }), brass = M.brass(), cw = 1.9;
+    { const con = new THREE.Group(), wood = woodMid(), brass = M.brass(), cw = 1.9;
       const body = box(cw, 0.74, 0.5, wood, { tile: 1 }); body.position.y = 0.37; con.add(body); const top = box(cw + 0.06, 0.05, 0.56, wood, { tile: 1 }); top.position.y = 0.765; con.add(top);
-      for (let i = -1; i <= 1; i++) { const d = box(cw / 3 - 0.06, 0.62, 0.02, M.wood(0x7a5030, { planks: 1 }), { tile: 1 }); d.position.set(i * cw / 3, 0.37, 0.255); con.add(d); const k = mesh(new THREE.SphereGeometry(0.02, 8, 6), brass); k.position.set(i * cw / 3, 0.4, 0.28); con.add(k); }
-      const dome = buildScarabDome(); dome.position.set(-0.5, 0.79, 0.0); con.add(dome);
-      const nest = buildNestOnBranch(); nest.position.set(0.45, 0.79, 0.02); nest.scale.setScalar(1.35); con.add(nest);
-      const hb1 = hitBox(0.44, 0.46, 0.44, card(T.skarabaeus, { station: 'biologie-kabinett', label: 'Skarabäus' })); hb1.position.set(-0.5, 0.79 + 0.22, 0); con.add(hb1);
-      const hb2 = hitBox(0.7, 0.34, 0.45, card(T.nest, { station: 'biologie-kabinett', label: 'Vogelnest' })); hb2.position.set(0.45, 0.79 + 0.14, 0); con.add(hb2);
-      api.place(con, 'S', 3.3, 0.0, 0); }
+      for (let i = -1; i <= 1; i++) { const d = box(cw / 3 - 0.06, 0.62, 0.02, woodMid(), { tile: 1 }); d.position.set(i * cw / 3, 0.37, 0.255); con.add(d); const k = mesh(new THREE.SphereGeometry(0.02, 8, 6), brass); k.position.set(i * cw / 3, 0.4, 0.28); con.add(k); }
+      const dome = buildScarabDome(); dome.position.set(-0.52, 0.79, 0.0); dome.scale.setScalar(1.4); con.add(dome);
+      const nest = buildNestOnBranch(); nest.position.set(0.5, 0.79, 0.02); nest.scale.setScalar(1.8); con.add(nest);
+      const hb1 = hitBox(0.6, 0.7, 0.6, card(T.skarabaeus, { station: 'biologie-kabinett', label: 'Skarabäus' })); hb1.position.set(-0.52, 0.79 + 0.33, 0); con.add(hb1);
+      const hb2 = hitBox(0.82, 0.4, 0.5, card(T.nest, { station: 'biologie-kabinett', label: 'Vogelnest' })); hb2.position.set(0.5, 0.79 + 0.18, 0); con.add(hb2);
+      { const f = P.fernPlant({ h: 0.4, seed: 8, potR: 0.08 }); f.position.set(0.88, 0.79, 0.1); con.add(f); const bk = props.books({ seed: 4 }); bk.position.set(-0.9, 0.79, 0.05); bk.rotation.y = 0.2; con.add(bk); }
+      api.place(con, 'S', 3.3, 0.0, 0);
+      // Wandbrett mit Samengläsern über dem Kabinett
+      const sh = new THREE.Group(); { const wd = woodMid(), br = M.brass(); const bd = box(1.7, 0.04, 0.24, wd, { tile: 1 }); bd.position.set(0, 0, 0.12); sh.add(bd); for (const x of [-0.7, 0.7]) { const b = box(0.03, 0.2, 0.2, br); b.position.set(x, -0.1, 0.1); sh.add(b); }
+        [['seedJar', -0.62, { color: 0x7ab04a, seed: 1 }], ['seedJar', -0.3, { color: 0xa8452a, seed: 2, size: 0.013 }], ['seedJar', 0.02, { color: 0xe8a03a, seed: 3, size: 0.009 }], ['succ', 0.4, {}], ['books', 0.58, { seed: 5 }]].forEach(([k, x, o]) => { const it = props[k](o); it.position.set(x, 0.02, 0.12); sh.add(it); }); }
+      api.place(sh, 'S', 3.3, 0.0, 1.78); }
     { const f = personFrame('mendel'); api.place(f, 'S', 1.9, 0.06, 1.75); }
 
     // ------------------------------------------------------------ Lehrtafeln an den oberen Wänden
-    for (const [key, wl, a, y, stn] of [['meta', 'S', -3.3, 3.1, 'biologie-schmetterlinge'], ['mendel', 'S', 3.3, 3.1, 'biologie-kabinett'], ['flower', 'E', -1.7, 3.4, 'biologie-mikroskop'], ['cells', 'E', 1.1, 3.4, 'biologie-mikroskop']]) {
+    for (const [key, wl, a, y, stn] of [['meta', 'S', -3.3, 3.05, 'biologie-schmetterlinge'], ['mendel', 'S', 3.3, 2.95, 'biologie-kabinett'], ['flower', 'E', -1.7, 3.4, 'biologie-herbar'], ['cells', 'E', 1.1, 3.4, 'biologie-herbar']]) {
       const f = chartFrame(key, { w: 1.4 }); api.place(f, wl, a, 0.04, y); const sz = f.userData.size; const hp = hitPlane(sz.w, sz.h, card(T.charts[key], { station: stn, label: T.charts[key].title })); hp.position.z = 0.06; f.add(hp); }
 
     // ------------------------------------------------------------ Große Pflanzen, hängende Körbe
-    const big = [[P.palmPlant({ h: 2.3, seed: 2 }), 4.55, -5.3], [P.palmPlant({ h: 2.1, seed: 5 }), -4.55, 5.35], [P.monsteraPlant({ h: 1.35, seed: 3 }), 4.55, 5.3], [P.fernPlant({ h: 1.0, seed: 4, kind: 'green', fronds: 16 }), -4.5, 4.2], [P.bushPlant({ h: 1.3, seed: 6, n: 70, size: 0.2, kind: 'green' }), 4.55, 0.0]];
+    const big = [[P.palmPlant({ h: 2.3, seed: 2 }), 4.55, -5.3], [P.palmPlant({ h: 1.9, seed: 5 }), -4.7, 5.5], [P.monsteraPlant({ h: 1.35, seed: 3 }), 4.55, 5.3], [P.fernPlant({ h: 1.0, seed: 4, kind: 'green', fronds: 16 }), -4.5, 4.2]];
     for (const [o, x, z] of big) { o.position.set(x, 0, z); g.add(o); }
     for (const [x, z, s] of [[-3.0, -3.1, 1], [3.0, -3.1, 2], [-2.6, 2.7, 3], [2.6, 2.7, 4]]) { const hp = P.hangingPlant({ len: 1.1, seed: s, strands: 7 }); hp.position.set(x, R.h - 0.75, z); g.add(hp); }
 
@@ -190,12 +195,13 @@ export function build(ctx) {
     api.stations.push(
       eingang,
       S0('regal', 'Regale und Dino-Buch', [-1.5, 1.6, -2.0], [-5, 1.55, -3.5], { catSpot: [-3.2, 0, -1.6] }),
-      S0('dna', 'Doppelhelix', [1.7, 1.6, 2.3], [0, 1.75, -0.9], { catSpot: [-1.0, 0, 2.4] }),
+      S0('dna', 'Doppelhelix', [1.4, 1.6, 2.0], [0, 1.75, -0.9], { catSpot: [-1.0, 0, 2.4] }),
       S0('fossilien', 'Fossilien und T. rex', [-1.3, 1.6, 1.3], [-4.6, 1.45, -0.2], { catSpot: [-2.0, 0, -1.8] }),
-      S0('mikroskop', 'Mikroskop und Herbar', [1.5, 1.6, 0.4], [4.8, 2.2, 0.4], { catSpot: [2.9, 0, -1.4] }),
-      S0('stammbaum', 'Stammbaum des Lebens', [0.2, 1.6, -2.0], [0.2, 2.1, -6], { catSpot: [-1.8, 0, -3.8] }),
-      S0('schmetterlinge', 'Schmetterlinge', [3.0, 1.6, 3.2], [3.3, 2.0, 6], { catSpot: [1.2, 0, 4.6] }),
-      S0('kabinett', 'Skarabäus und Vogelnest', [-3.0, 1.6, 3.2], [-3.3, 1.9, 6], { catSpot: [-1.2, 0, 4.6] }),
+      S0('mikroskop', 'Mikroskop', [1.9, 1.6, 2.8], [4.5, 1.25, 1.0], { catSpot: [2.9, 0, 3.6] }),
+      S0('herbar', 'Herbar und Lehrtafeln', [1.7, 1.6, -3.6], [4.9, 2.3, -1.4], { catSpot: [3.0, 0, -3.2] }),
+      S0('stammbaum', 'Stammbaum des Lebens', [0.2, 1.6, -2.7], [0.2, 2.2, -6], { catSpot: [-1.8, 0, -3.8] }),
+      S0('schmetterlinge', 'Schmetterlinge', [2.9, 1.6, 2.6], [3.3, 1.8, 6], { catSpot: [1.2, 0, 4.6] }),
+      S0('kabinett', 'Skarabäus und Vogelnest', [-2.9, 1.6, 2.6], [-3.3, 1.7, 6], { catSpot: [-1.2, 0, 4.6] }),
       tuer);
 
     // ------------------------------------------------------------ Licht (drei echte Lichter: spart Rechenzeit)

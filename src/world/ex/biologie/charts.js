@@ -2,12 +2,12 @@
 import * as THREE from 'three';
 import { M, box } from '../../kit.js';
 import { mulberry32, TAU } from '../../../lib/util.js';
-import { canvas, texOf, memo, SERIF } from './style.js';
+import { canvas, texOf, memo, SERIF, woodMid } from './style.js';
 import { paperBase } from './paper.js';
 
 const W = 768, H = 540;
 function base(title, sub) {
-  const [c, g] = canvas(W, H); paperBase(g, W, H, '#f4ecd4', 5);
+  const [c, g] = canvas(640, 450); g.scale(640 / W, 450 / H); paperBase(g, W, H, '#f4ecd4', 5);
   g.strokeStyle = '#2c5a3e'; g.lineWidth = 10; g.strokeRect(8, 8, W - 16, H - 16); g.lineWidth = 2; g.strokeRect(22, 22, W - 44, H - 44);
   g.fillStyle = '#2c5a3e'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold 38px ${SERIF}`; g.fillText(title, W / 2, 58, W - 90);
   if (sub) { g.fillStyle = '#5a4630'; g.font = `italic 20px ${SERIF}`; g.fillText(sub, W / 2, H - 42, W - 90); }
@@ -121,7 +121,7 @@ export const CHARTS = { meta: metamorphosisCanvas, mendel: mendelCanvas, flower:
 
 // Bild im Rahmen (breit), Ursprung Mitte, Vorderseite +z
 export function chartFrame(key, { w = 1.5 } = {}) {
-  const h = w * H / W, g = new THREE.Group(), wood = M.wood(0x5a3a22, { planks: 1 }), brass = M.brass();
+  const h = w * H / W, g = new THREE.Group(), wood = woodMid(), brass = M.brass();
   const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: texOf(CHARTS[key]()), roughness: 0.8 })); pic.position.z = 0.03; g.add(pic);
   for (const [x, y, ww, hh] of [[0, h / 2 + 0.04, w + 0.16, 0.08], [0, -h / 2 - 0.04, w + 0.16, 0.08]]) { const b = box(ww, hh, 0.06, wood, { tile: 1 }); b.position.set(x, y, 0.02); g.add(b); }
   for (const s of [-1, 1]) { const b = box(0.08, h, 0.06, wood, { tile: 1 }); b.position.set(s * (w / 2 + 0.04), 0, 0.02); g.add(b); }

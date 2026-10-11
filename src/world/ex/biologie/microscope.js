@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { M, mat, mesh, box, deskLamp } from '../../kit.js';
 import { mulberry32, TAU } from '../../../lib/util.js';
-import { canvas, texOf, memo, SERIF, glassMat } from './style.js';
+import { canvas, texOf, memo, SERIF, glassMat, woodDark, woodLight, woodMid } from './style.js';
 import * as P from './plants.js';
 
 const enamel = () => mat('mic-enamel', () => new THREE.MeshStandardMaterial({ color: 0x161a1a, roughness: 0.32, metalness: 0.55 }));
@@ -70,7 +70,7 @@ function notebookTex() {
   });
 }
 export function buildWorkbench({ len = 1.9, dep = 0.8, h = 0.8 } = {}) {
-  const g = new THREE.Group(), wood = M.wood(0xb98a55, { planks: 3, seed: 6 }), dark = M.wood(0x6a4326, { planks: 2, seed: 4 }), brass = M.brass();
+  const g = new THREE.Group(), wood = woodLight(), dark = woodMid(), brass = M.brass();
   const top = box(len, 0.05, dep, wood, { tile: 1 }); top.position.y = h - 0.025; g.add(top);
   const edge = box(len + 0.04, 0.02, dep + 0.04, dark, { tile: 1 }); edge.position.y = h - 0.06; g.add(edge);
   const inlay = box(len - 0.3, 0.004, dep - 0.2, M.fabric(0x2f5a40, 1)); inlay.position.y = h + 0.001; g.add(inlay);
@@ -90,11 +90,11 @@ export function bench(items = {}) {
   { const sp = P.fernPlant({ h: 0.2, seed: 12, fronds: 6, potR: 0.004 }); sp.scale.setScalar(0.5); sp.children.forEach((c, i) => { if (i < 3) c.visible = false; }); sp.position.y = -0.005; jar(-0.7, -0.08, 0.06, 0.15, sp); }
   jar(-0.55, 0.05, 0.045, 0.1, (() => { const c = new THREE.Group(); const m = mesh(new THREE.SphereGeometry(0.03, 12, 10), M.plain(0xc9d98a, 0.7)); m.position.y = 0.032; c.add(m); const m2 = mesh(new THREE.SphereGeometry(0.02, 10, 8), M.plain(0xb85a3a, 0.7)); m2.position.set(0.02, 0.02, 0.01); c.add(m2); return c; })());
   // Dia-Kästchen
-  { const bx = box(0.16, 0.05, 0.09, M.wood(0x6a4326, { planks: 1 }), { tile: 1 }); bx.position.set(0.5, y0 + 0.025, 0.12); bx.rotation.y = 0.2; g.add(bx); const lid = box(0.164, 0.012, 0.094, brass); lid.position.set(0.5, y0 + 0.056, 0.12); lid.rotation.y = 0.2; g.add(lid); for (let i = 0; i < 4; i++) { const sl = box(0.076, 0.0016, 0.026, M.plain(0xcfe8ee, 0.2)); sl.position.set(0.55 + i * 0.002, y0 + 0.002 + i * 0.002, -0.07 + i * 0.03); sl.rotation.y = 0.25 + i * 0.15; g.add(sl); } }
+  { const bx = box(0.16, 0.05, 0.09, woodMid(), { tile: 1 }); bx.position.set(0.5, y0 + 0.025, 0.12); bx.rotation.y = 0.2; g.add(bx); const lid = box(0.164, 0.012, 0.094, brass); lid.position.set(0.5, y0 + 0.056, 0.12); lid.rotation.y = 0.2; g.add(lid); for (let i = 0; i < 4; i++) { const sl = box(0.076, 0.0016, 0.026, M.plain(0xcfe8ee, 0.2)); sl.position.set(0.55 + i * 0.002, y0 + 0.002 + i * 0.002, -0.07 + i * 0.03); sl.rotation.y = 0.25 + i * 0.15; g.add(sl); } }
   // Notizbuch (aufgeschlagen, mit Zeichnung)
   { const nb = new THREE.Group(); const cv = box(0.4, 0.014, 0.28, M.plain(0x2f5a40, 0.7)); cv.position.y = 0.007; nb.add(cv); const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.265), new THREE.MeshStandardMaterial({ map: notebookTex(), roughness: 0.95 })); pg.rotation.x = -Math.PI / 2; pg.position.y = 0.0145; nb.add(pg); for (const sx of [-1, 1]) { const pgs = box(0.188, 0.012, 0.262, M.plain(0xf0e6cc, 0.95)); pgs.position.set(sx * 0.098, 0.016 - 0.002, 0); pgs.rotation.z = -sx * 0.025; nb.add(pgs); } nb.children[2].visible = false; nb.children[3].visible = false; nb.position.set(0.1, y0, 0.12); nb.rotation.y = -0.12; g.add(nb); }
   // Lupe
-  { const l = new THREE.Group(); const ring = mesh(new THREE.TorusGeometry(0.05, 0.007, 8, 28), brass); ring.rotation.x = -Math.PI / 2; l.add(ring); const gl = new THREE.Mesh(new THREE.CircleGeometry(0.05, 24), mat('lupe', () => new THREE.MeshStandardMaterial({ color: 0xcfe6ea, transparent: true, opacity: 0.25, roughness: 0.03 }))); gl.rotation.x = -Math.PI / 2; l.add(gl); const hd = mesh(new THREE.CylinderGeometry(0.01, 0.012, 0.13, 10), M.wood(0x4a2a18, { planks: 1 })); hd.rotation.z = Math.PI / 2; hd.rotation.y = 0; hd.position.set(0.115, 0, 0); l.add(hd); l.position.set(0.32, y0 + 0.01, -0.12); l.rotation.y = 0.5; g.add(l); }
+  { const l = new THREE.Group(); const ring = mesh(new THREE.TorusGeometry(0.05, 0.007, 8, 28), brass); ring.rotation.x = -Math.PI / 2; l.add(ring); const gl = new THREE.Mesh(new THREE.CircleGeometry(0.05, 24), mat('lupe', () => new THREE.MeshStandardMaterial({ color: 0xcfe6ea, transparent: true, opacity: 0.25, roughness: 0.03 }))); gl.rotation.x = -Math.PI / 2; l.add(gl); const hd = mesh(new THREE.CylinderGeometry(0.01, 0.012, 0.13, 10), woodDark()); hd.rotation.z = Math.PI / 2; hd.rotation.y = 0; hd.position.set(0.115, 0, 0); l.add(hd); l.position.set(0.32, y0 + 0.01, -0.12); l.rotation.y = 0.5; g.add(l); }
   // Petrischalen
   for (const [x, z] of [[-0.3, 0.14], [-0.2, 0.2]]) { const p = new THREE.Group(); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 24), glass); b.position.y = 0.006; b.renderOrder = 4; p.add(b); const agar = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.005, 24), M.plain(0xe8d890, 0.4)); agar.position.y = 0.004; p.add(agar); for (let i = 0; i < 4; i++) { const col = mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.002, 8), M.plain(0xf8f0e0, 0.5)); col.position.set((i - 1.5) * 0.012, 0.007, Math.sin(i * 2) * 0.014); p.add(col); } p.position.set(x, y0, z); g.add(p); }
   // Tischlampe
@@ -106,7 +106,7 @@ export function bench(items = {}) {
   return g;
 }
 export function stool({ h = 0.5 } = {}) {
-  const g = new THREE.Group(), wood = M.wood(0x8a5a30, { planks: 2, seed: 3 }), brass = M.brass();
+  const g = new THREE.Group(), wood = woodMid(), brass = M.brass();
   const seat = mesh(new THREE.CylinderGeometry(0.2, 0.19, 0.05, 24), wood, { tile: 0.6 }); seat.position.y = h; g.add(seat);
   for (let i = 0; i < 3; i++) { const a = (i / 3) * TAU, l = mesh(new THREE.CylinderGeometry(0.018, 0.026, h, 8), wood, { tile: 1 }); l.position.set(Math.cos(a) * 0.15, h / 2, Math.sin(a) * 0.15); l.rotation.set(Math.sin(a) * 0.14, 0, -Math.cos(a) * 0.14); g.add(l); }
   const ring = mesh(new THREE.TorusGeometry(0.15, 0.01, 6, 24), brass); ring.rotation.x = Math.PI / 2; ring.position.y = h * 0.35; g.add(ring); return g;

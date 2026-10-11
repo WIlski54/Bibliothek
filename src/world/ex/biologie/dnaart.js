@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { M, mat, box, mesh } from '../../kit.js';
 import { TAU } from '../../../lib/util.js';
-import { canvas, texOf, memo, SERIF } from './style.js';
+import { canvas, texOf, memo, SERIF, woodMid } from './style.js';
 import { DNA, hexPts, pentPts, CXH } from './dna.js';
 
 const css = (n) => '#' + n.toString(16).padStart(6, '0');
@@ -43,7 +43,7 @@ export function pairDiagram() {
 // Legende: Schild für das Pult (Hochformat, schräg gelesen)
 export function legendCanvas() {
   return memo('dna-legend', () => {
-    const [c, g] = canvas(1024, 720);
+    const [c, g] = canvas(768, 540); g.scale(0.75, 0.75);
     const grd = g.createLinearGradient(0, 0, 0, 720); grd.addColorStop(0, '#f8f1dc'); grd.addColorStop(1, '#efe4c4'); g.fillStyle = grd; g.fillRect(0, 0, 1024, 720);
     g.strokeStyle = '#2c5a3e'; g.lineWidth = 12; g.strokeRect(12, 12, 1000, 696); g.lineWidth = 3; g.strokeRect(30, 30, 964, 660);
     g.fillStyle = '#2c5a3e'; g.fillRect(30, 30, 964, 78); g.fillStyle = '#f6e7b0'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold 44px ${SERIF}`; g.fillText('Legende zur Doppelhelix', 512, 70);
@@ -66,7 +66,7 @@ export function legendCanvas() {
 }
 // Pult mit schräger Platte und Legende
 export function buildLectern() {
-  const g = new THREE.Group(), wood = M.wood(0x6a4326, { planks: 2, seed: 4 }), brass = M.brass();
+  const g = new THREE.Group(), wood = woodMid(), brass = M.brass();
   const w = 0.82, d = 0.55;
   const post = mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.88, 14), wood, { tile: 1 }); post.position.y = 0.44; g.add(post);
   const foot = mesh(new THREE.CylinderGeometry(0.3, 0.33, 0.06, 24), wood, { tile: 1 }); foot.position.y = 0.03; g.add(foot);
@@ -80,7 +80,7 @@ export function buildLectern() {
 }
 // Staffelei für das Franklin-Porträt
 export function buildEasel() {
-  const g = new THREE.Group(), wood = M.wood(0x8a5a30, { planks: 2, seed: 3 }), brass = M.brass();
+  const g = new THREE.Group(), wood = woodMid(), brass = M.brass();
   for (const [x, rz, h] of [[-0.42, 0.17, 2.1], [0.42, -0.17, 2.1]]) { const l = box(0.045, h, 0.04, wood, { tile: 1 }); l.position.set(x, h / 2, -0.04); l.rotation.z = rz; l.rotation.x = 0.06; g.add(l); }
   const back = box(0.045, 1.9, 0.04, wood, { tile: 1 }); back.position.set(0, 0.95, -0.42); back.rotation.x = -0.4; g.add(back);
   const rail = box(1.0, 0.05, 0.04, wood, { tile: 1 }); rail.position.set(0, 1.18, -0.01); g.add(rail);

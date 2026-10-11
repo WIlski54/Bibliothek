@@ -4,7 +4,7 @@ import { Figure } from '../../../lib/figure.js';
 import { limb, blob, poly } from '../../../art/dsl.js';
 import { M, mat, box } from '../../kit.js';
 import { mulberry32, TAU } from '../../../lib/util.js';
-import { canvas, texOf, memo, SERIF, glassSheen } from './style.js';
+import { canvas, texOf, memo, SERIF, glassSheen, woodMid } from './style.js';
 import { litFigure } from './trexcase.js';
 
 // ---- Umrisse der rechten Flügel (mm, Körperachse x=0, Kopf oben). Die linke Seite wird gespiegelt.
@@ -149,7 +149,7 @@ function butterflySpec(key) {
 }
 const cache = new Map();
 export function butterflyFigure(key, scale = 0.0066) {
-  const f = litFigure(butterflySpec(key), { worldScale: scale, ppu: 2600, maxTex: 1024, thickness: 0.012, border: 0.0016 });
+  const f = litFigure(butterflySpec(key), { worldScale: scale, ppu: 1700, maxTex: 1024, thickness: 0.012, border: 0.0016 });
   f.group.userData.mm = BUTTERFLY[key].mm; return f;
 }
 
@@ -161,7 +161,7 @@ function labelTexture(name, sci) {
 // ---- Schaukasten (Ursprung Mitte unten an der Wand, Vorderseite +z)
 export const BF_ORDER = ['pfauenauge', 'zitronenfalter', 'admiral', 'fuchs', 'aurora', 'schwalbenschwanz'];
 export function buildButterflyCase({ w = 1.7, h = 1.2, d = 0.12 } = {}) {
-  const g = new THREE.Group(), wood = M.wood(0x5a3a22, { planks: 2, seed: 9 }), brass = M.brass(), T = 0.07;
+  const g = new THREE.Group(), wood = woodMid(), brass = M.brass(), T = 0.07;
   for (const [x, y, ww, hh] of [[0, h + T / 2, w + 2 * T, T], [0, -T / 2, w + 2 * T, T]]) { const b = box(ww, hh, d + 0.03, wood, { tile: 1 }); b.position.set(x, y, (d + 0.03) / 2); g.add(b); }
   for (const s of [-1, 1]) { const b = box(T, h, d + 0.03, wood, { tile: 1 }); b.position.set(s * (w / 2 + T / 2), h / 2, (d + 0.03) / 2); g.add(b); }
   // Hintergrund: Leinenpapier in hellem Salbei mit feiner Struktur

@@ -75,13 +75,12 @@ class Leaves {
       const ny = -Math.sin(na), nz = Math.cos(na);
       const col = [color[0] * (0.78 + 0.22 * t), color[1] * (0.78 + 0.22 * t), color[2] * (0.78 + 0.22 * t)];
       for (const s of [-1, 1]) {
-        const lx = s * wid / 2, off = cup * lx * lx * 2, cr = Math.cos(roll * s), sr = Math.sin(roll * s);
-        // lokale Position (x quer, y/z Streifenebene), Cup entlang Normale
-        let X = lx * cr, Y = py + ny * off + ny * (lx * sr) * 0.4, Z = pz + nz * off + nz * (lx * sr) * 0.4;
-        // Gier um Y
+        const lx = s * wid / 2, off = cup * lx * lx * 2, cr = Math.cos(roll), sr = Math.sin(roll);
+        // Seitenvektor um die Blattachse gedreht (roll), Wölbung (cup) entlang der gedrehten Normalen
+        const X = lx * cr + off * sr, Y = py - lx * sr * ny + off * cr * ny, Z = pz - lx * sr * nz + off * cr * nz;
         const wx = X * cy + Z * sy, wz = -X * sy + Z * cy;
         this.p.push(o[0] + wx, o[1] + Y, o[2] + wz);
-        const nxl = 0, nyl = ny, nzl = nz; this.n.push(nxl * cy + nzl * sy, nyl, -nxl * sy + nzl * cy);
+        const nxl = sr, nyl = ny * cr, nzl = nz * cr; this.n.push(nxl * cy + nzl * sy, nyl, -nxl * sy + nzl * cy);
         this.u.push(u0 + (s < 0 ? 0 : du), v0 + dv * t);
         this.c.push(col[0], col[1], col[2]);
       }
@@ -118,31 +117,29 @@ export function fernPlant({ h = 0.9, seed = 1, kind = 'terra', fronds = 13, potR
   g.add(pot({ r: pr, h: pr * 1.5, kind })); const y0 = pr * 1.5 - 0.02;
   for (let i = 0; i < fronds; i++) {
     const yaw = (i / fronds) * TAU + rnd() * 0.5, up = rnd();
-    L.leaf('fern', { o: [Math.cos(yaw) * 0.03, y0, Math.sin(yaw) * 0.03], yaw, tilt: 0.25 + up * 0.8, len: h * (0.7 + rnd() * 0.5), wid: h * (0.3 + rnd() * 0.12), bend: 0.7 + rnd() * 0.5, cup: 0.3, seg: 5, color: tintOf(rnd, G(0.95, 1, 0.9), 0.2) });
+    L.leaf('fern', { o: [Math.cos(yaw) * 0.03, y0, Math.sin(yaw) * 0.03], yaw, tilt: 0.25 + up * 0.8, len: h * (0.7 + rnd() * 0.5), wid: h * (0.3 + rnd() * 0.12), bend: 0.7 + rnd() * 0.5, cup: -0.5, roll: (rnd() - 0.5) * 0.7, seg: 5, color: tintOf(rnd, G(0.95, 1, 0.9), 0.2) });
   }
   g.add(L.mesh()); return g;
 }
 export function palmPlant({ h = 2.0, seed = 2, kind = 'terra', fronds = 12, trunk = true } = {}) {
   const g = new THREE.Group(), rnd = mulberry32(seed * 57 + 3), L = new Leaves(), pr = 0.28;
   g.add(pot({ r: pr, h: 0.45, kind })); const y0 = 0.43, brown = M.plain(0x6a5a3a, 0.9);
-  const stems = [];
   for (let i = 0; i < fronds; i++) {
-    const yaw = (i / fronds) * TAU + rnd() * 0.4, hh = h * (0.5 + rnd() * 0.4), lean = 0.12 + rnd() * 0.25, fl = h * (0.36 + rnd() * 0.16);
-    // dünner Stiel (Zylinder, schräg), darüber der Wedel
+    const yaw = (i / fronds) * TAU + rnd() * 0.4, hh = h * (0.5 + rnd() * 0.42), lean = 0.1 + rnd() * 0.22, fl = h * (0.38 + rnd() * 0.16);
     const sx = Math.cos(yaw) * lean * hh, sz = Math.sin(yaw) * lean * hh;
-    const st = mesh(new THREE.CylinderGeometry(0.012, 0.02, hh, 6), brown); st.position.set(sx / 2, y0 + hh / 2, sz / 2); st.rotation.set(Math.sin(yaw) * lean * 0.9, 0, -Math.cos(yaw) * lean * 0.9); g.add(st);
-    L.leaf('palm', { o: [sx, y0 + hh * 0.97, sz], yaw, tilt: 0.7 + rnd() * 0.3, len: fl * 1.1, wid: fl * 0.9, bend: 1.3 + rnd() * 0.4, cup: 0.5, seg: 6, color: tintOf(rnd, G(0.9, 1, 0.9), 0.18) });
+    const st = mesh(new THREE.CylinderGeometry(0.011, 0.018, hh, 6), brown); st.position.set(sx / 2, y0 + hh / 2, sz / 2); st.rotation.set(Math.sin(yaw) * lean * 0.9, 0, -Math.cos(yaw) * lean * 0.9); g.add(st);
+    L.leaf('palm', { o: [sx, y0 + hh * 0.97, sz], yaw, tilt: 0.45 + rnd() * 0.5, len: fl * 1.1, wid: fl * 0.9, bend: 1.2 + rnd() * 0.5, cup: -0.9, roll: (rnd() - 0.5) * 0.5, seg: 6, color: tintOf(rnd, G(0.9, 1, 0.9), 0.18) });
   }
   g.add(L.mesh()); return g;
 }
-export function monsteraPlant({ h = 1.2, seed = 3, kind = 'terra', n = 8 } = {}) {
+export function monsteraPlant({ h = 1.2, seed = 3, kind = 'terra', n = 9 } = {}) {
   const g = new THREE.Group(), rnd = mulberry32(seed * 41 + 1), L = new Leaves();
   g.add(pot({ r: 0.26, h: 0.4, kind })); const y0 = 0.38, brown = M.plain(0x5a8a3a, 0.8);
   for (let i = 0; i < n; i++) {
-    const yaw = (i / n) * TAU + rnd() * 0.6, hh = h * (0.45 + rnd() * 0.5), lean = 0.2 + rnd() * 0.4, ll = h * (0.33 + rnd() * 0.13);
+    const yaw = (i / n) * TAU + rnd() * 0.6, hh = h * (0.35 + rnd() * 0.6), lean = 0.18 + rnd() * 0.35, ll = h * (0.34 + rnd() * 0.14);
     const sx = Math.cos(yaw) * lean * hh, sz = Math.sin(yaw) * lean * hh;
-    const st = mesh(new THREE.CylinderGeometry(0.008, 0.012, hh, 6), brown); st.position.set(sx / 2, y0 + hh / 2, sz / 2); st.rotation.set(Math.sin(yaw) * lean * 0.85, 0, -Math.cos(yaw) * lean * 0.85); g.add(st);
-    L.leaf('monstera', { o: [sx, y0 + hh, sz], yaw, tilt: 1.15 + rnd() * 0.4, len: ll * 1.05, wid: ll, bend: 0.5, cup: 0.5, seg: 3, color: tintOf(rnd, G(1, 1, 1), 0.2) });
+    const st = mesh(new THREE.CylinderGeometry(0.008, 0.013, hh, 6), brown); st.position.set(sx / 2, y0 + hh / 2, sz / 2); st.rotation.set(Math.sin(yaw) * lean * 0.85, 0, -Math.cos(yaw) * lean * 0.85); g.add(st);
+    L.leaf('monstera', { o: [sx, y0 + hh, sz], yaw, tilt: 0.45 + rnd() * 0.5, len: ll * 1.05, wid: ll, bend: 0.9, cup: 0.35, roll: (rnd() - 0.5) * 1.0, seg: 4, color: tintOf(rnd, G(1, 1, 1), 0.2) });
   }
   g.add(L.mesh()); return g;
 }
@@ -152,7 +149,7 @@ export function bushPlant({ h = 1.0, seed = 4, kind = 'terra', n = 40, leaf = 's
   const st = mesh(new THREE.CylinderGeometry(0.02, 0.035, h * 0.7, 8), brown); st.position.y = y0 + h * 0.35; g.add(st);
   for (let i = 0; i < n; i++) {
     const yaw = rnd() * TAU, f = rnd(), hh = h * (0.35 + f * 0.65), rad = (0.04 + (1 - Math.abs(f - 0.55)) * 0.25) * h * 0.8;
-    L.leaf(leaf, { o: [Math.cos(yaw) * 0.03, y0 + hh * 0.98, Math.sin(yaw) * 0.03], yaw, tilt: 0.9 + rnd() * 0.9, len: size * (0.8 + rnd() * 0.5), wid: size * (0.55 + rnd() * 0.25), bend: 0.4, cup: 0.5, seg: 3, color: tintOf(rnd, G(1, 1, 1), 0.25) });
+    L.leaf(leaf, { o: [Math.cos(yaw) * 0.03, y0 + hh * 0.98, Math.sin(yaw) * 0.03], yaw, tilt: 0.5 + rnd() * 0.9, len: size * (0.8 + rnd() * 0.5), wid: size * (0.55 + rnd() * 0.25), bend: 0.5, cup: 0.5, roll: (rnd() - 0.5) * 1.2, seg: 3, color: tintOf(rnd, G(1, 1, 1), 0.25) });
   }
   g.add(L.mesh()); return g;
 }

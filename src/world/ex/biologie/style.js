@@ -57,7 +57,7 @@ export const floorMat = () => mat('bio-floor-mat', () => new THREE.MeshStandardM
 // ------------------------------------------------------------------ Oberlicht: Himmel, Wolken, Laubschatten, Sprossen
 export function skyTex() {
   return memo('bio-sky', () => {
-    const W = 1024, H = 1024, [c, g] = canvas(W, H), rnd = mulberry32(77);
+    const W = 1024, H = 1024, [c, g] = canvas(512, 512), rnd = mulberry32(77); g.scale(0.5, 0.5);
     const gr = g.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.75); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.55, '#e8f5ff'); gr.addColorStop(1, '#b9dcf5');
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
     for (let i = 0; i < 46; i++) { // weiche Wolken
@@ -93,6 +93,10 @@ export function beamTex() {
 }
 
 // ------------------------------------------------------------------ Materialien
+// nur drei Holzsorten im Raum (spart Texturen)
+export const woodLight = () => M.wood(0xc99a5e, { planks: 3, seed: 14 });
+export const woodMid = () => M.wood(0x6a4326, { planks: 2, seed: 4 });
+export const woodDark = () => M.wood(0x3a2214, { planks: 1 });
 export const trimMat = () => M.plain(0xf1ead6, 0.62);
 export const paintGreen = () => M.plain(0x6f9c7a, 0.6);
 export const ironGreen = () => mat('bio-iron', () => new THREE.MeshStandardMaterial({ color: 0x2f4a3a, roughness: 0.45, metalness: 0.5 }));

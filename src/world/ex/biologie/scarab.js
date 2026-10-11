@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { M, mat, mesh, box } from '../../kit.js';
 import { fbm, mulberry32, TAU } from '../../../lib/util.js';
-import { canvas, texOf, memo } from './style.js';
+import { canvas, texOf, memo, woodDark } from './style.js';
 import { Leaves } from './plants.js';
 
 const shell = () => mat('scarab-shell', () => new THREE.MeshStandardMaterial({ color: 0x15201d, roughness: 0.26, metalness: 0.6 }));
@@ -38,7 +38,7 @@ const sandTex = () => memo('sand', () => { const [c, g] = canvas(256, 256), rnd 
 
 // Glasglocke mit Käfer, Mistkugel und Sand auf rundem Holzfuß. Höhe etwa 0.36 m.
 export function buildScarabDome() {
-  const g = new THREE.Group(), brass = M.brass(), wood = M.wood(0x4a2a18, { planks: 2, seed: 2 });
+  const g = new THREE.Group(), brass = M.brass(), wood = woodDark();
   const base = mesh(new THREE.CylinderGeometry(0.19, 0.2, 0.04, 36), wood, { tile: 0.6 }); base.position.y = 0.02; g.add(base);
   const ring = mesh(new THREE.TorusGeometry(0.17, 0.008, 8, 40), brass); ring.rotation.x = Math.PI / 2; ring.position.y = 0.043; g.add(ring);
   const sand = mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.014, 36), mat('sand-m', () => new THREE.MeshStandardMaterial({ map: sandTex(), roughness: 1 })), { tile: 0.3 }); sand.position.y = 0.047; g.add(sand);
