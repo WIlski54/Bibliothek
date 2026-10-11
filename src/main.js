@@ -140,6 +140,7 @@ function frame(now) {
 
 (async () => {
   await world.build((p) => { const b = document.getElementById('go'); b.textContent = `Bibliothek wird aufgebaut … ${Math.round(p * 100)} %`; });
+  { const b = document.getElementById('go'); b.textContent = 'Lichter werden angezündet …'; try { await (renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera))); } catch (e) { /* Vorwärmen ist nur eine Hilfe */ } }
   world.cat?.place?.('foyer-eingang'); rig.jump('foyer-eingang'); ui.setWhere('foyer', rig.stations.get('foyer-eingang').name);
   rig.onTravel = (from, to, fr, tr) => { ambient.whoosh(); if (tr && tr !== fr) setTimeout(() => ambient.setRoom(tr), 900); world.cat?.follow(from, to, rig.travel?.route); };
   requestAnimationFrame((t) => { last = t; frame(t); });
