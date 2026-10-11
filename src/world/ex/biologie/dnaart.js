@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { M, mat, box, mesh } from '../../kit.js';
 import { TAU } from '../../../lib/util.js';
 import { canvas, texOf, memo, SERIF, woodMid } from './style.js';
-import { DNA, hexPts, pentPts, CXH } from './dna.js';
+import { DNA, hexPts, pentPts, CXH, ATTACH } from './dna.js';
 
 const css = (n) => '#' + n.toString(16).padStart(6, '0');
 // eine Base als Plättchen in (u, v) Modellmetern -> Pixel: u nach rechts, v nach oben (Sugar-Seite unten)
@@ -20,22 +20,25 @@ export function pairDiagram() {
   return memo('dna-pairs', () => {
     const [c, g] = canvas(960, 430);
     g.fillStyle = '#f7f0dc'; g.fillRect(0, 0, 960, 430); g.strokeStyle = 'rgba(120,90,40,.4)'; g.lineWidth = 3; g.strokeRect(6, 6, 948, 418);
+    const k = 1150, y0 = 284, half = 0.1287;
     const pair = (left, right, ox, hb, title) => {
-      const k = 1500, y0 = 330, half = 0.1287;
-      // Sehne unten: links und rechts Zucker mit Phosphat
       const lx = ox - half * k, rx = ox + half * k;
-      g.strokeStyle = '#b8b2a0'; g.lineWidth = 5; g.lineCap = 'round';
       const a = drawBase(g, left, lx, y0, k, false), b = drawBase(g, right, rx, y0, k, true);
-      for (const [x, tx] of [[lx - 30, lx], [rx + 30, rx]]) { g.strokeStyle = '#b8b2a0'; g.lineWidth = 5; g.beginPath(); g.moveTo(x, y0 + 36); g.lineTo(tx + (x < ox ? 24 : -24), y0 - 12); g.stroke(); SUGAR(g, x, y0 + 44, 20); g.beginPath(); g.arc(x + (x < ox ? -34 : 34), y0 + 44, 11, 0, TAU); g.fillStyle = '#f08a22'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(30,20,10,.7)'; g.stroke(); }
+      // Zucker und Phosphat unter den beiden Sehnenenden, Stäbchen zur Base
+      for (const [x, dir, base] of [[lx, 1, left], [rx, -1, right]]) {
+        const pur = base === 'A' || base === 'G', att = pur ? ATTACH.pur() : ATTACH.pyr(), ax = x + dir * att[0] * k, ay = y0 - att[1] * k, sx = x - dir * 4, sy = y0 + 74;
+        g.strokeStyle = '#b8b2a0'; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath(); g.moveTo(ax, ay); g.lineTo(sx, sy - 10); g.stroke();
+        SUGAR(g, sx, sy, 24); g.beginPath(); g.arc(sx - dir * 52, sy + 14, 12, 0, TAU); g.fillStyle = '#f08a22'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(30,20,10,.7)'; g.stroke();
+        g.strokeStyle = '#b8b2a0'; g.lineWidth = 5; g.beginPath(); g.moveTo(sx - dir * 24, sy + 6); g.lineTo(sx - dir * 42, sy + 12); g.stroke();
+      }
       // Wasserstoffbrücken
       const ys = hb === 2 ? [y0 - 0.075 * k, y0 - 0.1 * k] : [y0 - 0.066 * k, y0 - 0.088 * k, y0 - 0.11 * k];
-      g.strokeStyle = '#3a3a3a'; g.lineWidth = 4; g.setLineDash([7, 6]); for (const yy of ys) { g.beginPath(); g.moveTo(ox - 0.014 * k, yy); g.lineTo(ox + 0.014 * k, yy); g.stroke(); } g.setLineDash([]);
-      // Buchstaben und Namen
-      g.fillStyle = '#fff'; g.font = `bold 44px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = 'rgba(30,20,10,.5)'; for (const [ch, p] of [[left, a], [right, b]]) { g.strokeText(ch, p.cx, p.cy - 4); g.fillText(ch, p.cx, p.cy - 4); }
-      g.fillStyle = '#2a1c10'; g.font = `bold 24px ${SERIF}`; g.fillText(title, ox, 52); g.font = `italic 19px ${SERIF}`; g.fillStyle = '#5a4630'; g.fillText(hb === 2 ? 'zwei Wasserstoffbrücken' : 'drei Wasserstoffbrücken', ox, 80);
+      g.strokeStyle = '#2a2a2a'; g.lineWidth = 4; g.setLineDash([6, 5]); for (const yy of ys) { g.beginPath(); g.moveTo(ox - 0.02 * k, yy); g.lineTo(ox + 0.02 * k, yy); g.stroke(); } g.setLineDash([]);
+      g.fillStyle = '#fff'; g.font = `bold 40px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = 'rgba(30,20,10,.55)'; for (const [ch, p] of [[left, a], [right, b]]) { g.strokeText(ch, p.cx, p.cy); g.fillText(ch, p.cx, p.cy); }
+      g.fillStyle = '#2a1c10'; g.font = `bold 26px ${SERIF}`; g.fillText(title, ox, 44); g.font = `italic 21px ${SERIF}`; g.fillStyle = '#5a4630'; g.fillText(hb === 2 ? 'zwei Wasserstoffbrücken' : 'drei Wasserstoffbrücken', ox, 76);
     };
-    pair('A', 'T', 250, 2, 'Adenin – Thymin'); pair('G', 'C', 710, 3, 'Guanin – Cytosin');
-    g.fillStyle = '#5a4630'; g.font = `italic 17px ${SERIF}`; g.textAlign = 'center'; g.fillText('Blick von oben auf ein Basenpaar · unten: Zucker (weißes Fünfeck) und Phosphat (orange)', 480, 410);
+    pair('A', 'T', 258, 2, 'Adenin – Thymin'); pair('G', 'C', 704, 3, 'Guanin – Cytosin');
+    g.fillStyle = '#5a4630'; g.font = `italic 18px ${SERIF}`; g.textAlign = 'center'; g.fillText('Blick von oben auf ein Basenpaar · unten: Zucker (weißes Fünfeck) und Phosphat (orange)', 480, 408);
     return c;
   });
 }
@@ -50,7 +53,7 @@ export function legendCanvas() {
     const row = (b, y) => { g.save(); g.translate(86, y); const k = 520; drawBase(g, b, -0.045 * 0, 0 + 0, 0.0001, false); g.restore(); };
     // vier Basen
     const names = [['A', 'Adenin', 'Purin (Doppelring)'], ['T', 'Thymin', 'Pyrimidin (Einzelring)'], ['G', 'Guanin', 'Purin (Doppelring)'], ['C', 'Cytosin', 'Pyrimidin (Einzelring)']];
-    names.forEach(([b, n, kind], i) => { const y = 190 + i * 98; drawBase(g, b, 70, y + 48, 780, false); g.fillStyle = '#2a1c10'; g.textAlign = 'left'; g.font = `bold 40px ${SERIF}`; g.fillText(`${b}  ${n}`, 188, y + 6); g.font = `italic 25px ${SERIF}`; g.fillStyle = '#5a4630'; g.fillText(kind, 188, y + 42); });
+    names.forEach(([b, n, kind], i) => { const y = 190 + i * 98; drawBase(g, b, 112, y + 48, 640, false); g.fillStyle = '#2a1c10'; g.textAlign = 'left'; g.font = `bold 40px ${SERIF}`; g.fillText(`${b}  ${n}`, 214, y + 6); g.font = `italic 25px ${SERIF}`; g.fillStyle = '#5a4630'; g.fillText(kind, 214, y + 42); });
     // Paarung
     g.fillStyle = '#2a1c10'; g.font = `bold 34px ${SERIF}`; g.textAlign = 'left'; g.fillText('Es passen nur:', 520, 172);
     g.font = `bold 40px ${SERIF}`; g.fillStyle = css(DNA.COLORS.A); g.fillText('A', 520, 232); g.fillStyle = '#2a1c10'; g.fillText('–', 556, 232); g.fillStyle = css(DNA.COLORS.T); g.fillText('T', 584, 232); g.font = `26px ${SERIF}`; g.fillStyle = '#2a1c10'; g.fillText('2 Wasserstoffbrücken', 640, 232);

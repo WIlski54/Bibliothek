@@ -47,7 +47,7 @@ export function buildScarabDome() {
   const ball = dungBall({ r: 0.052 }); ball.position.set(0.1, 0.1, 0.01); g.add(ball);
   // Glocke (Drehkörper)
   const prof = [[0.17, 0], [0.17, 0.04], [0.168, 0.14], [0.155, 0.22], [0.12, 0.29], [0.07, 0.325], [0.025, 0.34], [0, 0.342]].map(([r, y]) => new THREE.Vector2(r, y));
-  const gl = new THREE.Mesh(new THREE.LatheGeometry(prof, 36), mat('cloche', () => new THREE.MeshStandardMaterial({ color: 0xdcf0f4, transparent: true, opacity: 0.16, roughness: 0.04, metalness: 0, depthWrite: false, side: THREE.DoubleSide }))); gl.position.y = 0.045; gl.renderOrder = 4; g.add(gl);
+  const gl = new THREE.Mesh(new THREE.LatheGeometry(prof, 36), mat('cloche', () => new THREE.MeshStandardMaterial({ color: 0xe4f4f8, transparent: true, opacity: 0.22, roughness: 0.04, metalness: 0, depthWrite: false, side: THREE.DoubleSide }))); gl.position.y = 0.045; gl.renderOrder = 4; g.add(gl);
   const knob = mesh(new THREE.SphereGeometry(0.02, 14, 10), brass); knob.position.y = 0.045 + 0.355; g.add(knob);
   const ring2 = mesh(new THREE.TorusGeometry(0.17, 0.006, 6, 40), brass); ring2.rotation.x = Math.PI / 2; ring2.position.y = 0.05; g.add(ring2);
   g.userData.height = 0.42; return g;

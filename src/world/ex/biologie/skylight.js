@@ -1,7 +1,7 @@
 // Biologie: großes Oberlicht (leuchtende Deckenfläche mit Sprossen) und Lichtfleck auf dem Boden.
 import * as THREE from 'three';
 import { M, mat, box } from '../../kit.js';
-import { skyTex, lightPatchTex, beamTex, ironGreen, trimMat } from './style.js';
+import { skyTex, lightPatchTex, beamTex, sunFloorTex, ironGreen, trimMat } from './style.js';
 
 export function skylight({ w = 5.6, d = 7.6, h = 5.2, cols = 4, rows = 5 } = {}) {
   const g = new THREE.Group(), iron = ironGreen(), trim = trimMat();
@@ -36,4 +36,10 @@ export function beams(list) {
   const g = new THREE.Group(), m = mat('bio-beam', () => new THREE.MeshBasicMaterial({ map: beamTex(), color: 0xfff4d8, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
   for (const { x, z, w = 1.6, h = 5.0, ry = 0, lean = 0.12 } of list) { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.position.set(x, h / 2 + 0.1, z); p.rotation.set(0, ry, lean); p.renderOrder = 3; g.add(p); }
   return g;
+}
+
+// Sonnenfleck: Bodenplatte, die alles außerhalb des Fleckens leicht abdunkelt (Multiplikation, ohne Tonemapping)
+export function sunFloor({ w = 10, d = 12, y = 0.02 } = {}) {
+  const m = mat('bio-sunfloor', () => new THREE.MeshBasicMaterial({ map: sunFloorTex(), blending: THREE.MultiplyBlending, transparent: true, premultipliedAlpha: true, depthWrite: false, toneMapped: false }));
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.02, d - 0.02), m); p.rotation.x = -Math.PI / 2; p.position.y = y; p.renderOrder = 2; return p;
 }

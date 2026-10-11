@@ -8,7 +8,7 @@ import { plasterTex } from '../tex.js';
 import { M, mesh, box, placeWall, hitPlane, hitBox, shelfUnit, fillBooks } from '../kit.js';
 import { personFrame } from '../portraits.js';
 import { floorMat, wainscotMat, trimMat, BOOK_PALETTE, brassSign, friezeTex, glassMat, woodDark, woodLight, woodMid } from '../ex/biologie/style.js';
-import { skylight, lightPatch } from '../ex/biologie/skylight.js';
+import { skylight, sunFloor } from '../ex/biologie/skylight.js';
 import * as P from '../ex/biologie/plants.js';
 import { props } from '../ex/biologie/props.js';
 import { buildHelix, buildDnaStand, dnaPlaque, labelButton } from '../ex/biologie/dna.js';
@@ -57,7 +57,7 @@ export function build(ctx) {
     for (const u of api.units) for (const c of u.children) if (c.userData.tap?.kind === 'goto') c.userData.tap.station = stationFor(u);
 
     // ------------------------------------------------------------ Licht von oben
-    g.add(skylight({ h: R.h })); g.add(lightPatch());
+    g.add(skylight({ h: R.h })); g.add(sunFloor());
     // Fries (Blatt- und Blütengirlande) um den Raum
     { const tex = friezeTex(), fm = M.textured(tex, 0.9); const band = (len) => { const geo = new THREE.PlaneGeometry(len, 0.5), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * len / 4); return new THREE.Mesh(geo, fm); };
       for (const [wl, len] of [['N', 10], ['W', 12], ['E', 12], ['S', 10]]) { const b = band(len); api.place(b, wl, 0, 0.025, 4.45); } }
@@ -85,6 +85,18 @@ export function build(ctx) {
     const low = (wl, a, w, seed) => { const s = shelfUnit({ w, h: 0.92, d: 0.34, shelves: 2, wood: st.shelfWood, back: st.shelfBack }); placeWall(s, room, wl, a, 0.17); g.add(s); s.userData.slots.forEach((sl, i) => { const f = fillBooks(sl, { seed: seed * 11 + i, density: 0.94, palette: BOOK_PALETTE, tall: 0.95 }); if (f) s.add(f); }); return s; };
     low('W', 0.35 - 0.62, 1.2, 1); low('W', 0.35 + 0.62, 1.2, 2); low('N', -0.74, 1.45, 3); low('N', 0.74, 1.45, 4); low('E', -2.2, 1.0, 5); low('E', -1.2, 1.0, 6);
 
+    // zwei kleine Terrarien (Glaskästen mit Moos und Farnen) auf den niedrigen Regalen unter dem Stammbaum
+    for (const [a, sd] of [[-0.74, 1], [0.74, 2]]) {
+      const t = new THREE.Group(), br = M.brass(), w0 = 0.62, d0 = 0.26, h0 = 0.3;
+      const tray = box(w0, 0.03, d0, woodDark(), { tile: 1 }); tray.position.y = 0.015; t.add(tray); const soil = mesh(new THREE.BoxGeometry(w0 - 0.04, 0.05, d0 - 0.04), M.plain(0x3d5a2e, 1)); soil.position.y = 0.055; t.add(soil);
+      for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const p = box(0.016, h0, 0.016, br); p.position.set(x * (w0 / 2 - 0.01), h0 / 2 + 0.03, z * (d0 / 2 - 0.01)); t.add(p); }
+      for (const [x, y, ww, hh, dd] of [[0, h0 + 0.03, w0, 0.016, d0], [0, 0.03, w0, 0.01, d0]]) { const b = box(ww, hh, dd, br); b.position.set(x, y, 0); t.add(b); }
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(w0 - 0.02, h0, d0 - 0.02), glassMat()); glass.position.y = h0 / 2 + 0.03; glass.renderOrder = 4; t.add(glass);
+      const f1 = P.fernPlant({ h: 0.26, seed: sd + 20, potR: 0.001, fronds: 9 }); f1.children.forEach((c, i) => { if (i < 3) c.visible = false; }); f1.position.set(-0.12, 0.04, 0); t.add(f1);
+      const f2 = P.succulent({ r: 0.06, seed: sd + 5, kind: 'white' }); f2.children.forEach((c, i) => { if (i < 3) c.visible = false; }); f2.position.set(0.14, 0.05, 0.02); t.add(f2);
+      for (const [x, z, r] of [[-0.24, 0.05, 0.03], [0.04, -0.05, 0.035], [0.25, -0.04, 0.025]]) { const m = mesh(new THREE.SphereGeometry(r, 10, 7), M.plain(0x5a9a3e, 1)); m.scale.y = 0.55; m.position.set(x, 0.082, z); t.add(m); }
+      api.place(t, 'N', a, 0.17, 0.92); }
+
     // ------------------------------------------------------------ Mitte: Doppelhelix auf dem Sockel
     const DNA_POS = [0, -0.95];
     const stand = buildDnaStand({ h: 0.7 }); stand.position.set(DNA_POS[0], 0, DNA_POS[1]); g.add(stand);
@@ -97,8 +109,8 @@ export function build(ctx) {
     // Pult mit Legende und Staffelei mit Rosalind Franklin
     const lect = buildLectern(); lect.position.set(-1.3, 0, 0.25); lect.rotation.y = 0.75; g.add(lect);
     { const hb = hitBox(0.9, 1.0, 0.6, card(T.dnaLegend, { station: 'biologie-dna', label: 'Legende' })); hb.position.set(0, 0.95, 0.0); hb.rotation.x = 0.4; lect.add(hb); }
-    const easel = buildEasel(); easel.position.set(1.65, 0, -1.55); easel.rotation.y = -0.45; g.add(easel);
-    { const fr = personFrame('franklin'); fr.position.set(1.65, 1.72, -1.55); fr.rotation.y = -0.45; fr.translateZ(0.02); g.add(fr); }
+    const easel = buildEasel(); easel.position.set(1.7, 0, -1.6); easel.rotation.y = -0.45; easel.scale.setScalar(0.85); g.add(easel);
+    { const fr = personFrame('franklin'); fr.position.set(1.7, 1.56, -1.6); fr.rotation.y = -0.45; fr.translateZ(0.02); g.add(fr); }
 
     // ------------------------------------------------------------ Westwand: T. rex, Ichthyosaurus, Fossilien, Anning und Darwin
     const trexTap = card(T.trex, { station: 'biologie-fossilien', label: 'T. rex' });
@@ -166,11 +178,11 @@ export function build(ctx) {
     { const con = new THREE.Group(), wood = woodMid(), brass = M.brass(), cw = 1.9;
       const body = box(cw, 0.74, 0.5, wood, { tile: 1 }); body.position.y = 0.37; con.add(body); const top = box(cw + 0.06, 0.05, 0.56, wood, { tile: 1 }); top.position.y = 0.765; con.add(top);
       for (let i = -1; i <= 1; i++) { const d = box(cw / 3 - 0.06, 0.62, 0.02, woodMid(), { tile: 1 }); d.position.set(i * cw / 3, 0.37, 0.255); con.add(d); const k = mesh(new THREE.SphereGeometry(0.02, 8, 6), brass); k.position.set(i * cw / 3, 0.4, 0.28); con.add(k); }
-      const dome = buildScarabDome(); dome.position.set(-0.52, 0.79, 0.0); dome.scale.setScalar(1.4); con.add(dome);
-      const nest = buildNestOnBranch(); nest.position.set(0.5, 0.79, 0.02); nest.scale.setScalar(1.8); con.add(nest);
-      const hb1 = hitBox(0.6, 0.7, 0.6, card(T.skarabaeus, { station: 'biologie-kabinett', label: 'Skarabäus' })); hb1.position.set(-0.52, 0.79 + 0.33, 0); con.add(hb1);
-      const hb2 = hitBox(0.82, 0.4, 0.5, card(T.nest, { station: 'biologie-kabinett', label: 'Vogelnest' })); hb2.position.set(0.5, 0.79 + 0.18, 0); con.add(hb2);
-      { const f = P.fernPlant({ h: 0.4, seed: 8, potR: 0.08 }); f.position.set(0.88, 0.79, 0.1); con.add(f); const bk = props.books({ seed: 4 }); bk.position.set(-0.9, 0.79, 0.05); bk.rotation.y = 0.2; con.add(bk); }
+      const dome = buildScarabDome(); dome.position.set(-0.55, 0.79, 0.0); dome.scale.setScalar(1.75); con.add(dome);
+      const nest = buildNestOnBranch(); nest.position.set(0.52, 0.79, 0.02); nest.scale.setScalar(2.0); con.add(nest);
+      const hb1 = hitBox(0.7, 0.85, 0.7, card(T.skarabaeus, { station: 'biologie-kabinett', label: 'Skarabäus' })); hb1.position.set(-0.55, 0.79 + 0.4, 0); con.add(hb1);
+      const hb2 = hitBox(0.9, 0.45, 0.55, card(T.nest, { station: 'biologie-kabinett', label: 'Vogelnest' })); hb2.position.set(0.52, 0.79 + 0.2, 0); con.add(hb2);
+      { const f = P.fernPlant({ h: 0.4, seed: 8, potR: 0.08 }); f.position.set(0.9, 0.79, 0.14); f.scale.setScalar(0.8); con.add(f); const bk = props.books({ seed: 4 }); bk.position.set(-0.93, 0.79, 0.12); bk.rotation.y = 0.2; con.add(bk); }
       api.place(con, 'S', 3.3, 0.0, 0);
       // Wandbrett mit Samengläsern über dem Kabinett
       const sh = new THREE.Group(); { const wd = woodMid(), br = M.brass(); const bd = box(1.7, 0.04, 0.24, wd, { tile: 1 }); bd.position.set(0, 0, 0.12); sh.add(bd); for (const x of [-0.7, 0.7]) { const b = box(0.03, 0.2, 0.2, br); b.position.set(x, -0.1, 0.1); sh.add(b); }
@@ -194,14 +206,14 @@ export function build(ctx) {
     api.stations.length = 0;
     api.stations.push(
       eingang,
-      S0('regal', 'Regale und Dino-Buch', [-1.5, 1.6, -2.0], [-5, 1.55, -3.5], { catSpot: [-3.2, 0, -1.6] }),
+      S0('regal', 'Regale und Dino-Buch', [-1.5, 1.6, -2.0], [-5, 1.9, -3.5], { catSpot: [-3.2, 0, -1.6] }),
       S0('dna', 'Doppelhelix', [1.4, 1.6, 2.0], [0, 1.75, -0.9], { catSpot: [-1.0, 0, 2.4] }),
       S0('fossilien', 'Fossilien und T. rex', [-1.3, 1.6, 1.3], [-4.6, 1.45, -0.2], { catSpot: [-2.0, 0, -1.8] }),
       S0('mikroskop', 'Mikroskop', [1.9, 1.6, 2.8], [4.5, 1.25, 1.0], { catSpot: [2.9, 0, 3.6] }),
       S0('herbar', 'Herbar und Lehrtafeln', [1.7, 1.6, -3.6], [4.9, 2.3, -1.4], { catSpot: [3.0, 0, -3.2] }),
       S0('stammbaum', 'Stammbaum des Lebens', [0.2, 1.6, -2.7], [0.2, 2.2, -6], { catSpot: [-1.8, 0, -3.8] }),
-      S0('schmetterlinge', 'Schmetterlinge', [2.9, 1.6, 2.6], [3.3, 1.8, 6], { catSpot: [1.2, 0, 4.6] }),
-      S0('kabinett', 'Skarabäus und Vogelnest', [-2.9, 1.6, 2.6], [-3.3, 1.7, 6], { catSpot: [-1.2, 0, 4.6] }),
+      S0('schmetterlinge', 'Schmetterlinge', [2.9, 1.6, 2.9], [3.3, 1.85, 6], { catSpot: [1.2, 0, 4.6] }),
+      S0('kabinett', 'Skarabäus und Vogelnest', [-3.0, 1.6, 3.0], [-3.3, 1.75, 6], { catSpot: [-1.2, 0, 4.6] }),
       tuer);
 
     // ------------------------------------------------------------ Licht (drei echte Lichter: spart Rechenzeit)
@@ -211,6 +223,7 @@ export function build(ctx) {
       { pos: [-3.3, 3.0, -0.3], color: 0xfff0d6, intensity: 7, distance: 0, decay: 2 },
       { pos: [3.3, 3.0, 0.4], color: 0xfff0d6, intensity: 7, distance: 0, decay: 2 });
 
-    return { update(dt, t) { helix.rotation.y += dt * 0.14; } };
+    const calmQ = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+    return { update(dt) { if (!(calmQ?.matches || document.body.classList.contains('calm'))) helix.rotation.y += dt * 0.14; } };
   });
 }

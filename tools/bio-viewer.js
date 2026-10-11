@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildHelix, buildDnaStand } from './../src/world/ex/biologie/dna.js';
+import { pairDiagram, legendCanvas } from './../src/world/ex/biologie/dnaart.js';
 import * as P from './../src/world/ex/biologie/plants.js';
 import { buildTrexCase, buildIchthyo } from './../src/world/ex/biologie/trexcase.js';
 import * as F from './../src/world/ex/biologie/fossils.js';
@@ -36,6 +37,8 @@ const REG = {
   herbar: () => { const g = new THREE.Group(); HERBAR_ORDER.forEach((k, i) => { const f = herbarSheet(k); f.position.set((i % 3) * 0.7 - 0.7, 1.7 - Math.floor(i / 3) * 0.95, 0); g.add(f); }); return g; },
   tree: () => { const g = new THREE.Group(); const t = new THREE.CanvasTexture(treeCanvas()); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: t })); m.position.y = 1.5; g.add(m); return g; },
   charts: () => { const g = new THREE.Group(); Object.keys(CHARTS).forEach((k, i) => { const f = chartFrame(k); f.position.set((i % 2) * 1.8 - 0.9, 2.4 - Math.floor(i / 2) * 1.3, 0); g.add(f); }); return g; },
+  pair: () => { const g = new THREE.Group(); const t = new THREE.CanvasTexture(pairDiagram()); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4 * 430 / 960), new THREE.MeshBasicMaterial({ map: t })); m.position.y = 1.5; g.add(m); return g; },
+  legend: () => { const g = new THREE.Group(); const t = new THREE.CanvasTexture(legendCanvas()); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4 * 540 / 768), new THREE.MeshBasicMaterial({ map: t })); m.position.y = 1.5; g.add(m); return g; },
   plants: () => { const g = new THREE.Group(); const add = (o, x, z) => { o.position.set(x, 0, z); g.add(o); }; add(P.palmPlant({ h: 2.0 }), -1.6, 0); add(P.monsteraPlant({ h: 1.2 }), -0.6, 0); add(P.fernPlant({ h: 0.9 }), 0.4, 0); add(P.bushPlant({ h: 1.2 }), 1.4, 0); add(P.succulent({ r: 0.12 }), 2.1, 0); add(P.cactus({}), 2.5, 0); add(P.grassTuft({}), 3.0, 0); const hp = P.hangingPlant({}); hp.position.set(0, 2.4, 1.2); g.add(hp); return g; },
 };
 window.__v = {

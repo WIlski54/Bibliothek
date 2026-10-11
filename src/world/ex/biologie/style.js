@@ -140,3 +140,16 @@ export const glassSheen = () => mat('bio-glass-sheen', () => {
   for (const [x, w, a] of [[40, 34, 0.16], [110, 12, 0.14], [150, 6, 0.1]]) { const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, `rgba(255,255,255,${a})`); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.save(); g.translate(128, 128); g.rotate(0.55); g.translate(-128, -128); g.fillStyle = gr; g.fillRect(x - 100, -100, w + 200, 460); g.restore(); }
   return new THREE.MeshBasicMaterial({ map: texOf(c), transparent: true, depthWrite: false });
 });
+
+// Sonnenfleck auf dem Boden als Abdunklung (Multiplikation): außerhalb etwas dunkler und kühler, im Lichtfleck unverändert, mit Schatten der Sprossen
+export function sunFloorTex({ w = 10, d = 12, sw = 5.6, sd = 7.6, dx = 1.0, dz = 1.3, cols = 4, rows = 5 } = {}) {
+  return memo(`bio-sunfloor${dx}|${dz}`, () => {
+    const W = 320, H = 384, [c, g] = canvas(W, H), px = (x) => ((x + w / 2) / w) * W, py = (z) => ((z + d / 2) / d) * H;
+    g.fillStyle = '#c9cdd4'; g.fillRect(0, 0, W, H);
+    const x0 = px(dx - sw / 2), x1 = px(dx + sw / 2), y0 = py(dz - sd / 2), y1 = py(dz + sd / 2);
+    g.fillStyle = '#ffffff'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    g.fillStyle = '#d6d8dc'; const bar = 2.4; for (let i = 1; i < cols; i++) g.fillRect(x0 + ((x1 - x0) * i) / cols - bar / 2, y0, bar, y1 - y0); for (let j = 1; j < rows; j++) g.fillRect(x0, y0 + ((y1 - y0) * j) / rows - bar / 2, x1 - x0, bar);
+    g.filter = 'blur(5px)'; g.drawImage(c, 0, 0); g.filter = 'none';
+    const t = texOf(c, { srgb: false }); return t;
+  });
+}
