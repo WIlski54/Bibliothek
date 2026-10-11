@@ -13,10 +13,12 @@ function skyTex() {
 }
 const beamMat = () => M.plain; // Platzhalter, Strahlenmaterial unten
 
+const glassMats = new Map();
+const glassMat = (glow) => { if (!glassMats.has(glow)) glassMats.set(glow, new THREE.MeshStandardMaterial({ map: skyTex(), color: 0x222222, emissive: 0xffffff, emissiveMap: skyTex(), emissiveIntensity: glow, roughness: 0.4 })); return glassMats.get(glow); };
 export function archWindow({ w = 1.0, h = 2.3, frame = M.wood(0x4a2a18, { planks: 1 }), glow = 1.1 } = {}) {
   const g = new THREE.Group(); const r = w / 2, yt = h - r;
   const sh = new THREE.Shape(); sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, yt); sh.absarc(0, yt, r, 0, Math.PI, false); sh.lineTo(-r, 0);
-  const glass = new THREE.Mesh(new THREE.ShapeGeometry(sh, 20), new THREE.MeshStandardMaterial({ map: skyTex(), color: 0x222222, emissive: 0xffffff, emissiveMap: skyTex(), emissiveIntensity: glow, roughness: 0.4 }));
+  const glass = new THREE.Mesh(new THREE.ShapeGeometry(sh, 20), glassMat(glow));
   // UV der ShapeGeometry sind Koordinaten in Metern: auf 0..1 normieren
   const uv = glass.geometry.attributes.uv, p = glass.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (p.getX(i) + r) / w, p.getY(i) / h);
   glass.position.z = 0.02; g.add(glass);

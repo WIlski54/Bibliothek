@@ -41,6 +41,16 @@ export class World {
     for (let i = 0; i < 4; i++) { const l = new THREE.PointLight(0xffe2b0, 0, 0, 2); this.scene.add(l); this.pool.push({ l, room: null, cur: 0, tgt: null }); }
     this.setWant('geschichte', true);
     this.roomsOrder = ids;
+    this.detail = {}; this.culled = {};
+    for (const id of ids) { // nicht zusammengefasste Einzelteile je Raum (für das Ausblenden außerhalb des Türausschnitts)
+      const list = []; this.rooms[id].group.updateMatrixWorld(true);
+      this.rooms[id].group.traverse((o) => {
+        if (!(o.isMesh || o.isPoints || o.isLine) || o.name === 'merged' || this.blockerMeshes.has(o) || !o.geometry) return;
+        if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere; if (!bs) return;
+        const sc = o.matrixWorld.getMaxScaleOnAxis(); list.push({ o, c: bs.center.clone().applyMatrix4(o.matrixWorld), r: bs.radius * sc + 0.35, on: true });
+      });
+      this.detail[id] = list;
+    }
     this.cat = createCat({ rig: this.rig, world: this, ui: this.ctx.ui, books: this.ctx.books }); this.scene.add(this.cat.group); this.pickRoots.push(this.cat.group);
     // Rücksprung-Stationen im Foyer neben jeder Tür (für "Zurück ins Foyer")
     for (const d of DEPTS) {
@@ -76,6 +86,32 @@ export class World {
     const vis = { foyer: here === 'foyer', geschichte: false, biologie: false, chemie: false }; vis[here] = true;
     if (here === 'foyer') for (const d of DEPTS) vis[d] = seen(d); else vis.foyer = seen(here);
     for (const id of this.roomsOrder) { const g = this.rooms[id].group; if (g.visible !== vis[id]) g.visible = vis[id]; }
+    // Räume, die man nur durch eine Tür sieht: Einzelteile außerhalb des Türausschnitts nicht zeichnen (Tür = Fenster ins Nachbarzimmer)
+    for (const id of this.roomsOrder) {
+      if (!vis[id]) continue;
+      const door = id === here ? null : id === 'foyer' ? here : id; // Tür, durch die man in diesen Raum schaut
+      if (!door) { if (this.culled[id]) { for (const e of this.detail[id]) if (!e.on) { e.o.visible = true; e.on = true; } this.culled[id] = false; } continue; }
+      const planes = this.portalPlanes(p, door, id === 'foyer');
+      for (const e of this.detail[id]) {
+        let inside = true; for (const pl of planes) if (pl.normal.dot(e.c) + pl.constant < -e.r) { inside = false; break; }
+        if (inside !== e.on) { e.on = inside; e.o.visible = inside; }
+      }
+      this.culled[id] = true;
+    }
+  }
+  // Ebenen des Sichtkegels von der Kamera durch den Türausschnitt (nach innen zeigend) + Türebene; towardFoyer: Blick vom Fachraum ins Foyer
+  portalPlanes(p, dept, towardFoyer) {
+    const fd = FOYER_DOORS[dept], W = new THREE.Vector3(fd.world[0], 0, fd.world[2]);
+    const dir = new THREE.Vector3(fd.outside[0] - fd.inside[0], 0, fd.outside[2] - fd.inside[2]).normalize(); // vom Foyer in den Fachraum
+    const side = new THREE.Vector3(-dir.z, 0, dir.x), hw = 1.2 + 0.3, top = 3.8, bot = -0.2;
+    const C = [[-1, bot], [1, bot], [1, top], [-1, top]].map(([sx, y]) => W.clone().addScaledVector(side, sx * hw).setY(y));
+    const mid = W.clone().setY(1.6), planes = [];
+    for (let i = 0; i < 4; i++) {
+      const a = C[i].clone().sub(p), b = C[(i + 1) % 4].clone().sub(p), n = a.cross(b).normalize();
+      if (n.dot(mid.clone().sub(p)) < 0) n.negate(); planes.push(new THREE.Plane(n, -n.dot(p)));
+    }
+    const nrm = dir.clone().multiplyScalar(towardFoyer ? -1 : 1); planes.push(new THREE.Plane(nrm, -nrm.dot(W) + 0.05));
+    return planes;
   }
   update(dt) {
     this.t += dt; this.updateVisibility(); this.cat?.update(dt, this.t);
