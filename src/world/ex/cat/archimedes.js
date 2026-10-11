@@ -148,6 +148,8 @@ export class Archimedes {
     if (!/Heureka/.test(text)) this.showPop(rnd() < 0.5 ? 'excl' : 'quest', 1.5);
     this.t.sleep = rr(70, 100);
   }
+  // Kopfhöhe der Katze in NDC {x, y, visible}, z. B. um eine Sprechblase daran zu verankern
+  screenAnchor() { const v = new THREE.Vector3(this.pos.x, this.pos.y + 0.5, this.pos.z).project(this.cam); return { x: v.x, y: v.y, visible: v.z > -1 && v.z < 1 && Math.abs(v.x) < 1 && Math.abs(v.y) < 1 }; }
   // Tippfläche für Tests und die Oberfläche: Mittelpunkt des Körpers (Welt)
   bodyCenter() { return new THREE.Vector3(this.pos.x, this.pos.y + 0.2, this.pos.z); }
 

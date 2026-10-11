@@ -11,7 +11,7 @@ export const TIPS = {
 export const LINES = {
   foyer: [
     'Miau! Das ist mein Reich. Ich bin hier der Hausherr, du bist mein Gast.',
-    'Heureka! So soll der Gelehrte Archimedes gerufen haben, wenn ihm etwas Kluges einfiel. Mir fällt dauernd etwas Kluges ein.',
+    'Heureka! So soll der Gelehrte Archimedes gerufen haben, als ihm im Badewasser ein kluger Gedanke kam. Mir fällt dauernd etwas Kluges ein.',
     'Drei Türen, drei Fächer: Geschichte, Biologie und Chemie. Such dir eine aus, ich laufe vor!',
     'Mein Lieblingsplatz ist der Lesetisch in der Mitte. Dort schlafe ich besonders klug.',
     'Siehst du das Bild von mir neben der Biologie-Tür? Ich finde, es trifft mich gut.',
@@ -30,7 +30,7 @@ export const LINES = {
     'Katzen schlafen bis zu 16 Stunden am Tag. Das ist nicht faul, das ist Forschung.',
     'Meine Schnurrhaare sind Fühler: Damit merke ich, ob ich durch eine Lücke passe.',
     'Im Halbdunkel sehe ich viel besser als du. Eine spiegelnde Schicht im Auge verstärkt das Restlicht.',
-    'Pflanzen machen aus Licht, Wasser und Luft ihr Essen. Das heißt Fotosynthese. Ich nenne es Neid.',
+    'Pflanzen machen aus Licht, Wasser und dem Kohlenstoffdioxid der Luft ihren Zucker. Das heißt Fotosynthese. Ich nenne es Neid.',
     'Alle Lebewesen bestehen aus Zellen: Pflanzen, Pilze, Bakterien, du und ich.',
   ],
   chemie: [
