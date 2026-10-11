@@ -110,6 +110,7 @@ export function slimFrame(root) {
   const by = new Map(); for (const c of [...root.children]) { if (!c.isMesh || Array.isArray(c.material) || c.userData.picture) continue; if (!by.has(c.material)) by.set(c.material, []); by.get(c.material).push(c); }
   for (const [mat, list] of by) {
     if (list.length < 2) continue;
+    const sig = (m) => Object.keys(m.geometry.attributes).sort().join(',') + (m.geometry.index ? '|i' : '|n'); if (list.some((m) => sig(m) !== sig(list[0]))) continue;   // nur gleichartige Geometrien verschmelzen
     const geos = list.map((m) => { const g = m.geometry.clone(); m.updateMatrix(); g.applyMatrix4(m.matrix); return g; }); const merged = mergeGeometries(geos, false); if (!merged) continue;
     list.forEach((m) => root.remove(m)); root.add(new THREE.Mesh(merged, mat));
   }
