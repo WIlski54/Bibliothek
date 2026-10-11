@@ -96,7 +96,7 @@ export class World {
     for (const h of hits) {
       if (this.blockerMeshes.has(h.object)) return null;
       let o = h.object; while (o && !o.userData.tap) o = o.parent;
-      if (o) return { tap: o.userData.tap, obj: o, point: h.point };
+      if (o) return { tap: o.userData.tap, obj: o, point: h.point, uv: h.uv, hit: h };
     }
     return null;
   }

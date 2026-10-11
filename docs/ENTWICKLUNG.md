@@ -56,6 +56,7 @@ Jedes Objekt mit `userData.tap` ist anklickbar (das nächstgelegene Elternobjekt
 { kind: 'goto', station }            { kind: 'nav', to: 'foyer'|'geschichte'|... }
 { kind: 'say', text, who? }          Sprechblase
 ```
+- `resolve(hit)`: Statt fester Karte kann `tap = { resolve: (hit) => <tap-Objekt oder null>, label? }` gesetzt werden. `hit` = `{ point (Welt), uv, obj, hit }`. Damit lässt sich z. B. auf einer Tafel (Periodensystem) das angetippte Feld bestimmen.
 - `station`: Ist angegeben und die Kamera steht nicht dort, fährt sie erst hin und öffnet danach die Karte.
 - Für Tippflächen ohne sichtbares Objekt: `hitPlane(w,h,tap)`, `hitBox(w,h,d,tap)` aus `kit.js` (unsichtbar, aber anklickbar). Ein Regal als Ganzes wird über eine unsichtbare Fläche an der Rückwand angetippt (siehe `dept.js`), damit die Regalgeometrie zusammengefasst werden kann.
 - Karten sind für Kinder: kurze Absätze (max. 2 bis 3 Sätze), ein „Wusstest du?“-Fakt, Unsicheres ehrlich kennzeichnen (`src`).

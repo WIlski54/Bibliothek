@@ -54,7 +54,8 @@ function step(dir) {
 rig.onArrive = (id, st) => { ui.setWhere(st.room, st.name); window.__arrived = id; world.cat?.arrive(id); };
 
 // ---------------------------------------------------------------- Antippen
-function handleTap(tap) {
+function handleTap(tap, hit) {
+  if (tap && tap.resolve) tap = tap.resolve(hit); // dynamische Karte: aus der Trefferstelle (hit.uv, hit.point) ein tap-Objekt ableiten
   if (!tap) return;
   const act = () => {
     switch (tap.kind) {
@@ -94,7 +95,7 @@ canvas.addEventListener('pointermove', (e) => {
 });
 const up = (e) => {
   const had = ptr.delete(e.pointerId); if (!had) return; canvas.classList.remove('grabbing'); if (ptr.size < 2) pinch = null;
-  if (down && ptr.size === 0 && down.moved < 10 && performance.now() - down.t < 600 && !ui.blocking && !rig.moving) { const [x, y] = ndc(e); const h = world.pick(x, y); if (h) handleTap(h.tap); }
+  if (down && ptr.size === 0 && down.moved < 10 && performance.now() - down.t < 600 && !ui.blocking && !rig.moving) { const [x, y] = ndc(e); const h = world.pick(x, y); if (h) handleTap(h.tap, h); }
   if (ptr.size === 0) down = null;
 };
 canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
