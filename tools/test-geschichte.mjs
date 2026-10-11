@@ -61,6 +61,21 @@ await tapObject('Gutenberg-Druckerpresse', 'Die Druckerpresse', { from: 'geschic
 await tapObject('Kartentisch', 'Der Kartentisch', { from: 'geschichte-tisch', label: 'Kartentisch' });
 await tapObject('Globus', 'Der Globus', { label: 'Globus' });
 
+// 3b) Buch im Regal: Antippen zieht das Ägypten-Buch auf den Lesetisch (Buch-Auftritt), Zurück stellt es wieder hin
+{
+  await go('geschichte-regal-W');
+  const bp = await page.evaluate(() => { const L = window.__lib; let p = null; L.world.rooms.geschichte.group.traverse((o) => { if (o.userData.tap?.kind === 'book' && o.userData.tap.book.id === 'aegypten' && !p) { const v = new L.THREE.Vector3(); o.getWorldPosition(v); p = [v.x, v.y + 0.2, v.z]; } }); return p; });
+  const [x, y, z] = bp ? await proj(...bp) : [0, 0, 2];
+  if (z < 1 && x > 0 && x < 1024 && y > 0 && y < 640) {
+    await page.mouse.click(x, y); await step(2);
+    check('Ägypten-Buch: Buch-Auftritt startet', await page.evaluate(() => window.__lib.showcase.active));
+    await step(25, 0.1); await page.waitForTimeout(300); await page.screenshot({ path: out('gesch-buch-auftritt.png') });
+    check('Ägypten-Buch: Leiste sichtbar', await page.evaluate(() => !document.getElementById('bookbar').hidden));
+    await page.evaluate(() => document.getElementById('bb-back').click()); await step(40, 0.1);
+    check('Ägypten-Buch: zurück an der Station', await page.evaluate(() => !window.__lib.showcase.active && window.__lib.rig.cur === 'geschichte-regal-W'));
+  } else check('Ägypten-Buch im Bild', false, `(${x | 0},${y | 0})`);
+}
+
 // 4) Fahrt auf Tipp: Vitrine vom Eingang aus antippen -> Kamera fährt zur Station, danach Karte
 {
   await go('geschichte-eingang');

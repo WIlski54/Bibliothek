@@ -232,7 +232,7 @@ function extras(api, ctx) {
   {
     const press = printingPress(); press.scale.setScalar(1.05); place(press, 'E', 2.4, 0.3, 0);
     const hb = hitBox(1.5, 1.75, 1.1, { ...FURNITURE.presse, label: 'Gutenberg-Druckerpresse', station: 'geschichte-presse' }); hb.position.set(0, 0.88, 0.05); press.add(hb);
-    place(personFrame('gutenberg'), 'E', 2.0, 0.012, 2.85);
+    const gb = personFrame('gutenberg'); place(gb, 'E', 2.0, 0.012, 2.85); gb.userData.tap.station = 'geschichte-presse';
     const bt = new THREE.CanvasTexture(bibelSeiteCanvas()); bt.colorSpace = THREE.SRGBColorSpace; bt.anisotropy = 8;
     const bf = framedPicture(bt, { w: 0.5, h: 0.66, name: 'Gutenberg-Bibel', sub: 'um 1455' }); place(bf, 'E', 3.0, 0.012, 2.85);
     bf.userData.tap = { ...FURNITURE.presse, label: 'Seite aus der Gutenberg-Bibel', station: 'geschichte-presse' };
@@ -242,7 +242,7 @@ function extras(api, ctx) {
 
   // ---------------------------------------------------------------- Porträts an den Nischen
   for (const [wl, a, id] of [['N', -1.0, 'carter'], ['N', 1.0, 'kleopatra'], ['S', -1.0, 'herodot'], ['S', 1.0, 'champollion']]) {
-    const f = personFrame(id); place(f, wl, a, 0.014, 3.1); f.userData.tap = { ...f.userData.tap, station: wl === 'N' ? 'geschichte-schaetze' : 'geschichte-schrift' };
+    const f = personFrame(id); place(f, wl, a, 0.014, 3.1); f.userData.tap.station = wl === 'N' ? 'geschichte-schaetze' : 'geschichte-schrift';
     place(pictureLight(0.9), wl, a, 0.014, 3.82); place(glow(1.3, 0.6, 0xffd890, 0.22), wl, a, 0.04, 3.7);
   }
 
@@ -275,7 +275,7 @@ function extras(api, ctx) {
   stations.length = 0;
   const st = (id, name, pos, look, extra = {}) => stations.push({ id: `geschichte-${id}`, room: 'geschichte', name: `Geschichte: ${name}`, pos, look, ...extra });
   st('eingang', 'Eingang', [4.4, 1.6, 0.0], [-6, 2.15, 0], { catSpot: [2.0, 0, 2.7] });
-  st('regal-W', 'Popup-Bücher', [-3.7, 1.6, 3.35], [-5.8, 1.35, 3.6], { catSpot: [-3.0, 0, 2.4] });
+  st('regal-W', 'Popup-Bücher', [-3.7, 1.6, 3.35], [-5.8, 1.35, 3.6], { catSpot: [-3.0, 0, 2.4], bookSpot: [-4.55, 3.4] });
   st('regal-N', 'Regale Altertum', [3.6, 1.6, -1.7], [3.6, 2.2, -5], { catSpot: [1.8, 0, -1.2] });
   st('regal-S', 'Regale Neuzeit', [-3.6, 1.6, 1.7], [-3.6, 2.2, 5], { catSpot: [-2.1, 0, 2.6] });
   st('schaetze', 'Schätze der Pharaonen', [0.0, 1.6, -1.6], [0, 2.15, -5], { catSpot: [2.6, 0, -3.5] });
