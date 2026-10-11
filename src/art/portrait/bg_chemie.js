@@ -53,20 +53,22 @@ export const BG_CHEMIE = {
   periodensystem(P, G, c) {
     const paper = C(c, 0, '#efe6d0'), gold = '#f2c53a';
     base(P, paper, '#e6d9b8');
-    const x0 = 30, y0 = 42, cw = 30, ch = 34;
-    P.cut([[x0 - 4, y0 - 6], [x0 + cw * 18 + 4, y0 - 6], [x0 + cw * 18 + 4, y0 + ch * 7 + 4], [x0 - 4, y0 + ch * 7 + 4]], '#fffaf0', { lift: 1, smooth: false, step: 40, wob: 0.6 });
-    const { ctx } = P; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 13px Georgia, serif';
+    const x0 = 30, y0 = 44, cw = 30, ch = 52, f0 = y0 + 7 * ch + 20;
+    P.cut([[x0 - 6, y0 - 8], [x0 + cw * 18 + 6, y0 - 8], [x0 + cw * 18 + 6, f0 + 2 * ch + 8], [x0 - 6, f0 + 2 * ch + 8]], '#fffaf0', { lift: 1, smooth: false, step: 40, wob: 0.6 });
+    const { ctx } = P; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const gaps = [];
+    const cell = (sym, x, y, col) => { ctx.fillStyle = ptColor(sym, col); ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2); ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(x + 1, y + 1, cw - 2, 3); ctx.fillStyle = '#2a2a30'; ctx.font = (sym.length > 1 ? 'bold 13px' : 'bold 15px') + ' Georgia, serif'; ctx.fillText(sym, x + cw / 2, y + ch / 2 + 1); };
     PT.forEach((row, r) => row.forEach((sym, col) => {
       if (!sym) return; const x = x0 + col * cw, y = y0 + r * ch;
       if (r === 3 && (col === 2 || col === 12 || col === 13)) { gaps.push([x, y]); return; }
-      ctx.fillStyle = ptColor(sym, col); ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2); ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(x + 1, y + 1, cw - 2, 3);
-      ctx.fillStyle = '#2a2a30'; ctx.font = (sym.length > 1 ? 'bold 12px' : 'bold 14px') + ' Georgia, serif'; ctx.fillText(sym, x + cw / 2, y + ch / 2 + 1);
+      cell(sym, x, y, col);
     }));
     ctx.restore();
-    for (const [x, y] of gaps) { P.cut(rect(x + 1, y + 1, cw - 2, ch - 2), gold, { lift: 0.5, smooth: false, step: 40, wob: 0.3, line: false }); text(P, '?', x + cw / 2, y + ch / 2 + 1, { font: 'bold 18px Georgia, serif', col: '#8a3a1a', align: 'center' }); }
-    // Lanthanoiden-Zeile angedeutet
-    ctx.save(); ctx.fillStyle = '#c8b8a0'; ctx.fillRect(x0 + 3 * cw + 1, y0 + 7 * ch + 10, cw * 14 - 2, 0); ctx.restore();
+    // Lanthanoide und Actinoide (Ce bis Lu, Th bis Lr) darunter
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ['Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu', 'Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr'].forEach((line, r) => line.split(' ').forEach((sym, k) => { const x = x0 + (3 + k) * cw, y = f0 + r * ch; ctx.fillStyle = r ? '#c98aa0' : '#d9a86a'; ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2); ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(x + 1, y + 1, cw - 2, 3); ctx.fillStyle = '#2a2a30'; ctx.font = 'bold 13px Georgia, serif'; ctx.fillText(sym, x + cw / 2, y + ch / 2 + 1); }));
+    ctx.restore();
+    for (const [x, y] of gaps) { P.cut(rect(x + 1, y + 1, cw - 2, ch - 2), gold, { lift: 0.5, smooth: false, step: 40, wob: 0.3, line: false }); text(P, '?', x + cw / 2, y + ch / 2 + 1, { font: 'bold 20px Georgia, serif', col: '#8a3a1a', align: 'center' }); }
   },
   // Curie: Strahlen und Radium-Leuchten
   strahlen(P, G, c) {
@@ -133,9 +135,9 @@ export const BG_CHEMIE = {
       for (let j = 0; j < 6; j++) for (let i = 0; i < 7; i++) {
         const p = node(i, j, k); if (hidden(p) || p[1] > 640) continue;
         const right = node(i + 1, j, k), down = node(i, j + 1, k), depth = node(i, j, k + 1);
-        P.line([p, right], alpha('#fffaf0', k ? 0.55 : 0.9), 4.5 - k * 1.5, { smooth: false, shadow: !k });
-        P.line([p, down], alpha('#fffaf0', k ? 0.55 : 0.9), 4.5 - k * 1.5, { smooth: false, shadow: !k });
-        if (k === 0 && i % 2 === 0 && j % 2 === 0) P.line([p, depth], alpha('#fffaf0', 0.5), 3, { smooth: false });
+        if (i < 6 && !hidden(right)) P.line([p, right], alpha('#fffaf0', k ? 0.55 : 0.9), 4.5 - k * 1.5, { smooth: false, shadow: !k });
+        if (j < 5 && !hidden(down) && down[1] < 640) P.line([p, down], alpha('#fffaf0', k ? 0.55 : 0.9), 4.5 - k * 1.5, { smooth: false, shadow: !k });
+        if (k === 0 && i % 2 === 0 && j % 2 === 0 && !hidden(depth)) P.line([p, depth], alpha('#fffaf0', 0.5), 3, { smooth: false });
       }
       for (let j = 0; j < 6; j++) for (let i = 0; i < 7; i++) {
         const p = node(i, j, k); if (hidden(p) || p[1] > 640 || p[0] > 600) continue; const col = (i + j + k) % 2 ? violet : gold, r = 13 - k * 2.5;

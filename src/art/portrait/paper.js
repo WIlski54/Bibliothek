@@ -161,8 +161,10 @@ export class Paper {
       const base = typeof fill === 'string' ? fill : '#d8c8a8';
       ctx.lineJoin = 'round';
       ctx.strokeStyle = alpha(tint(base, 0.5), 0.55); ctx.lineWidth = 2.4; ctx.stroke(path);
-      ctx.save(); ctx.translate(-0.7, -0.8); ctx.strokeStyle = alpha('#fffaf0', 0.28); ctx.lineWidth = 1.6; ctx.stroke(path); ctx.restore();
-      ctx.save(); ctx.translate(0.9, 1.1); ctx.strokeStyle = alpha('#1a0c04', 0.13); ctx.lineWidth = 1.6; ctx.stroke(path); ctx.restore();
+      if (Math.max(bb.w, bb.h) > 44) { // Lichtkante oben links, Schattenkante unten rechts (bei winzigen Teilen unnötig)
+        ctx.save(); ctx.translate(-0.7, -0.8); ctx.strokeStyle = alpha('#fffaf0', 0.28); ctx.lineWidth = 1.6; ctx.stroke(path); ctx.restore();
+        ctx.save(); ctx.translate(0.9, 1.1); ctx.strokeStyle = alpha('#1a0c04', 0.13); ctx.lineWidth = 1.6; ctx.stroke(path); ctx.restore();
+      }
     }
     ctx.restore();
     if (o.line !== false) { ctx.save(); ctx.strokeStyle = o.line || alpha(shade(typeof fill === 'string' ? fill : '#8a7a5a', 0.45), 0.28); ctx.lineWidth = 0.8; ctx.lineJoin = 'round'; ctx.stroke(path); ctx.restore(); }

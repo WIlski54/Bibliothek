@@ -3,7 +3,7 @@ import { rect, ell, spline, bez, TAU, mix, shade, tint, alpha, ribbon, rngOf } f
 import { C, base, halo, band, star, leaf, disc, cloud, peak, text, stem } from './bg_util.js';
 
 // Hieroglyphen-ähnliche Zeichen, eingemeißelt: heller Rand unten rechts, dunkle Linie
-function glyph(P, kind, x, y, s, col) {
+export function glyph(P, kind, x, y, s, col) {
   const { ctx } = P;
   const draw = (dx, dy, c, w) => {
     ctx.save(); ctx.translate(x + dx, y + dy); ctx.scale(s, s); ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = w / s; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();

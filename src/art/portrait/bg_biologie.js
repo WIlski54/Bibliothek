@@ -162,7 +162,7 @@ export const BG_BIOLOGIE = {
     band(P, 520, 300, '#7aa4b0', { amp: 6, wl: 70, scallop: true }); band(P, 560, 300, '#5a8a9a', { amp: 7, wl: 60, ph: 0.5, scallop: true });
     // Klippen mit Schichten
     const strata = (poly) => P.cut(poly, slate, { lift: 0.9, smooth: false, wob: 1.4, step: 20, grad: false, deco: (ctx, bb) => {
-      let y = bb.y0, i = 0; while (y < bb.y1 + 20) { const h = 18 + (i * 7) % 16; ctx.fillStyle = i % 3 === 0 ? cream : i % 3 === 1 ? slate : shade(slate, 0.18); ctx.beginPath(); ctx.moveTo(bb.x0 - 5, y); for (let x = bb.x0; x <= bb.x1 + 5; x += 16) ctx.lineTo(x, y + Math.sin(x * 0.04 + i) * 3); ctx.lineTo(bb.x1 + 5, y + h); ctx.lineTo(bb.x0 - 5, y + h); ctx.fill(); y += h; i++; } } });
+      let y = bb.y0, i = 0; while (y < bb.y1 + 20) { const h = 18 + (i * 7) % 16; ctx.fillStyle = i % 4 === 0 ? mix(cream, slate, 0.35) : i % 4 === 2 ? mix(slate, '#fff', 0.15) : shade(slate, (i % 3) * 0.08); ctx.beginPath(); ctx.moveTo(bb.x0 - 5, y); for (let x = bb.x0; x <= bb.x1 + 5; x += 16) ctx.lineTo(x, y + Math.sin(x * 0.04 + i) * 3); ctx.lineTo(bb.x1 + 5, y + h); ctx.lineTo(bb.x0 - 5, y + h); ctx.fill(); y += h; i++; } } });
     strata([[-20, 640], [-20, 250], [50, 232], [100, 262], [140, 330], [180, 390], [214, 470], [226, 640]]);
     strata([[640, 640], [640, 300], [580, 282], [520, 320], [480, 400], [462, 470], [450, 640]]);
     // Ammoniten
@@ -177,13 +177,19 @@ export const BG_BIOLOGIE = {
   roentgen(P, G, c) {
     const dark = C(c, 0, '#1d2a4a'), cream = C(c, 1, '#e8e2c8'), blue = C(c, 2, '#5a8ac8');
     base(P, shade(dark, 0.25), dark);
-    P.glow(G.cx, G.cy, 360, blue, 0.35); P.glow(G.cx, G.cy, 200, '#ffffff', 0.18);
+    P.glow(G.cx, G.cy, 330, blue, 0.30); P.glow(G.cx, G.cy, 150, '#ffffff', 0.12);
     const { ctx } = P;
-    // X aus Reflexen (Diagonalen) mit abnehmender Helligkeit
-    for (const sg of [-1, 1]) for (let t = -7; t <= 7; t++) { if (!t) continue; for (const ss of [-1, 1]) { const d = Math.abs(t), x = G.cx + ss * d * 34 * 0.9, y = G.cy + sg * (t > 0 ? 1 : -1) * d * 44 * ss * 0.98; P.glow(x, y, 20 - d * 1.3, cream, Math.max(0.12, 0.85 - d * 0.1)); } }
-    // Schichtlinien (oben/unten)
-    for (const sg of [-1, 1]) for (let k = 1; k <= 3; k++) for (let i = -3; i <= 3; i++) P.glow(G.cx + i * 38 - (i * i) * 0.5, G.cy + sg * (130 + k * 56) + i * i * sg * -1.5, 12, cream, 0.36 - k * 0.06);
-    ctx.save(); ctx.strokeStyle = alpha(cream, 0.16); ctx.lineWidth = 2; for (const r of [150, 230, 310]) { ctx.beginPath(); ctx.arc(G.cx, G.cy, r, 0, TAU); ctx.stroke(); } ctx.restore();
+    const spot = (x, y, rx, ry, rot, a) => { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(1, ry / rx); const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, alpha('#fffdf0', a)); g.addColorStop(0.45, alpha(cream, a * 0.8)); g.addColorStop(1, alpha(cream, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, TAU); ctx.fill(); ctx.restore(); };
+    // zwei Diagonalen mit Reflexen (X); jeder Reflex hat zwei Nachbarn quer dazu (Rautenmuster)
+    for (const sg of [-1, 1]) for (const ss of [-1, 1]) for (let t = 1; t <= 8; t++) {
+      const dx = ss * 0.82, dy = sg * 0.66, m = Math.hypot(dx, dy), d = t * 41, x = G.cx + dx * d, y = G.cy + dy * d, rot = Math.atan2(dy, dx), a = Math.max(0.3, 1 - t * 0.08);
+      spot(x, y, 24 - t * 1.2, 11 - t * 0.5, rot, a);
+      for (const q of [-1, 1]) spot(x + (-dy / m) * 26 * q * 0.9, y + (dx / m) * 26 * q * 0.9, 13 - t * 0.6, 7 - t * 0.3, rot, a * 0.6);
+    }
+    // Schichtlinien oben und unten (Chevrons)
+    for (const sg of [-1, 1]) for (let k = 0; k < 3; k++) for (let i = -4; i <= 4; i++) { if (!i && k === 0) continue; spot(G.cx + i * 40, G.cy + sg * (150 + k * 62 + Math.abs(i) * 14), 11, 7, 0, 0.8 - k * 0.2 - Math.abs(i) * 0.04); }
+    spot(G.cx, G.cy, 38, 38, 0, 0.5);
+    ctx.save(); ctx.strokeStyle = alpha(cream, 0.12); ctx.lineWidth = 2; for (const r of [150, 230, 310]) { ctx.beginPath(); ctx.arc(G.cx, G.cy, r, 0, TAU); ctx.stroke(); } ctx.restore();
     // Doppelhelix rechts und links
     for (const hx of [62, 540]) {
       const A = [], B = []; for (let y = 50; y <= 600; y += 10) { const t = y / 46; A.push([hx + Math.sin(t) * 24, y]); B.push([hx - Math.sin(t) * 24, y]); }

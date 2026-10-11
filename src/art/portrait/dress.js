@@ -46,8 +46,8 @@ function cravat(P, G, col, o = {}) {
   P.cut(ell(cx, ny + 2, 14 * w, 12, 12), tint(col, 0.04), { lift: 0.8, wob: 0.4 });
 }
 function stiffCollar(P, G, col, o = {}) { // hohe Kragenspitzen neben den Wangen
-  const cx = G.cx, ny = G.Y(1.0) + 36, w = o.w ?? 1, top = G.Y(o.h ?? 0.66);
-  both(cx, [[22, ny - 2], [96 * w, top], [106 * w, top + 12], [72 * w, ny - 14], [58 * w, ny + 6], [30, ny + 10]], (q) => P.cut(q, col, { lift: 0.7, wob: 0.5, smooth: false, step: 8, deco: (ctx) => { ctx.strokeStyle = alpha(shade(col, 0.3), 0.3); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(q[0][0], q[0][1] - 4); ctx.lineTo(q[1][0] + (q[1][0] < cx ? 6 : -6), q[1][1] + 12); ctx.stroke(); } }));
+  const cx = G.cx, ny = G.Y(1.0) + 36, w = o.w ?? 1, top = G.Y(o.h ?? 0.7);
+  both(cx, [[26, ny - 10], [62 * w, top], [78 * w, top + 30], [72 * w, ny + 6], [30, ny + 12]], (q) => P.cut(q, col, { lift: 0.7, wob: 0.5, smooth: false, step: 8 }));
 }
 function pleats(P, G, col, x0, x1, y0, y1, n, a = 0.18) {
   for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n; P.line([[x, y0], [x + (x - G.cx) * 0.06, (y0 + y1) / 2], [x + (x - G.cx) * 0.1, y1]], col, 1.5, { a }); }
@@ -221,8 +221,9 @@ export const DRESS = {
     top(P, G, D) {
       const cx = G.cx, ny = G.Y(1.0) + 36, shawl = D.shawl || '#e8dcc2';
       P.cut([[cx - 44, ny - 6], [cx + 44, ny - 6], [cx + 190, ny + 50], [cx + 214, ny + 110], [cx + 120, ny + 220], [cx, ny + 330], [cx - 120, ny + 220], [cx - 214, ny + 110], [cx - 190, ny + 50]], shawl, { lift: 1, wob: 1, deco: (ctx) => {
-        ctx.strokeStyle = alpha('#8a6a4a', 0.45); ctx.lineWidth = 1.4; for (let i = -9; i <= 9; i++) { ctx.beginPath(); ctx.moveTo(cx + i * 22, ny); ctx.lineTo(cx + i * 22 + (i * 5), ny + 340); ctx.stroke(); }
-        ctx.strokeStyle = alpha('#a2554a', 0.55); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx - 190, ny + 56); ctx.lineTo(cx, ny + 330); ctx.lineTo(cx + 190, ny + 56); ctx.stroke(); } });
+        ctx.strokeStyle = alpha('#a2554a', 0.22); ctx.lineWidth = 3; for (let i = -9; i <= 9; i++) { ctx.beginPath(); ctx.moveTo(cx + i * 30, ny); ctx.lineTo(cx + i * 30 + (i * 6), ny + 340); ctx.stroke(); }
+        ctx.strokeStyle = alpha('#a2554a', 0.18); for (let y = ny + 20; y < ny + 340; y += 30) { ctx.beginPath(); ctx.moveTo(cx - 220, y); ctx.lineTo(cx + 220, y); ctx.stroke(); }
+        ctx.strokeStyle = alpha('#a2554a', 0.6); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cx - 200, ny + 58); ctx.lineTo(cx, ny + 326); ctx.lineTo(cx + 200, ny + 58); ctx.stroke(); } });
       P.cut(ell(cx, ny + 36, 11, 11, 10), '#b8863a', { lift: 0.7 });
     },
   },
@@ -281,7 +282,7 @@ export const DRESS = {
       const cx = G.cx, ny = G.Y(1.0) + 36, col = D.col || '#6f8494';
       P.cut([[cx - 50, ny - 12], [cx + 50, ny - 12], [cx + 30, ny + 130], [cx - 30, ny + 130]], '#f0ebdd', { lift: 0.5, wob: 0.6 });
       stiffCollar(P, G, '#f6f1e6', { h: 0.7, w: 0.9, out: 4 });
-      P.cut([[cx - 36, ny - 8], [cx + 36, ny - 8], [cx + 20, ny + 40], [cx + 24, ny + 100], [cx, ny + 116], [cx - 24, ny + 100], [cx - 20, ny + 40]], '#232126', { lift: 0.7, wob: 0.7 });
+      cravat(P, G, '#2a272c', { w: 0.9 });
       both(cx, [[58, ny - 10], [112, ny + 20], [92, ny + 150], [30, ny + 150], [50, ny + 40]], (q) => P.cut(q, tint(col, 0.06), { lift: 0.8, wob: 0.8, smooth: false, step: 10 }));
       buttons(P, cx, ny + 150, ny + 330, 4, '#e6e0d0', 6);
       P.cut([[cx + 90, ny + 220], [cx + 190, ny + 220], [cx + 190, ny + 310], [cx + 90, ny + 310]], tint(col, 0.04), { lift: 0.6, smooth: false, step: 20 });
@@ -296,8 +297,7 @@ export const DRESS = {
       P.cut([[cx - 66, ny - 4], [cx + 66, ny - 4], [cx + 74, 820], [cx - 74, 820]], D.vest || '#7a7488', { lift: 0.6, deco: (ctx) => { ctx.strokeStyle = alpha('#2a2630', 0.3); ctx.lineWidth = 1.4; for (let x = cx - 80; x < cx + 90; x += 14) { ctx.beginPath(); ctx.moveTo(x, ny); ctx.lineTo(x, 820); ctx.stroke(); } for (let y = ny; y < 820; y += 14) { ctx.beginPath(); ctx.moveTo(cx - 80, y); ctx.lineTo(cx + 80, y); ctx.stroke(); } } });
       both(cx, [[50, ny - 8], [142, ny + 34], [108, ny + 94], [118, ny + 150], [74, ny + 290], [48, ny + 290], [52, ny + 80]], (q) => P.cut(q, tint(coat, 0.05), { lift: 1, wob: 0.9, smooth: false, step: 10 }));
       stiffCollar(P, G, '#f7f2e6', { h: 0.62, w: 1.0 });
-      P.cut([[cx - 46, ny - 16], [cx + 46, ny - 16], [cx + 54, ny + 20], [cx + 20, ny + 50], [cx - 20, ny + 50], [cx - 54, ny + 20]], '#1f1c20', { lift: 0.8, wob: 0.7 });
-      P.cut(ell(cx, ny + 8, 14, 16, 10), '#2a272c', { lift: 0.6 });
+      cravat(P, G, '#26232a', { w: 1.0 });
       buttons(P, cx - 40, ny + 160, ny + 290, 3, '#9a8a5a', 5);
     },
   },

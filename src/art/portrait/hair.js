@@ -67,15 +67,15 @@ export const HAIR = {
     // einzelne Stirnlocken
     for (const [u, v, rr] of [[-0.62, -0.52, 17], [-0.36, -0.5, 14], [-0.12, -0.52, 15], [0.14, -0.5, 14], [0.4, -0.52, 16], [0.64, -0.5, 17]]) P.cut(ell(G.X(u), G.Y(v), rr, rr * 0.9, 14), H.col, { lift: 0.5, wob: 0.6, grad: false, bump: { amp: 2.8, wl: 14 }, deco: (ctx) => { ctx.strokeStyle = alpha(tint(H.col, 0.36), 0.55); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(G.X(u) + 2, G.Y(v), rr * 0.45, 0.5, 4.2); ctx.stroke(); } });
   } },
-  // fast kahl: Haarkranz seitlich (Darwin, Bunsen)
+  // fast kahl: Haarkranz seitlich und hinten (Darwin, Bunsen)
   kranz: { back(P, G, H) {
-    P.cut(full(G, [[0, -0.5], [0.8, -0.45], [1.1, -0.1], [1.12, 0.5], [0.9, 0.6], [0, 0.6]]), H.col, { lift: 0.5, bump: { amp: 3, wl: 22 } });
+    P.cut(full(G, [[0, -0.55], [0.8, -0.5], [1.12, -0.1], [1.16, 0.35], [1.0, 0.62], [0, 0.62]]), H.col, { lift: 0.7, bump: { amp: 3.5, wl: 22 }, deco: (ctx) => {
+      ctx.strokeStyle = alpha(shade(H.col, 0.3), 0.4); ctx.lineWidth = 1.3; for (let i = 0; i < 16; i++) { const s = i % 2 ? 1 : -1, x = G.cx + s * (G.fw * (1.0 + (i % 5) * 0.03)); ctx.beginPath(); ctx.moveTo(x, G.Y(-0.4 + (i % 4) * 0.1)); ctx.quadraticCurveTo(x + s * 6, G.Y(0.1), x - s * 2, G.Y(0.55)); ctx.stroke(); } } });
   }, front(P, G, H) {
     for (const s of [-1, 1]) {
-      const half = [[0.96, -0.55], [1.1, -0.3], [1.13, 0.2], [1.02, 0.5], [0.94, 0.3], [0.97, -0.1]].map(([u, v]) => G.P(s * u, v));
-      P.cut(s < 0 ? half.reverse() : half, H.col, { lift: 0.6, bump: { amp: 3, wl: 18 }, step: 5 });
+      const half = [[0.97, -0.46], [1.07, -0.24], [1.1, 0.12], [1.03, 0.36], [0.95, 0.2], [0.97, -0.08]].map(([u, v]) => G.P(s * u, v));
+      P.cut(s < 0 ? half.reverse() : half, H.col, { lift: 0.5, bump: { amp: 2.2, wl: 16 }, step: 5 });
     }
-    if (H.fringe) cap(P, G, { col: H.col, side: 1.05, top: -1.0, sdrop: -0.35, hl: [[0.95, -0.4], [0.9, -0.55], [0.6, -0.72], [0, -0.78], [-0.6, -0.72], [-0.9, -0.55], [-0.95, -0.4]], strands: false });
   } },
   // lange, wilde Haare (Mendelejew)
   lang: { back(P, G, H) {
