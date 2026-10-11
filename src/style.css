@@ -20,6 +20,7 @@ button { font: inherit; color: inherit; }
 #brand #where { font: 600 12px var(--sans); text-transform: uppercase; letter-spacing: .12em; color: #d8c9a6; }
 #topbtns { position: absolute; right: calc(14px + var(--safe-r)); top: calc(12px + var(--safe-t)); display: flex; gap: 8px; }
 #topbtns button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(217,164,65,.6); background: rgba(42,24,16,.88); color: var(--brass2); font: 700 20px var(--serif); cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+#b-sound svg { display: block; margin: auto; } #b-sound.off .w { display: none; } #b-sound.off { opacity: .75; }
 #topbtns button:hover, #roombar button:hover { filter: brightness(1.15); }
 #tip { position: absolute; transform: translate(-50%, -140%); padding: 5px 10px; border-radius: 8px; background: rgba(30,17,11,.92); border: 1px solid rgba(217,164,65,.6); color: var(--brass2); font: 600 14px var(--serif); white-space: nowrap; pointer-events: none; }
 

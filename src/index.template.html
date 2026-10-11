@@ -13,6 +13,7 @@
 <div id="hud" hidden>
   <div id="brand"><b>Die große Bibliothek</b><span id="where">Foyer</span></div>
   <div id="topbtns">
+    <button id="b-sound" class="off" aria-label="Ton an oder aus" aria-pressed="false"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     <button id="b-help" aria-label="Hilfe">?</button>
     <button id="b-menu" aria-label="Einstellungen">&#9881;</button>
   </div>
@@ -34,7 +35,7 @@
 <div id="menu" class="overlay" hidden role="dialog" aria-modal="true"><div class="sheet small"><button class="x" aria-label="Schließen">&times;</button><div class="body">
   <h2>Einstellungen</h2>
   <label class="row"><input type="checkbox" id="o-calm"> <span><b>Ruhiger Modus</b><br><small>Weniger Bewegung: Kamera blendet über statt zu fahren.</small></span></label>
-  <label class="row"><input type="checkbox" id="o-sound"> <span><b>Ton</b><br><small>Leises Raumrauschen und Geräusche (kommt noch).</small></span></label>
+  <label class="row"><input type="checkbox" id="o-sound"> <span><b>Ton</b><br><small>Leises Raumrauschen, Blättern und kleine Geräusche.</small></span></label>
   <div class="row"><span><b>Bildqualität</b><br><small>Wenn es ruckelt, wähle „Sparsam“.</small></span>
     <select id="o-q"><option value="auto">Automatisch</option><option value="low">Sparsam</option><option value="mid">Mittel</option><option value="high">Schön</option></select></div>
   <p class="fine">Die große Bibliothek · Code MIT · Texte CC BY-SA 4.0</p>

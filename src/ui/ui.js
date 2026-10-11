@@ -21,9 +21,11 @@ export class UI {
     $('#v-back').addEventListener('click', () => this.closeViewer());
     addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (this.viewerOpen) this.closeViewer(); else if (!this.menu.hidden) this.close(this.menu); else if (this.cardOpen) this.close(this.card); } });
     $('#o-calm').addEventListener('change', (e) => this.onSettings({ calm: e.target.checked }));
-    $('#o-sound').addEventListener('change', (e) => this.onSettings({ sound: e.target.checked }));
+    $('#o-sound').addEventListener('change', (e) => this.setSound(e.target.checked));
+    $('#b-sound').addEventListener('click', () => this.setSound(!this.sound));
     $('#o-q').addEventListener('change', (e) => this.onSettings({ quality: e.target.value }));
   }
+  setSound(v) { this.sound = v; $('#o-sound').checked = v; const b = $('#b-sound'); b.classList.toggle('off', !v); b.setAttribute('aria-pressed', String(v)); this.onSettings({ sound: v }); }
   close(ov) { ov.hidden = true; if (ov === this.card) { this.cardOpen = false; const cb = this.onCardClose; this.onCardClose = null; cb?.(); } }
   ready(onStart) { const b = $('#go'); b.disabled = false; b.textContent = 'Bibliothek betreten'; b.addEventListener('click', () => { this.intro.classList.add('out'); this.hud.hidden = false; setTimeout(() => { this.intro.hidden = true; }, 700); onStart?.(); }, { once: true }); }
   setWhere(roomId, stationName) {
@@ -49,10 +51,10 @@ export class UI {
   imgFrom(src, alt) { const i = new Image(); i.alt = alt || ''; i.decoding = 'async'; i.src = typeof src === 'string' ? src : src.toDataURL('image/png'); return i; }
 
   openCard(d, { onClose } = {}) {
-    const body = $('.body', this.card); body.replaceChildren(); this.onCardClose = onClose || null;
+    const body = $('.body', this.card); body.replaceChildren(); this.onCardClose = onClose || null; this.hush();
     if (d.kind === 'book') this.fillBook(body, d.book);
     else this.fillInfo(body, d);
-    this.card.hidden = false; this.cardOpen = true; $('.sheet', this.card).scrollTop = 0;
+    this.card.hidden = false; this.cardOpen = true; $('.sheet', this.card).scrollTop = 0; this.onCardOpen?.();
   }
   fillBook(body, def) {
     const cols = el('div', 'cols'); const pic = el('div', 'pic'); pic.append(this.imgFrom(this.coverURL(def), 'Buchdeckel: ' + def.title)); cols.append(pic);
