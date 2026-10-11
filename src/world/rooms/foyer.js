@@ -6,6 +6,7 @@ import { M, mesh, box, roomShell, shelfUnit, fillBooks, readingTable, chair, arm
 import { makeBook } from '../books.js';
 import { bannerTex, planTex, DEPT_NAME } from '../signs.js';
 import { catPortrait } from '../cat.js';
+import { archWindow, lightShaft, dust } from '../ex/windows.js';
 
 export function build(ctx) {
   const R = FOYER, g = new THREE.Group(); g.name = 'foyer';
@@ -100,16 +101,31 @@ export function build(ctx) {
   const ch = chandelier({ r: 0.85, arms: 10, light: false }); ch.position.set(0, R.h - 1.35, 0); g.add(ch);
   for (const [wl, a] of [['S', -1.9], ['S', 1.9], ['W', -3.7], ['W', 3.7], ['E', -3.7], ['E', 3.7], ['N', -3.6], ['N', 3.6]]) { const sc = sconce({ light: false }); placeWall(sc, room, wl, a, 0.02, 3.1); g.add(sc); }
 
+  // ---------------- Hohe Fenster (Obergaden), Lichtschächte und Staub
+  const shafts = [];
+  for (const [wl, a] of [['W', -2.8], ['W', 2.8], ['W', -5.0], ['W', 5.0], ['E', -2.8], ['E', 2.8], ['E', -5.0], ['E', 5.0], ['N', -2.8], ['N', 2.8], ['N', -5.0], ['N', 5.0], ['S', -5.0], ['S', 5.0]]) {
+    const wd = archWindow({ w: 1.0, h: 2.2 }); placeWall(wd, room, wl, a, 0.0, 3.55); g.add(wd);
+  }
+  for (const [wl, a, sx] of [['W', -2.8, 1], ['W', 2.8, 1], ['E', -2.8, 1], ['E', 2.8, 1]]) {
+    const sh = lightShaft({ w: 0.95, len: 5.6, opacity: 0.2 }); const p = wallPos(room, wl, a, 0.3); sh.position.set(p.x, 5.1, p.z); sh.rotation.y = p.ry; sh.rotation.x = 0.0; sh.rotation.z = 0; sh.userData.dynamic = true; g.add(sh); shafts.push(sh);
+    // schräg in den Raum kippen (um die Wandachse)
+    const tilt = new THREE.Group(); tilt.position.copy(sh.position); tilt.rotation.y = p.ry; g.remove(sh); sh.position.set(0, 0, 0); sh.rotation.set(0.5, 0, 0); tilt.add(sh); g.add(tilt);
+  }
+  const motes = dust({ box: [9, 3.6, 7], n: 90, y0: 0.9, seed: 7 }); g.add(motes);
+
+  // ---------------- Hausregeln
+  { const rules = plaque('Hausregeln', { w: 0.9, h: 0.5, sub: 'Leise bitte · Hier stöbern erlaubt · Bücher mit Liebe behandeln', bg: '#3b2417', fg: '#f6dc8a' }); placeWall(rules, room, 'S', 0, 0.03, 3.9); g.add(rules); }
+
   // ---------------- Stationen
   stations.push(
     { id: 'foyer-eingang', room: 'foyer', name: 'Eingangshalle', pos: [0, 1.6, 4.7], look: [0, 1.9, -6] },
     { id: 'foyer-neu', room: 'foyer', name: 'Neu im Regal', pos: [0.9, 1.6, 3.2], look: [3.0, 1.3, 1.3] },
-    { id: 'foyer-plan', room: 'foyer', name: 'Lageplan', pos: [3.3, 1.6, -2.3], look: [4.8, 1.8, -6] },
+    { id: 'foyer-plan', room: 'foyer', name: 'Lageplan', pos: [4.3, 1.6, -3.0], look: [4.75, 1.75, -6] },
   );
   const lights = [
     { pos: [0, 5.0, 0], color: 0xffe2b0, intensity: 38, distance: 0, decay: 2 },
     { pos: [0, 3.0, 4.2], color: 0xffd9a0, intensity: 9, distance: 0, decay: 2 },
     { pos: [0, 3.0, -4.2], color: 0xffd9a0, intensity: 9, distance: 0, decay: 2 },
   ];
-  return { group: g, stations, lights, blockers, update(dt, t) { ch.rotation.y = Math.sin(t * 0.3) * 0.04; } };
+  return { group: g, stations, lights, blockers, update(dt, t) { ch.rotation.y = Math.sin(t * 0.3) * 0.04; motes.userData.tick(t); } };
 }
