@@ -6,6 +6,7 @@ import { Rig } from './world/nav.js';
 import { World } from './world/world.js';
 import { UI } from './ui/ui.js';
 import { clamp } from './lib/util.js';
+import { Ambient } from './audio/ambient.js';
 
 const qs = new URLSearchParams(location.search);
 const touchDevice = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
@@ -26,6 +27,7 @@ rig.calm = calm;
 
 const ctx = { books, counts };
 const world = new World(renderer, scene, rig, ctx);
+const ambient = new Ambient();
 let ui;
 let paused = qs.has('manual');
 
@@ -51,7 +53,7 @@ function step(dir) {
   if (rig.moving) return; const list = rig.roomStations(rig.room); if (list.length < 2) return;
   const i = Math.max(0, list.findIndex((s) => s.id === rig.cur)); goStation(list[(i + dir + list.length) % list.length].id);
 }
-rig.onArrive = (id, st) => { ui.setWhere(st.room, st.name); window.__arrived = id; world.cat?.arrive(id); };
+rig.onArrive = (id, st) => { ui.setWhere(st.room, st.name); window.__arrived = id; ambient.setRoom(st.room); world.cat?.arrive(id); };
 
 // ---------------------------------------------------------------- Antippen
 function handleTap(tap, hit) {
@@ -63,7 +65,7 @@ function handleTap(tap, hit) {
       case 'info': ui.openCard(tap); break;
       case 'nav': goRoom(tap.to); break;
       case 'goto': if (rig.cur !== tap.station) goStation(tap.station); break;
-      case 'cat': world.cat?.poke(); break;
+      case 'cat': ambient.meow(); world.cat?.poke(); break;
       case 'say': ui.say(tap.text, tap.who ? { who: tap.who } : {}); break;
       default: if (tap.title) ui.openCard(tap);
     }
@@ -112,11 +114,12 @@ function setTier(name, lock) { tierName = TIERS[name] ? name : tierName; if (loc
 ui = new UI({
   onGo: goRoom, onStep: step,
   onSettings: (o) => {
+    if ('sound' in o) ambient.setEnabled(o.sound);
     if ('calm' in o) { calm = o.calm; rig.calm = calm; document.body.classList.toggle('calm', calm); }
     if ('quality' in o) { if (o.quality === 'auto') { tierLocked = false; tierName = touchDevice ? 'mid' : 'high'; size(); } else setTier(o.quality, true); }
   },
 });
-ctx.ui = ui;
+ctx.ui = ui; ui.onCardOpen = () => ambient.page();
 ui.onViewerChange = (open) => { paused = open; if (!open) last = performance.now(); };
 document.addEventListener('visibilitychange', () => { paused = document.hidden || ui.viewerOpen; if (!paused) last = performance.now(); });
 
@@ -135,7 +138,7 @@ function frame(now) {
 (async () => {
   await world.build((p) => { const b = document.getElementById('go'); b.textContent = `Bibliothek wird aufgebaut … ${Math.round(p * 100)} %`; });
   world.cat?.place?.('foyer-eingang'); rig.jump('foyer-eingang'); ui.setWhere('foyer', rig.stations.get('foyer-eingang').name);
-  rig.onTravel = (from, to) => { world.cat?.follow(from, to, rig.travel?.route); };
+  rig.onTravel = (from, to, fr, tr) => { ambient.whoosh(); if (tr && tr !== fr) setTimeout(() => ambient.setRoom(tr), 900); world.cat?.follow(from, to, rig.travel?.route); };
   requestAnimationFrame((t) => { last = t; frame(t); });
   ui.ready(() => { if (!qs.has('quiet')) setTimeout(() => ui.say('Miau! Ich bin Archimedes. Komm, ich zeige dir die Bibliothek. Tippe auf eine Tür oder auf die Knöpfe unten.', { ms: 9000 }), 700); });
   window.__lib = { rig, world, ui, THREE, renderer, scene, camera, goStation, goRoom, handleTap, setTier, ctx, step: (dt, n = 1) => { for (let i = 0; i < n; i++) { rig.update(dt); world.update(dt); } renderer.render(scene, camera); } };

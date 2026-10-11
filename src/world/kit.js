@@ -155,12 +155,17 @@ export function armchair({ color = 0x6a2230 } = {}) {
   const cus = box(0.6, 0.12, 0.6, f); cus.position.set(0, 0.52, 0.04); g.add(cus);
   for (const [x, z] of [[-0.36, -0.34], [0.36, -0.34], [-0.36, 0.34], [0.36, 0.34]]) { const l = box(0.06, 0.14, 0.06, wd, { tile: 1 }); l.position.set(x, 0.07, z); g.add(l); } return g;
 }
-export function globe({ r = 0.32, map = null } = {}) {
-  const g = new THREE.Group(); const brass = M.brass(), wd = M.wood(0x4a2a18);
-  const sph = new THREE.Mesh(new THREE.SphereGeometry(r, 36, 24), map ? new THREE.MeshStandardMaterial({ map, roughness: 0.55 }) : M.plain(0x4a79a8, 0.5)); sph.position.y = r + 0.5; sph.rotation.z = 0.41; g.add(sph); g.userData.sphere = sph;
-  const ring = mesh(new THREE.TorusGeometry(r + 0.04, 0.012, 8, 48), brass); ring.position.y = r + 0.5; ring.rotation.y = Math.PI / 2; g.add(ring);
+export function globe({ r = 0.32, map = null, tilt = 0.41 } = {}) {
+  // Erdachse geneigt: sphere sitzt in der Neigungsgruppe, g.userData.sphere.rotation.y = Drehung um die Erdachse (ggf. animieren, userData.dynamic setzen)
+  const g = new THREE.Group(); const brass = M.brass(), wd = M.wood(0x4a2a18), cy = r + 0.5;
+  const pivot = new THREE.Group(); pivot.position.y = cy; pivot.rotation.z = tilt; g.add(pivot);
+  const sph = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), map ? new THREE.MeshStandardMaterial({ map, roughness: 0.5, metalness: 0.05 }) : M.plain(0x4a79a8, 0.5)); pivot.add(sph); g.userData.sphere = sph;
+  const ring = mesh(new THREE.TorusGeometry(r + 0.04, 0.012, 8, 56), brass); ring.rotation.y = Math.PI / 2; pivot.add(ring);
+  const axis = mesh(new THREE.CylinderGeometry(0.008, 0.008, 2 * r + 0.16, 8), brass); pivot.add(axis);
+  for (const sy of [-1, 1]) { const cap = mesh(new THREE.SphereGeometry(0.02, 10, 8), brass); cap.position.y = sy * (r + 0.08); pivot.add(cap); }
   const stem = mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.5, 12), wd, { tile: 1 }); stem.position.y = 0.25; g.add(stem);
-  const foot = mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.06, 28), wd, { tile: 1 }); foot.position.y = 0.03; g.add(foot); return g;
+  const foot = mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.06, 28), wd, { tile: 1 }); foot.position.y = 0.03; g.add(foot);
+  g.userData.dynamic = true; return g;
 }
 export function pottedPlant({ h = 1.4, pot = 0x9a5a38, leaf = 0x3f7a42, seed = 3 } = {}) {
   const g = new THREE.Group(); const rnd = mulberry32(seed);
