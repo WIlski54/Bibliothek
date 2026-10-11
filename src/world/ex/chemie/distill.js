@@ -25,7 +25,7 @@ function stand(b, x, z, h, clampY, cx, ringR, axis = [0, 1, 0]) {
   b.cyl(st, 0.008, 0.008, 0.03, x, clampY + 0.018, z - 0.002, { seg: 8 });         // Flügelschraube
 }
 
-export function makeDistillation() {
+export function makeDistillation({ mirrorX = false } = {}) {
   const grp = new THREE.Group(), b = new Batch(), glass = MAT.glass();
   // ---- Hebebühne und Heizpilz (flach, damit die obere Kolbenhälfte frei sichtbar bleibt)
   b.box(MAT.darkSteel(), 0.17, 0.028, 0.17, 0, 0.014, 0); b.box(MAT.steel(), 0.2, 0.012, 0.2, 0, 0.034, 0);
@@ -38,8 +38,8 @@ export function makeDistillation() {
 
   // ---- Siedekolben mit Siedesteinen und Gemisch; Boden liegt in der Mulde
   const F0 = 0.078, flask = PROFILE.rund(0.062, 0.017, 0.157);
-  addVessel(b, flask, 0, F0, 0, { liquid: 0xb0283c, level: 0.34, opacity: 0.82, seg: 28 });
-  for (const [x, z, r, c] of [[0.012, 0.01, 0.007, 0xe2dccb], [-0.018, -0.006, 0.006, 0xcfc8b4], [0.003, -0.02, 0.0065, 0xe8e2d0], [-0.006, 0.022, 0.006, 0xd9d2bf], [0.028, -0.012, 0.0055, 0xe0d9c6]]) b.sph(MAT.solid(c, 0.95), r, x, F0 + 0.012 + r * 0.4, z, { w: 7, h: 5 });
+  addVessel(b, flask, 0, F0, 0, { liquid: 0xb0283c, level: 0.27, opacity: 0.7, seg: 28 });
+  for (const [x, z, r] of [[0.012, 0.01, 0.007], [-0.018, -0.006, 0.006], [0.003, -0.02, 0.0065], [-0.006, 0.022, 0.006], [0.028, -0.012, 0.0055]]) b.sph(MAT.solid(0xe2dccb, 0.95), r, x, F0 + 0.012 + r * 0.4, z, { w: 7, h: 5 });
   // ---- Destillationsaufsatz: senkrechtes Rohr (Schliff auf dem Kolbenhals), Thermometerstutzen oben, Seitenrohr zum Kühler
   const yTopFlask = F0 + 0.1216 + 0.157;                // Oberkante Kolbenhals (0.357)
   b.cyl(glass, 0.0235, 0.0235, 0.04, 0, yTopFlask - 0.006, 0, { seg: 20 });  // Schliffhülse
@@ -78,10 +78,15 @@ export function makeDistillation() {
   hose(b, MAT.hoseBlue(), [pLow, [pLow[0] - 0.01, pLow[1] - 0.07, 0.02], [0.5, 0.03, 0.14], [0.68, 0.022, 0.34], [TAP.x - 0.06, 0.19, TAP.z + 0.06]], 0.0072);
   hose(b, MAT.hoseGrey(), [pUp, [pUp[0] + 0.0, pUp[1] + 0.05, 0.02], [pUp[0] + 0.03, pUp[1] + 0.05, 0.16], [0.30, 0.50, 0.34], [0.62, 0.30, 0.44], [TAP.x - 0.08, 0.08, TAP.z - 0.05]], 0.0072);
   // ---- Wasserhahn und Ausgussbecken (Laborstandard)
-  b.box(MAT.ceramic(), 0.24, 0.06, 0.2, TAP.x + 0.0, 0.03, TAP.z - 0.06); b.box(MAT.solid(0x33383a, 0.6), 0.17, 0.003, 0.13, TAP.x, 0.0615, TAP.z - 0.06);
+  { // Ausgussbecken: Keramikblock mit rundem Loch, darunter die Edelstahlmulde mit Abfluss
+    const sh = new THREE.Shape(); sh.moveTo(-0.13, -0.1); sh.lineTo(0.13, -0.1); sh.lineTo(0.13, 0.1); sh.lineTo(-0.13, 0.1); sh.closePath(); const hole = new THREE.Path(); hole.absarc(0, 0, 0.082, 0, Math.PI * 2, true); sh.holes.push(hole);
+    const ring = new THREE.ExtrudeGeometry(sh, { depth: 0.062, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.004, bevelSegments: 2, curveSegments: 20 }); ring.rotateX(-Math.PI / 2);
+    b.add(ring, MAT.ceramic(), { p: [TAP.x, 0, TAP.z - 0.06] });
+    b.lathe(MAT.steel(), [[0.086, 0.058], [0.078, 0.042], [0.05, 0.03], [0.012, 0.026], [0.0, 0.026]], TAP.x, 0, TAP.z - 0.06, { seg: 24 }); b.cyl(MAT.black(), 0.011, 0.011, 0.003, TAP.x, 0.0275, TAP.z - 0.06, { seg: 10 });
+  }
   b.cyl(MAT.copper(), 0.013, 0.015, 0.2, TAP.x, 0.1, TAP.z + 0.07, { seg: 12 }); b.pipe(MAT.copper(), [[TAP.x, 0.2, TAP.z + 0.07], [TAP.x, 0.255, TAP.z + 0.07], [TAP.x, 0.255, TAP.z - 0.02], [TAP.x, 0.21, TAP.z - 0.02]], 0.012, 0.04, 12);
   b.cyl(MAT.copper(), 0.007, 0.007, 0.05, TAP.x - 0.03, 0.18, TAP.z + 0.07, { rz: Math.PI / 2, seg: 8 });
   b.cyl(MAT.solid(0x2e7bd0, 0.5), 0.004, 0.004, 0.06, TAP.x, 0.235, TAP.z + 0.07, { rz: Math.PI / 2, seg: 6 }); b.sph(MAT.solid(0x2e7bd0, 0.5), 0.011, TAP.x + 0.03, 0.235, TAP.z + 0.07, { w: 8, h: 6 });
-  grp.add(b.build({ name: 'destillation' }));
+  grp.add(b.build({ name: 'destillation', mirrorX }));
   return { group: grp, tap: TAP, size: { x0: -0.12, x1: 1.15, z0: -0.15, z1: 0.65, h: 0.7 } };
 }

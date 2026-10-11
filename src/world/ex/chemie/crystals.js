@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry.js';
 import { M } from '../../kit.js';
 import { mulberry32 } from '../../../lib/util.js';
-import { Batch, MAT, signMesh, canvas, texOf } from './util.js';
+import { Batch, MAT } from './util.js';
 
 export const NA_COL = 0x6a78e0, CL_COL = 0x5cc15a;
 
@@ -39,7 +39,7 @@ export function makeCuSO4() {
   // flache Glasschale
   b.lathe(MAT.glass(), [[0, 0.03], [0.07, 0.032], [0.1, 0.048], [0.104, 0.056]], 0, 0, 0, { seg: 28 });
   const spots = [[0, 0.0, 0.06, 0.035, 0.04, 0.2], [0.055, 0.03, 0.03, 0.02, 0.025, -0.5], [-0.05, 0.035, 0.032, 0.022, 0.024, 0.9], [0.02, -0.055, 0.028, 0.02, 0.02, 0.2], [-0.045, -0.04, 0.022, 0.016, 0.018, -1.1], [0.07, -0.025, 0.02, 0.014, 0.016, 2.0]];
-  for (const [x, z, a, h, c, ry] of spots) b.add(crystalGeo(rnd, a, h, c), blue, { p: [x, 0.04 + h * 0.65, z], r: [(rnd() - 0.5) * 0.5, ry, (rnd() - 0.5) * 0.4] });
+  for (const [x, z, a, h, c, ry] of spots) b.add(crystalGeo(rnd, a, h, c), blue, { p: [x * 1.15, 0.04 + h * 0.8, z * 1.15], s: 1.3, r: [(rnd() - 0.5) * 0.7, ry, (rnd() - 0.5) * 0.6] });
   // Glasglocke
   const R = 0.13, H = 0.2, dome = [[R + 0.004, 0.026], [R, 0.03], [R, 0.07]]; for (let i = 1; i <= 14; i++) { const a = (i / 14) * (Math.PI / 2); dome.push([R * Math.cos(a), 0.07 + (H - 0.07) * Math.sin(a)]); }
   b.lathe(MAT.glass(), dome, 0, 0, 0, { seg: 32 }); b.sph(MAT.glass(), 0.016, 0, H + 0.016, 0, { w: 12, h: 8 });
@@ -75,8 +75,8 @@ export function makeDisplayTable({ w = 2.3, d = 0.95, h = 0.95 } = {}) {
   b.box(dark, w - 0.2, 0.03, d - 0.2, 0, 0.2, 0, 0, { tile: 1 });
   g.add(b.build({ name: 'schautisch' })); return { group: g, top: h + 0.004, w, d };
 }
-// Beschriftungsschild auf kleinem Keil (Formeln mit tiefgestellten Ziffern über Unicode)
-export function labelStand(text, w = 0.3, h = 0.06) {
+// Beschriftungsschild auf kleinem Keil; sg = fertiges Schild-Mesh (aus dem Schilder-Atlas), w = Breite
+export function labelStand(sg, w = 0.3) {
   const g = new THREE.Group(), wedge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, 0.05), M.wood(0x3a2214, { planks: 1 })); wedge.position.set(0, 0.015, 0); g.add(wedge);
-  const sg = signMesh(text, w - 0.01, h, { bg: '#2d1c0e', fg: '#f6dc8a', font: 'bold 54px Georgia, serif', px: 640, border: '#d9a441' }); sg.rotation.x = -0.75; sg.position.set(0, 0.048, 0.006); g.add(sg); return g;
+  sg.rotation.x = -0.75; sg.position.set(0, 0.048, 0.006); g.add(sg); return g;
 }

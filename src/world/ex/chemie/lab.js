@@ -46,9 +46,9 @@ export function buildLab(g, cards, upd) {
   }
 
   // ---- Destillationsapparatur
-  const d = makeDistillation(); d.group.position.set(DIST_AT.x, H, DIST_AT.z); d.group.scale.x = -1; d.group.userData.keep = true; g.add(d.group);
+  const d = makeDistillation({ mirrorX: true }); d.group.position.set(DIST_AT.x, H, DIST_AT.z); g.add(d.group);
   const W = (x, y, z) => [DIST_AT.x - x, H + y, DIST_AT.z + z];
-  const box = (w, h, dd, x, y, z, rz = 0) => { const t = hitBox(w, h, dd, cards.destillation); t.position.set(...W(x, y, z)); t.rotation.z = -rz * -1; g.add(t); return t; };
+  const box = (w, h, dd, x, y, z) => { const t = hitBox(w, h, dd, cards.destillation); t.position.set(...W(x, y, z)); g.add(t); return t; };
   box(0.34, 0.74, 0.26, 0.0, 0.37, 0.0);                    // Heizpilz, Kolben, Aufsatz, Thermometer
   { const c = box(0.62, 0.075, 0.075, 0.42, 0.30, 0.0); c.rotation.z = (18 * Math.PI) / 180; }  // Kühler (geneigt; Spiegelung in x kehrt die Neigung um)
   box(0.16, 0.26, 0.16, 0.687, 0.13, 0.0);                  // Vorlage

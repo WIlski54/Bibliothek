@@ -40,6 +40,7 @@ const goto = async (id) => { await page.evaluate((id) => window.__lib.goStation(
 const cardTitle = () => page.evaluate(() => { const c = document.getElementById('card'); return c.hidden ? null : c.querySelector('h2')?.textContent || ''; });
 const closeCard = async () => { await page.keyboard.press('Escape'); await step(1); };
 
+check('Fahrt vom Foyer ins Labor (durch die Tür)', await goto('chemie-eingang'));
 // (2) Felder des Periodensystems
 check('Station Periodensystem erreichbar', await goto('chemie-periodensystem'));
 const cellScreen = (z) => page.evaluate((z) => {
@@ -86,7 +87,9 @@ const tapObject = async (label, from = null) => {
     for (let i = 0; i <= 6; i++) for (let j = 0; j <= 6; j++) for (let k = 0; k <= 2; k++) pts.push(new L.THREE.Vector3(box.min.x + (box.max.x - box.min.x) * i / 6, box.min.y + (box.max.y - box.min.y) * j / 6, box.min.z + (box.max.z - box.min.z) * k / 2));
     const scr = pts.map((p) => p.project(L.camera)).filter((v) => Math.abs(v.x) < 0.95 && Math.abs(v.y) < 0.8 && v.z < 1);
     scr.sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y));
-    for (const v of scr) { const h = L.world.pick(v.x, v.y); if (h && h.tap.label === label) return [(v.x + 1) / 2 * c.width + c.left, (1 - v.y) / 2 * c.height + c.top]; }
+    // Nur Punkte, an denen auch alle Nachbarpixel (±4 px) das Ziel treffen: ein Fingertipp trifft nie auf den Pixel genau
+    const at = (px, py) => { const h = L.world.pick(((px - c.left) / c.width) * 2 - 1, -(((py - c.top) / c.height) * 2 - 1)); return h && h.tap.label === label; };
+    for (const v of scr) { const px = Math.round((v.x + 1) / 2 * c.width + c.left), py = Math.round((1 - v.y) / 2 * c.height + c.top); if ([[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4]].every(([dx, dy]) => at(px + dx, py + dy))) return [px, py]; }
     return null;
   }, label);
   if (!pt) return { err: 'von der Station nicht antippbar' };

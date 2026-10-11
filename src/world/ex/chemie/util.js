@@ -87,17 +87,33 @@ export class Batch {
     return this;
   }
   get empty() { return this.map.size === 0; }
-  build({ name = 'batch', renderOrder = 0 } = {}) {
+  // mirrorX: ganze Gruppe an der YZ-Ebene spiegeln (Geometrie spiegeln und Dreiecke umdrehen), damit world.js sie ganz normal zusammenfassen kann
+  build({ name = 'batch', renderOrder = 0, mirrorX = false } = {}) {
     const grp = new THREE.Group(); grp.name = name;
     for (const [mat, list] of this.map) {
       const idx = list.filter((g) => g.index).length; if (idx && idx !== list.length) list.forEach((g, i) => { if (g.index) list[i] = g.toNonIndexed(); });
       const merged = mergeGeometries(list, false); if (!merged) continue; list.forEach((g) => g.dispose());
+      if (mirrorX) { merged.scale(-1, 1, 1); flipWinding(merged); }
       const m = new THREE.Mesh(merged, mat); m.renderOrder = mat.transparent ? 3 + renderOrder : renderOrder; grp.add(m);
     }
     this.map.clear(); return grp;
   }
 }
 
+function flipWinding(g) {
+  if (g.index) { const a = g.index.array; for (let i = 0; i < a.length; i += 3) { const t = a[i + 1]; a[i + 1] = a[i + 2]; a[i + 2] = t; } g.index.needsUpdate = true; return; }
+  for (const attr of Object.values(g.attributes)) { const n = attr.itemSize, a = attr.array, tmp = new Array(n); for (let i = 0; i + 2 < attr.count; i += 3) for (let k = 0; k < n; k++) { const i1 = (i + 1) * n + k, i2 = (i + 2) * n + k; const t = a[i1]; a[i1] = a[i2]; a[i2] = t; } attr.needsUpdate = true; }
+}
+// Rahmen mit vielen gleichen Materialien (zum Beispiel Porträtrahmen) zu wenigen Meshes zusammenfassen: gleiche Materialien werden verschmolzen, Bildfläche und Schild bleiben einzeln
+export function slimFrame(root) {
+  const by = new Map(); for (const c of [...root.children]) { if (!c.isMesh || Array.isArray(c.material) || c.userData.picture) continue; if (!by.has(c.material)) by.set(c.material, []); by.get(c.material).push(c); }
+  for (const [mat, list] of by) {
+    if (list.length < 2) continue;
+    const geos = list.map((m) => { const g = m.geometry.clone(); m.updateMatrix(); g.applyMatrix4(m.matrix); return g; }); const merged = mergeGeometries(geos, false); if (!merged) continue;
+    list.forEach((m) => root.remove(m)); root.add(new THREE.Mesh(merged, mat));
+  }
+  return root;
+}
 // ---------------------------------------------------------------- Kleinkram
 export const rad = (d) => (d * Math.PI) / 180;
 export function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
@@ -112,5 +128,17 @@ export function signTex(text, { w = 512, h = 128, bg = '#3a2a14', fg = '#f6dc8a'
 }
 export function signMesh(text, w, h, o = {}) {
   const px = o.px || 640; const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: signTex(text, { w: px, h: Math.round(px * h / w), ...o }), roughness: o.rough ?? 0.45, metalness: o.metal ?? 0.25 })); return m;
+}
+
+// Schilder-Atlas: alle Beschriftungsschilder des Raums liegen auf EINER Textur und teilen sich ein Material (world.js fasst sie dann zu einem Zeichenaufruf zusammen)
+export function makeSignAtlas(entries) {
+  const [c, g] = canvas(1024, 1024), rects = {}, CW = 512, CH = 200;
+  entries.forEach((e, i) => {
+    const x = (i % 2) * CW, y = Math.floor(i / 2) * CH, ph = Math.round(CW * e.h / e.w); rects[e.key] = { x, y, ph, w: e.w, h: e.h };
+    const t = signTex(e.draw ? '' : e.text, { w: CW, h: ph, bg: e.bg || '#3a2410', fg: e.fg || '#f6dc8a', font: e.font || 'bold 56px Georgia, serif', border: e.border ?? '#d9a441' }); g.drawImage(t.image, x, y); t.dispose();
+    if (e.draw) { g.save(); g.translate(x, y); e.draw(g, CW, ph); g.restore(); }   // eigene Zeichnung (zum Beispiel Legende mit Farbpunkten)
+  });
+  const mat = new THREE.MeshStandardMaterial({ map: texOf(c), roughness: 0.45, metalness: 0.25 });
+  return { material: mat, mesh(key) { const r = rects[key], geo = new THREE.PlaneGeometry(r.w, r.h), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (r.x + uv.getX(i) * 512) / 1024, 1 - (r.y + (1 - uv.getY(i)) * r.ph) / 1024); return new THREE.Mesh(geo, mat); } };
 }
 export { THREE };

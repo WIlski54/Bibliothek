@@ -5,7 +5,7 @@ import { buildDept } from './dept.js';
 import { M, placeWall, wallPos, hitBox, pottedPlant } from '../kit.js';
 import { tileTex, plasterTex } from '../tex.js';
 import { personFrame } from '../portraits.js';
-import { Batch, MAT, signMesh } from '../ex/chemie/util.js';
+import { Batch, MAT, signMesh, makeSignAtlas, slimFrame } from '../ex/chemie/util.js';
 import { addFrieze, makeWindow, addPipe, addValve, makeGauge, addCeiling, makeLamp, makeLightPatch, makeRunner, makeGogglesSign } from '../ex/chemie/room.js';
 import { createPeriodicTable, makePseFrame } from '../ex/chemie/pse.js';
 import { makeCards } from '../ex/chemie/cards.js';
@@ -32,6 +32,15 @@ export function build(ctx) {
   };
   return buildDept(ctx, 'chemie', style, (api) => {
     const { g, R, room } = api, upd = [], cards = makeCards(ctx, ST);
+    const frame = (id, o) => slimFrame(personFrame(id, o));
+    const atlas = makeSignAtlas([
+      { key: 'Stoffe', text: 'Stoffe', w: 1.3, h: 0.3, font: 'bold 66px Georgia, serif' }, { key: 'Elemente', text: 'Elemente', w: 1.3, h: 0.3, font: 'bold 66px Georgia, serif' }, { key: 'Reaktionen', text: 'Reaktionen', w: 1.3, h: 0.3, font: 'bold 66px Georgia, serif' },
+      { key: 'Alltag', text: 'Alltag', w: 1.0, h: 0.3, font: 'bold 70px Georgia, serif' }, { key: 'Bücher', text: 'Bücher', w: 1.0, h: 0.3, font: 'bold 70px Georgia, serif' },
+      { key: 'nacl', text: 'NaCl · Kochsalz', w: 0.3, h: 0.06, bg: '#2d1c0e', font: 'bold 46px Georgia, serif' }, { key: 'cuso4', text: 'CuSO₄ · 5 H₂O', w: 0.3, h: 0.06, bg: '#2d1c0e', font: 'bold 46px Georgia, serif' },
+      { key: 'natron', text: 'Natron', w: 0.3, h: 0.06, bg: '#2d1c0e', font: 'bold 46px Georgia, serif' }, { key: 'atom', text: 'Natrium-Atom (vereinfachtes Modell)', w: 0.5, h: 0.065, bg: '#2d1c0e', font: 'bold 27px Georgia, serif' },
+      { key: 'legende', text: '', w: 0.34, h: 0.1, bg: '#2d1c0e', draw: (g, W, H) => { g.textBaseline = 'middle'; g.fillStyle = '#6a78e0'; g.beginPath(); g.arc(56, H * 0.3, 15, 0, 7); g.fill(); g.fillStyle = '#5cc15a'; g.beginPath(); g.arc(56, H * 0.7, 23, 0, 7); g.fill();
+        g.fillStyle = '#f6dc8a'; g.font = 'bold 34px Georgia, serif'; g.textAlign = 'left'; g.fillText('Na⁺  klein', 112, H * 0.3); g.fillText('Cl⁻  groß', 112, H * 0.7); } },
+    ]);
     // ---- Mitte räumen: Lesetisch, Stühle, Kronleuchter, Teppich und Pflanzen der Vorlage entfernen (wir bauen das Labor selbst)
     for (const c of [...g.children]) {
       const isShelf = c.userData.kind === 'shelf', p = c.position;
@@ -65,17 +74,17 @@ export function build(ctx) {
     { const t = hitBox(0.3, 3.0, 0.3, cards.kupfer); t.position.set(east2.x - 0.02, 1.6, -2.6); g.add(t); const t2 = hitBox(0.3, 3.0, 0.3, cards.kupfer); t2.position.set(east2.x - 0.02, 1.6, 2.6); g.add(t2); }
 
     // ---- Schilder über den Regalen
-    const sign = (txt, wall, a, w = 1.3) => { const s = signMesh(txt, w, 0.3, { bg: '#3a2410', fg: '#f6dc8a' }); placeWall(s, room, wall, a, 0.02, 2.98); g.add(s); };
+    const sign = (key, wall, a) => { const s = atlas.mesh(key); placeWall(s, room, wall, a, 0.02, 2.98); g.add(s); };
     const nu = api.units.filter((u) => u.userData.wall === 'N').sort((a, b) => a.userData.a - b.userData.a);
     ['Stoffe', 'Elemente', 'Reaktionen'].forEach((txt, i) => { const u1 = nu[2 * i], u2 = nu[2 * i + 1]; if (u1 && u2) sign(txt, 'N', (u1.userData.a + u2.userData.a) / 2); });
-    for (const u of api.units.filter((u) => u.userData.wall === 'W')) sign('Alltag', 'W', u.userData.a, 1.0);
-    for (const u of api.units.filter((u) => u.userData.wall === 'E')) sign('Bücher', 'E', u.userData.a, 1.0);
+    for (const u of api.units.filter((u) => u.userData.wall === 'W')) sign('Alltag', 'W', u.userData.a);
+    for (const u of api.units.filter((u) => u.userData.wall === 'E')) sign('Bücher', 'E', u.userData.a);
 
     // ---- Periodensystem (Ostwand, Mitte) mit Schrank darunter; Mendelejew daneben
     const pse = createPeriodicTable({ ctx, station: ST.periodensystem, w: 4.2 });
     { const fr = makePseFrame(pse.width); pse.board.position.z = 0.02; fr.add(pse.board); placeWall(fr, room, 'E', 0, 0.03, 2.36); g.add(fr); }
     { const sb = makeSideboard(); placeWall(sb, room, 'E', 0, 0.0, 0.0); g.add(sb); }
-    { const pf = personFrame('mendelejew'); pf.userData.tap.station = ST.periodensystem; placeWall(pf, room, 'E', 3.65, 0.0, 1.95); g.add(pf); }
+    { const pf = frame('mendelejew'); pf.userData.tap.station = ST.periodensystem; placeWall(pf, room, 'E', 3.65, 0.0, 1.95); g.add(pf); }
 
     { const ru = makeRunner(6.6, 1.9); ru.position.x = -0.9; ru.position.z = -0.35; g.add(ru); }
     { const sg = makeGogglesSign(0.26); placeWall(sg, room, 'W', -1.7, 0.012, 1.55); g.add(sg); }
@@ -85,27 +94,28 @@ export function build(ctx) {
 
     // ---- Fensterfront: Arbeitsplatte mit Spüle, Waage (Lavoisier), Gewichtskasten, Standflaschen, Porträts
     { const ct = makeCounter(); placeWall(ct, room, 'S', 0, 0, 0); g.add(ct); const dc = makeCounterDecor(); placeWall(dc, room, 'S', 0, 0, 0.86); g.add(dc); }
-    const scale = makeScale(); scale.group.scale.setScalar(1.4); placeWall(scale.group, room, 'S', 1.95, 0.31, 0.86); g.add(scale.group); upd.push((dt, t) => scale.update(t));
-    { const t = hitBox(0.92, 0.95, 0.42, cards.waage); placeWall(t, room, 'S', 1.95, 0.31, 0.86 + 0.46); g.add(t); }
+    const scale = makeScale(); scale.group.scale.setScalar(1.3); placeWall(scale.group, room, 'S', 1.95, 0.31, 0.86); g.add(scale.group); upd.push((dt, t) => scale.update(t));
+    { const t = hitBox(0.86, 0.9, 0.4, cards.waage); placeWall(t, room, 'S', 1.95, 0.31, 0.86 + 0.43); g.add(t); }
     { const wbx = makeWeightBox(); placeWall(wbx, room, 'S', 1.3, 0.28, 0.86); wbx.scale.setScalar(1.25); wbx.position.x += 0.0; g.add(wbx); }
-    { const pf = personFrame('lavoisier'); pf.userData.tap.station = ST.waage; placeWall(pf, room, 'S', 1.95, 0.0, 1.95); g.add(pf); }
-    { const pf = personFrame('liebig'); pf.userData.tap.station = ST.destillation; placeWall(pf, room, 'S', -1.95, 0.0, 1.95); g.add(pf); }
+    { const pf = frame('lavoisier'); pf.userData.tap.station = ST.waage; placeWall(pf, room, 'S', 1.95, 0.0, 2.25); g.add(pf); }
+    { const pf = frame('liebig'); pf.userData.tap.station = ST.destillation; placeWall(pf, room, 'S', -1.95, 0.0, 2.25); g.add(pf); }
 
     // ---- Nordzone: Schaukasten-Tisch (Kristalle) und Atommodell
     const DT = { x: -2.6, z: -2.75 }, dtab = makeDisplayTable({ w: 2.3, d: 0.95, h: 0.95 }); dtab.group.position.set(DT.x, 0, DT.z); g.add(dtab.group);
     { const hb = hitBox(2.3, 0.95, 0.95, cards.kristalle0 || cards.natron); void hb; }
-    const nacl = makeNaCl(); nacl.group.position.set(DT.x - 0.62, dtab.top + 0.26 + 0.012, DT.z - 0.02); g.add(nacl.group); upd.push((dt, t) => nacl.update(t));
-    { const bb = new Batch(); bb.cyl(M.brass(), 0.11, 0.12, 0.014, 0, 0.007, 0, { seg: 26 }); const base = bb.build({ name: 'nacl-fuss' }); base.position.set(DT.x - 0.62, dtab.top, DT.z - 0.02); g.add(base); }
-    { const t = hitBox(0.46, 0.5, 0.46, cards.nacl); t.position.set(DT.x - 0.62, dtab.top + 0.27, DT.z - 0.02); g.add(t); }
+    const nacl = makeNaCl({ s: 0.12, rNa: 0.027, rCl: 0.045 }); nacl.group.position.set(DT.x - 0.6, dtab.top + 0.3 + 0.012, DT.z - 0.02); g.add(nacl.group); upd.push((dt, t) => nacl.update(t));
+    { const bb = new Batch(); bb.cyl(M.brass(), 0.12, 0.13, 0.014, 0, 0.007, 0, { seg: 26 }); const base = bb.build({ name: 'nacl-fuss' }); base.position.set(DT.x - 0.6, dtab.top, DT.z - 0.02); g.add(base); }
+    { const t = hitBox(0.56, 0.6, 0.56, cards.nacl); t.position.set(DT.x - 0.6, dtab.top + 0.31, DT.z - 0.02); g.add(t); }
     const cu = makeCuSO4(); cu.position.set(DT.x + 0.02, dtab.top, DT.z - 0.02); g.add(cu);
     { const t = hitBox(0.32, 0.28, 0.32, cards.kupfersulfat); t.position.set(DT.x + 0.02, dtab.top + 0.14, DT.z - 0.02); g.add(t); }
     const nat = makeNatron(); nat.group.position.set(DT.x + 0.66, dtab.top, DT.z - 0.02); g.add(nat.group);
     { const t = hitBox(0.46, 0.2, 0.32, cards.natron); t.position.set(DT.x + 0.66, dtab.top + 0.1, DT.z - 0.02); g.add(t); }
-    for (const [dx, txt] of [[-0.62, 'NaCl · Kochsalz'], [0.02, 'CuSO₄ · 5 H₂O'], [0.66, 'Natron']]) { const ls = labelStand(txt, 0.3, 0.06); ls.position.set(DT.x + dx, dtab.top, DT.z + 0.36); g.add(ls); }
+    for (const [dx, key] of [[-0.62, 'nacl'], [0.02, 'cuso4'], [0.66, 'natron']]) { const ls = labelStand(atlas.mesh(key), 0.3); ls.position.set(DT.x + dx, dtab.top, DT.z + 0.36); g.add(ls); }
     // Atommodell: auf der Arbeitsplatte vor dem mittleren Fenster (leuchtender Hintergrund)
     const atom = makeAtom({ h: 0.4 }); placeWall(atom.group, room, 'S', 0, 0.3, 0.86); g.add(atom.group); upd.push((dt, t) => atom.update(t));
     { const t = hitBox(1.05, 1.1, 0.9, cards.atom); placeWall(t, room, 'S', 0, 0.3, 0.86 + atom.centerY); g.add(t); }
-    { const ls = labelStand('Natrium-Atom (Modell)', 0.42, 0.065); placeWall(ls, room, 'S', 0, 0.52, 0.86); g.add(ls); }
+    { const ls = labelStand(atlas.mesh('atom'), 0.5); placeWall(ls, room, 'S', 0, 0.52, 0.86); g.add(ls); }
+    { const ls = labelStand(atlas.mesh('legende'), 0.34); ls.position.set(DT.x - 0.97, dtab.top, DT.z + 0.18); ls.rotation.y = 0.35; g.add(ls); }
     for (const [x, z, s] of [[5.45, 3.7, 3], [-5.4, 4.15, 2]]) { const p = pottedPlant({ h: 1.5, seed: s }); p.position.set(x, 0, z); g.add(p); }
 
     // ---- Stationen (Reihenfolge = Pfeile)
@@ -114,21 +124,21 @@ export function build(ctx) {
     api.stations.push(
       S(ST.eingang, 'Eingang', [-4.3, 1.6, 0], [6, 1.7, 0], { catSpot: [-3.5, 0, -1.7] }),
       S(ST.regalN, 'Regale', [0.0, 1.6, 0.5], [0.0, 2.1, -5], { catSpot: [2.3, 0, -1.7] }),
-      S(ST.regalE, 'Bücher', [3.1, 1.6, -1.2], [6, 1.8, -3.7], { catSpot: [4.4, 0, -0.9] }),
+      S(ST.regalE, 'Bücher', [3.9, 1.6, -2.2], [6, 1.6, -3.6], { catSpot: [4.4, 0, -0.9] }),
       S(ST.periodensystem, 'Periodensystem', [3.35, 1.6, 0], [6, 2.3, 0], { catSpot: [4.8, 0, -3.0] }),
       S(ST.labortisch, 'Labortisch', [-1.3, 1.55, -0.3], [-1.3, 1.05, 1.3], { catSpot: [2.2, 0.92, 1.4] }),
       S(ST.destillation, 'Destillation', [1.5, 1.55, -0.1], [1.45, 1.3, 1.3], { catSpot: [2.2, 0.92, 1.4] }),
-      S(ST.waage, 'Waage', [-1.95, 1.6, 3.2], [-1.95, 1.5, 4.8], { catSpot: [0.4, 0.86, 4.7] }),
-      S(ST.atom, 'Atommodell', [0.0, 1.6, 3.2], [0.0, 1.75, 4.8], { catSpot: [1.6, 0.86, 4.7] }),
-      S(ST.kristalle, 'Kristalle und Natron', [-2.6, 1.6, -0.75], [-2.6, 1.2, -2.75], { catSpot: [-4.6, 0, -1.4] }),
+      S(ST.waage, 'Waage', [-1.95, 1.6, 3.45], [-1.95, 1.5, 4.8], { catSpot: [0.4, 0.86, 4.7] }),
+      S(ST.atom, 'Atommodell', [0.0, 1.6, 3.2], [0.0, 1.6, 4.8], { catSpot: [1.6, 0.86, 4.7] }),
+      S(ST.kristalle, 'Kristalle und Natron', [-2.6, 1.6, -1.1], [-2.6, 1.15, -2.75], { catSpot: [-4.6, 0, -1.4] }),
       S(ST.portraets, 'Porträts', [-2.3, 1.6, 0], [-6, 1.9, 0], { catSpot: [-3.4, 0, 2.3] }),
       S(ST.tuer, 'Ausgang', [3.0, 1.6, 0], [-6, 1.9, 0]),
     );
 
     // ---- Porträts der Porträtwand (Westwand neben der Tür)
-    for (const [id, a] of [['curie', 2.3], ['hodgkin', -2.3]]) { const pf = personFrame(id); pf.userData.tap.station = ST.portraets; placeWall(pf, room, 'W', a, 0.0, 1.85); g.add(pf); }
+    for (const [id, a] of [['curie', 2.3], ['hodgkin', -2.3]]) { const pf = frame(id); pf.userData.tap.station = ST.portraets; placeWall(pf, room, 'W', a, 0.0, 1.85); g.add(pf); }
     // Bunsen: kleines Bild auf dem Tisch hinter den Brennern
-    { const pf = personFrame('bunsen', { w: 0.2, h: 0.27 }); pf.userData.tap.station = ST.labortisch; pf.position.set(-0.72, LAB.H + 0.24, 1.74); pf.rotation.y = Math.PI; pf.rotation.x = -0.12; g.add(pf);
+    { const pf = frame('bunsen', { w: 0.2, h: 0.27 }); pf.userData.tap.station = ST.labortisch; pf.position.set(-0.72, LAB.H + 0.24, 1.74); pf.rotation.y = Math.PI; pf.rotation.x = -0.12; g.add(pf);
       const sb = new Batch(); sb.tube(M.wood(0x3a2214, { planks: 1 }), [-0.72, LAB.H + 0.24, 1.74 + 0.05], [-0.72, LAB.H + 0.0, 1.74 + 0.18], 0.012, 6); g.add(sb.build({ name: 'staender' })); }
 
     // ---- Lichter (max. 4): über Tisch Ost und West, Nordzone, Periodensystem

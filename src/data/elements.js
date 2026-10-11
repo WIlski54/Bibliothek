@@ -161,7 +161,7 @@ const ORIGIN = {
   Sc: 'Scandium ist nach Skandinavien benannt, wo man seine Erze fand.',
   V: 'Vanadium ist nach Vanadis benannt, einem Beinamen der nordischen Göttin Freya.',
   Rb: 'Rubidium kommt von lateinisch rubidus, „dunkelrot“, nach den roten Linien in seinem Spektrum.',
-  Sr: 'Strontium ist nach dem Ort Strontian in Schottland benannt. In der Flamme leuchtet es rot (Feuerwerk).',
+  Sr: 'Strontium ist nach dem Ort Strontian in Schottland benannt. Strontiumsalze färben die Flamme rot, zum Beispiel im Feuerwerk.',
   Y: 'Yttrium ist nach dem schwedischen Ort Ytterby benannt. Auch Ytterbium, Terbium und Erbium tragen Namen von dort.',
   Zr: 'Zirconium wird zum Beispiel für die Hüllen der Brennstäbe in Kernkraftwerken gebraucht.',
   Nb: 'Niob ist nach Niobe benannt, der Tochter des Tantalus, denn es kommt zusammen mit Tantal vor.',
@@ -220,12 +220,20 @@ const ORIGIN = {
 // Hinweise zur Einordnung (für das Feld src der Karte)
 const NOTE = {
   Tc: 'Die Zahl in Klammern ist die Massenzahl des langlebigsten Isotops, nicht ein Standardwert.',
+  Po: 'Polonium wird in Büchern teils zu den Metallen, teils zu den Halbmetallen gerechnet; hier steht es bei den übrigen Metallen.',
+  At: 'Astat wird nach seiner Stellung in Gruppe 17 zu den Halogenen gerechnet; seine Eigenschaften sind kaum untersucht.',
   Ts: 'Tenness gehört nach seiner Stellung zur Gruppe 17 (Halogene). Seine Eigenschaften sind kaum untersucht.',
+  Og: 'Oganesson steht in Gruppe 18 und wird deshalb zu den Edelgasen gezählt; seine Eigenschaften sind kaum untersucht.',
   Nh: 'Die Einordnung der Elemente 113 bis 116 als „übrige Metalle“ folgt ihrer Stellung im Periodensystem; ihre Eigenschaften sind kaum untersucht.',
   Fl: 'Die Einordnung der Elemente 113 bis 116 als „übrige Metalle“ folgt ihrer Stellung im Periodensystem; ihre Eigenschaften sind kaum untersucht.',
   Mc: 'Die Einordnung der Elemente 113 bis 116 als „übrige Metalle“ folgt ihrer Stellung im Periodensystem; ihre Eigenschaften sind kaum untersucht.',
   Lv: 'Die Einordnung der Elemente 113 bis 116 als „übrige Metalle“ folgt ihrer Stellung im Periodensystem; ihre Eigenschaften sind kaum untersucht.',
-  Lr: 'Bei den schweren Actinoiden schwanken die Massenzahlen je nach Quelle; angegeben ist das langlebigste bekannte Isotop.',
+};
+// kurze, für alle Mitglieder zutreffende Einordnung (für Elemente ohne eigenen Fachtext)
+const CAT_BLURB = {
+  ak: 'Alkalimetalle sind sehr reaktionsfreudige Metalle der Gruppe 1.', ea: 'Erdalkalimetalle sind reaktionsfreudige Metalle der Gruppe 2.', ub: 'Übergangsmetalle sind die Elemente der Gruppen 3 bis 12.',
+  um: 'Die „übrigen Metalle“ stehen in den Hauptgruppen 13 bis 16 rechts neben den Übergangsmetallen.', hm: 'Halbmetalle haben Eigenschaften von Metallen und von Nichtmetallen.', hg: 'Halogene sind die Elemente der Gruppe 17.',
+  eg: 'Edelgase sind die Elemente der Gruppe 18.', la: 'Lanthanoide sind silbrige Metalle, die einander sehr ähnlich sind.', ac: 'Actinoide sind die Elemente von Actinium bis Lawrencium.',
 };
 
 const ART = { f: 'fest', l: 'flüssig', g: 'gasförmig' };
@@ -243,15 +251,16 @@ export function elementCard(z, { image } = {}) {
   const paras = [`${massLine} ${state}`];
   let fact;
   if (d) { paras.push(d[0]); fact = d[1]; } else {
-    if (e.radio) paras.push('Alle Atome dieses Elements sind radioaktiv.');
-    if (e.z >= 93 && e.z <= 118 && e.z !== 92) paras.push('Dieses Element kommt in der Natur praktisch nicht vor und wird künstlich in Kernreaktoren oder Teilchenbeschleunigern hergestellt.');
+    const bits = [CAT_BLURB[e.cat]];
+    if (e.radio) bits.push(e.z >= 104 ? 'Alle Atome sind radioaktiv. Man hat dieses Element nur in Teilchenbeschleunigern in winzigen Mengen hergestellt.' : e.z >= 93 ? 'Alle Atome sind radioaktiv. Das Element kommt in der Natur praktisch nicht vor und wird künstlich hergestellt.' : 'Alle Atome dieses Elements sind radioaktiv.');
+    paras.push(bits.join(' '));
     fact = ORIGIN[e.sym] || `Die Ordnungszahl ${e.z} verrät: Jedes Atom von ${e.name} hat ${e.z} Protonen im Kern.`;
   }
   const noteSrc = NOTE[e.sym];
   return {
     kind: 'info', tag: 'Chemie', dept: 'chemie', title: `${e.name} (${e.sym})`, sub: `Ordnungszahl ${e.z} · ${cat.one} · ${stellung}`,
     paras, fact, factLabel: 'Wusstest du? ', alt: `${e.name}, Symbol ${e.sym}, Ordnungszahl ${e.z}`,
-    src: (d ? '' : 'Allgemeine Angaben ohne eigenen Fachtext. ') + 'Atommassen: IUPAC-Standardwerte, gerundet.' + (noteSrc ? ' ' + noteSrc : ''),
+    src: (d ? '' : 'Allgemeine Angaben ohne eigenen Fachtext. ') + 'Atommassen: IUPAC-Standardwerte, gerundet.' + (noteSrc ? ' ' + noteSrc : '') + (e.z >= 99 && e.mass !== undefined && typeof e.mass !== 'number' ? ' Bei den schwersten Elementen ändern sich die Angaben mit neuen Messungen.' : ''),
     label: `${e.name} (${e.sym})`,
     image: image ? image(e) : undefined,
   };
