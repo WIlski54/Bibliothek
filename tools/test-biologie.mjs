@@ -67,7 +67,7 @@ for (const name of ['Charles Darwin', 'Carl von Linné', 'Gregor Mendel', 'Alexa
 
 // 7) Regale: Antippen fährt zur Station; Dino-Buch antippbar
 { await jump('biologie-regal'); const bk = taps.find((t) => t.kind === 'book'); let found = null; await page.evaluate(() => { }); const bp = await page.evaluate(() => { const L = window.__lib; let p = null; L.world.rooms.biologie.group.traverse((o) => { if (o.userData.tap?.kind === 'book' && !p) { const v = new L.THREE.Vector3(); o.getWorldPosition(v); p = [v.x, v.y + 0.2, v.z]; } }); return p; });
-  const [x, y, z] = await proj(bp); await page.mouse.click(x, y); await page.waitForTimeout(40); const ti = await cardTitle(); check('Dino-Buch öffnet Karte', ti !== null && /Dinosaurier/.test(ti), String(ti)); if (ti !== null) await closeCard(); }
+  const [x, y, z] = await proj(bp); await page.mouse.click(x, y); await page.waitForTimeout(40); const ti = await cardTitle(); await page.evaluate(() => window.__lib.step(0.1, 25)); const act = await page.evaluate(() => ({ a: window.__lib.showcase.active, t: document.getElementById('bb-title').textContent })); check('Dino-Buch öffnet den Buch-Auftritt', act.a && /Dinosaurier/.test(act.t), JSON.stringify(act)); await page.evaluate(() => { window.__lib.showcase.close(); window.__lib.step(0.1, 40); }); if (ti !== null) await closeCard(); }
 
 const errs = logs.filter((l) => /error|pageerror/i.test(l) && !/Failed to load resource|ERR_/.test(l)); if (errs.length) console.log(errs.slice(0, 10).join('\n'));
 check('keine Konsolenfehler', errs.length === 0);
