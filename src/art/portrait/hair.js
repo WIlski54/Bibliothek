@@ -65,7 +65,7 @@ export const HAIR = {
       for (let i = 0; i < 46; i++) { const x = bb.x0 + 10 + r() * (bb.w - 20), y = bb.y0 + 6 + r() * (bb.h * 0.8), rad = 6 + r() * 7, a = r() * TAU;
         ctx.strokeStyle = i % 2 ? alpha(tint(H.col, 0.34), 0.5) : alpha('#000', 0.35); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, rad, a, a + 3.4); ctx.stroke(); } } });
     // einzelne Stirnlocken
-    for (const [u, v, rr] of [[-0.62, -0.52, 17], [-0.36, -0.5, 14], [-0.12, -0.52, 15], [0.14, -0.5, 14], [0.4, -0.52, 16], [0.64, -0.5, 17]]) P.cut(ell(G.X(u), G.Y(v), rr, rr * 0.9, 14), H.col, { lift: 0.5, wob: 0.6, grad: false, bump: { amp: 2.8, wl: 14 }, deco: (ctx) => { ctx.strokeStyle = alpha(tint(H.col, 0.36), 0.55); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(G.X(u) + 2, G.Y(v), rr * 0.45, 0.5, 4.2); ctx.stroke(); } });
+    for (const [u, v, rr] of [[-0.64, -0.5, 21], [-0.38, -0.5, 18], [-0.12, -0.52, 19], [0.14, -0.5, 18], [0.4, -0.52, 20], [0.64, -0.5, 21]]) P.cut(ell(G.X(u), G.Y(v), rr, rr * 0.9, 14), H.col, { lift: 0.3, wob: 0.6, grad: false, bump: { amp: 2.8, wl: 14 }, deco: (ctx) => { ctx.strokeStyle = alpha(tint(H.col, 0.36), 0.55); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(G.X(u) + 2, G.Y(v), rr * 0.45, 0.5, 4.2); ctx.stroke(); } });
   } },
   // fast kahl: Haarkranz seitlich und hinten (Darwin, Bunsen)
   kranz: { back(P, G, H) {
@@ -154,13 +154,13 @@ export const BEARD = {
       }
     } });
   },
-  // Backenbart / Koteletten
+  // Backenbart / Koteletten: oben schmal, in Wangenhöhe am breitesten, unten spitz zulaufend
   koteletten(P, G, B) {
-    const w = B.wid ?? 1, l = B.len ?? 0.55;
+    const w = B.wid ?? 1, l = B.len ?? 0.55, a = 0.07 * (w - 1), tip = 0.62 + 0.3 * l;
     for (const s of [-1, 1]) {
-      const half = [[0.93, -0.4], [1.04, -0.15], [1.04 + 0.05 * w, 0.2], [0.98 + 0.12 * w, 0.5], [0.84 + 0.12 * w, 0.5 + l * 0.5], [0.72, 0.5 + l * 0.35], [0.8, 0.22], [0.86, -0.1]].map(([u, v]) => G.P(s * u, v));
+      const half = [[0.96 + a * 0.3, -0.3], [1.05 + a, 0.0], [1.1 + a, 0.3], [1.05 + a * 0.8, 0.55], [0.96, tip - 0.1], [0.9, tip], [0.84, 0.55], [0.82 - a, 0.3], [0.88 - a, 0.0], [0.93, -0.25]].map(([u, v]) => G.P(s * u, v));
       P.cut(s < 0 ? half.reverse() : half, B.col, { lift: 0.8, bump: { amp: B.curl ?? 2.5, wl: 14 }, step: 5, deco: (ctx) => {
-        ctx.strokeStyle = alpha(shade(B.col, 0.3), 0.4); ctx.lineWidth = 1.2; for (let i = 0; i < 7; i++) { const [x0, y0] = G.P(s * (0.82 + i * 0.03), -0.2 + i * 0.03), [x1, y1] = G.P(s * (0.78 + i * 0.05), 0.5 + l * 0.3); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
+        ctx.strokeStyle = alpha(shade(B.col, 0.3), 0.4); ctx.lineWidth = 1.2; for (let i = 0; i < 7; i++) { const [x0, y0] = G.P(s * (0.9 + i * 0.03), -0.15 + i * 0.02), [x1, y1] = G.P(s * (0.88 + i * 0.03), tip - 0.12); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
       } });
     }
   },

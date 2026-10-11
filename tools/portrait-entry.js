@@ -21,3 +21,4 @@ window.__portraits = {
 window.__bookReady = true;
 window.__time = (id, flags) => { Object.assign(globalThis, flags); const a = []; for (let i = 0; i < 4; i++) a.push(draw(id).ms); return a.map((x) => +x.toFixed(1)); };
 window.__prof = (id) => { globalThis.__PROF = {}; draw(id); const a = globalThis.__PROF; globalThis.__PROF = null; return Object.entries(a).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(', '); };
+window.__size = (id, w, h) => { const r = draw(id, w, h); return { ms: r.ms, url: r.canvas.toDataURL('image/png') }; };

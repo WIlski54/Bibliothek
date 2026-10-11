@@ -235,7 +235,7 @@ export const PERSONS = {
     look: {
       skin: '#eec1a0', age: 0.6, face: { w: 1.0 }, eyes: { col: '#4a5a6a' }, brow: { col: '#6a645a', thick: 1.4 },
       hair: { style: 'wellig', col: '#6f685e', sdrop: -0.3, flare: 0.0, top: -1.34, bump: { amp: 5, wl: 34 }, back: false, hl: [[0.93, -0.2], [0.9, -0.5], [0.7, -0.72], [0.4, -0.84], [0, -0.82], [-0.4, -0.84], [-0.7, -0.72], [-0.9, -0.5], [-0.93, -0.2]] },
-      sideburns: { col: '#b8b2a6', len: 0.9, wid: 1.5, curl: 3.5 }, dress: { style: 'arbeitskittel', col: '#6f8494' }, bg: { id: 'labor', c: ['#e2eadc', '#9ac0cc', '#e8883a'] },
+      sideburns: { col: '#b8b2a6', len: 1.0, wid: 2.4, curl: 3.5 }, dress: { style: 'arbeitskittel', col: '#6f8494' }, bg: { id: 'labor', c: ['#e2eadc', '#9ac0cc', '#e8883a'] },
     },
   },
   bunsen: {
