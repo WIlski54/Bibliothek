@@ -104,7 +104,7 @@ export class Archimedes {
     const delay = wasSleeping ? 0.45 : 0.22; this.curS = 0;
     if (L < 0.35) { this.pos.copy(target); this.ground = target.y; return; }
     let T = Math.max(0.7, dur * 0.86 - delay - (wasSleeping ? 0.3 : 0)); T = Math.max(T, L / (0.83 * 6.5));
-    this.travel = { path, lens, L, T, t: 0, s: 0, useCam: !!rt, lead: 0.6 / Math.max(1, dur), delay, delay0: delay, stretchPrep: wasSleeping, startY: this.pos.y, endY: target.y, target, jumpAt: Math.max(0.05, (lens[1] || 0.7) - 0.55) };
+    this.travel = { path, lens, L, T, t: 0, s: 0, useCam: !!rt, lead: 0.6 / Math.max(1, dur), delay, delay0: delay, stretchPrep: wasSleeping, startY: this.pos.y, endY: target.y, target, jumpAt: Math.max(0.05, (lens[1] || 0.7) - 0.55), lastSeg: lens[lens.length - 1] - lens[lens.length - 2], upF: 0 };
     this.goFace = this.faceFor(new THREE.Vector3(path[1].x - this.pos.x, 0, path[1].z - this.pos.z));
     if (wasSleeping) { this.mode = 'wake'; this.modeT = 0; this.wakeNext = 'go'; } else { this.mode = 'prep'; this.modeT = 0; this.switchPose('walk', false, this.goFace); }
   }
@@ -172,8 +172,10 @@ export class Archimedes {
     const a = tr.path[i - 1], b = tr.path[i], seg = (L[i] - L[i - 1]) || 1, f = clamp((s - L[i - 1]) / seg);
     const old = this.pos.clone();
     this.pos.x = lerp(a.x, b.x, f); this.pos.z = lerp(a.z, b.z, f);
-    // Höhe: erst vom Möbelstück herunterspringen
-    const jl = tr.jumpAt, jf = clamp((s - jl) / 0.6); this.ground = tr.startY > 0.1 ? lerp(tr.startY, 0, smooth(jf)) : 0; this.lift = tr.startY > 0.1 && jf > 0 && jf < 1 ? 0.16 * Math.sin(Math.PI * jf) : 0;
+    // Höhe: erst vom Möbelstück herunterspringen, am Ziel gegebenenfalls hinaufspringen (catSpot mit y > 0)
+    const jl = tr.jumpAt, jf = clamp((s - jl) / 0.6); let gr = tr.startY > 0.1 ? lerp(tr.startY, 0, smooth(jf)) : 0, lf = tr.startY > 0.1 && jf > 0 && jf < 1 ? 0.16 * Math.sin(Math.PI * jf) : 0;
+    if (tr.endY > 0.05) { const ul = Math.min(0.9, tr.lastSeg), uf = clamp((s - (tr.L - ul)) / ul); if (uf > 0) { gr = Math.max(gr, tr.endY * smooth(uf)); lf = uf < 1 ? Math.max(lf, 0.14 * Math.sin(Math.PI * uf)) : lf; } tr.upF = uf; }
+    this.ground = gr; this.lift = lf;
     this.pos.y = this.ground + this.lift;
     const d = new THREE.Vector3(this.pos.x - old.x, 0, this.pos.z - old.z); const sp = d.length() / Math.max(dt, 1e-4);
     if (sp > 0.02) this.heading.copy(d).normalize();
@@ -323,8 +325,9 @@ export class Archimedes {
     else if (gait === 'trot') { const a = 0.5; fN = sw(0, a); hF = sw(0, a); fF = sw(0.5, a); hN = sw(0.5, a); bob = 0.008 * Math.abs(Math.sin(TAU * ph * 2)); tail += 0.15 * Math.sin(ph * TAU); headRz = 0.05 * Math.sin(TAU * ph * 2); }
     else if (gait === 'gallop') { const a = 0.78; fN = sw(0, a); fF = sw(0.08, a); hN = sw(0.5, a * 0.9); hF = sw(0.58, a * 0.9); bob = 0.022 * Math.max(0, Math.sin(TAU * ph)) ; pitch = -0.06 * Math.sin(TAU * ph); tail = 0.95 + 0.12 * Math.sin(ph * TAU * 2); bodySx = 1 + 0.05 * Math.sin(TAU * ph); headRz = 0.1 * Math.sin(TAU * ph); }
     const idleStretch = this.mode === 'stretch' ? Math.sin(clamp((this.modeT - 0.2) / 1.5) * Math.PI) : (this.mode === 'prep' && this.travel?.stretchPrep ? Math.sin(clamp((this.travel.delay0 - this.travel.delay) / this.travel.delay0) * Math.PI) : 0);
-    const jump = this.lift > 0.01 || (moving && this.ground > 0.02 && this.curS >= (this.travel?.jumpAt ?? 9));
-    if (jump) { const u = clamp(this.travel ? (this.curS - this.travel.jumpAt) / 0.6 : 1); fN = 0.9 - 0.4 * u; fF = 0.8 - 0.4 * u; hN = -0.7 + 0.5 * u; hF = -0.6 + 0.5 * u; bob = 0; pitch = 0.1 - 0.2 * u; tail = 0.3; }
+    const up = moving && this.travel.upF > 0 && this.travel.upF < 1;
+    const jump = this.lift > 0.01 || up || (moving && this.ground > 0.02 && this.curS >= (this.travel?.jumpAt ?? 9));
+    if (jump) { const u = up ? 1 - this.travel.upF : clamp(this.travel ? (this.curS - this.travel.jumpAt) / 0.6 : 1); fN = 0.9 - 0.4 * u; fF = 0.8 - 0.4 * u; hN = -0.7 + 0.5 * u; hF = -0.6 + 0.5 * u; bob = 0; pitch = 0.1 - 0.2 * u; tail = 0.3; }
     if (this.mode === 'wake' || (this.mode === 'prep' && this.modeT < 0.3)) { tail = 0.25 + 0.2 * Math.sin(t * 12); }
     // Strecken (Verbeugung): Vorderkörper nach unten, Beine nach vorn, Schwanz hoch
     const bw = idleStretch;
