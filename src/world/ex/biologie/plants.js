@@ -112,9 +112,9 @@ export function pot({ r = 0.22, h = 0.34, kind = 'terra', y = 0 } = {}) {
 }
 
 // ------------------------------------------------------------------ Pflanzen (Gruppe mit Topf, ein Blatt-Mesh)
-export function fernPlant({ h = 0.9, seed = 1, kind = 'terra', fronds = 13, potR } = {}) {
+export function fernPlant({ h = 0.9, seed = 1, kind = 'terra', fronds = 13, potR, potless = false } = {}) {
   const g = new THREE.Group(), rnd = mulberry32(seed * 91 + 7), L = new Leaves(), pr = potR || 0.2 + h * 0.06;
-  g.add(pot({ r: pr, h: pr * 1.5, kind })); const y0 = pr * 1.5 - 0.02;
+  if (!potless) g.add(pot({ r: pr, h: pr * 1.5, kind })); const y0 = potless ? 0 : pr * 1.5 - 0.02;
   for (let i = 0; i < fronds; i++) {
     const yaw = (i / fronds) * TAU + rnd() * 0.5, up = rnd();
     L.leaf('fern', { o: [Math.cos(yaw) * 0.03, y0, Math.sin(yaw) * 0.03], yaw, tilt: 0.25 + up * 0.8, len: h * (0.7 + rnd() * 0.5), wid: h * (0.3 + rnd() * 0.12), bend: 0.7 + rnd() * 0.5, cup: -0.5, roll: (rnd() - 0.5) * 0.7, seg: 5, color: tintOf(rnd, G(0.95, 1, 0.9), 0.2) });
@@ -153,9 +153,9 @@ export function bushPlant({ h = 1.0, seed = 4, kind = 'terra', n = 40, leaf = 's
   }
   g.add(L.mesh()); return g;
 }
-export function succulent({ r = 0.1, seed = 5, kind = 'terra', rings = 3 } = {}) { // Rosette (Echeveria-artig)
+export function succulent({ r = 0.1, seed = 5, kind = 'terra', rings = 3, potless = false } = {}) { // Rosette (Echeveria-artig)
   const g = new THREE.Group(), rnd = mulberry32(seed * 17 + 2), L = new Leaves(), pr = r * 0.9;
-  g.add(pot({ r: pr, h: pr * 1.1, kind })); const y0 = pr * 1.1 - 0.01;
+  if (!potless) g.add(pot({ r: pr, h: pr * 1.1, kind })); const y0 = potless ? 0 : pr * 1.1 - 0.01;
   for (let k = 0; k < rings; k++) { const nn = 6 + k * 3, tilt = 1.25 - k * 0.38; for (let i = 0; i < nn; i++) { const yaw = (i / nn) * TAU + k * 0.4; L.leaf('succ', { o: [0, y0 + 0.01 * k, 0], yaw, tilt, len: r * (1.1 - k * 0.17), wid: r * 0.55, bend: 0.5, cup: 1.5, seg: 2, color: tintOf(rnd, G(1, 1, 1), 0.14) }); } }
   g.add(L.mesh()); return g;
 }

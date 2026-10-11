@@ -58,6 +58,9 @@ export function build(ctx) {
 
     // ------------------------------------------------------------ Licht von oben
     g.add(skylight({ h: R.h })); g.add(sunFloor());
+    // Deckenbalken quer zum Raum (cremeweiß gestrichen) und zwei Längsbalken am Rand des Oberlichts
+    { const bm = trimMat(); for (const z of [-4.35, 4.35]) { const b = box(R.w - 0.3, 0.2, 0.22, bm); b.position.set(0, R.h - 0.1 - 0.12, z); g.add(b); const c2 = box(R.w - 0.3, 0.05, 0.3, bm); c2.position.set(0, R.h - 0.22 - 0.025, z); g.add(c2); }
+      for (const sx of [-1, 1]) { const b = box(0.2, 0.2, R.d - 0.3, bm); b.position.set(sx * 4.2, R.h - 0.1 - 0.12, 0); g.add(b); } }
     // Fries (Blatt- und Blütengirlande) um den Raum
     { const tex = friezeTex(), fm = M.textured(tex, 0.9); const band = (len) => { const geo = new THREE.PlaneGeometry(len, 0.5), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * len / 4); return new THREE.Mesh(geo, fm); };
       for (const [wl, len] of [['N', 10], ['W', 12], ['E', 12], ['S', 10]]) { const b = band(len); api.place(b, wl, 0, 0.025, 4.45); } }
@@ -92,8 +95,8 @@ export function build(ctx) {
       for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const p = box(0.016, h0, 0.016, br); p.position.set(x * (w0 / 2 - 0.01), h0 / 2 + 0.03, z * (d0 / 2 - 0.01)); t.add(p); }
       for (const [x, y, ww, hh, dd] of [[0, h0 + 0.03, w0, 0.016, d0], [0, 0.03, w0, 0.01, d0]]) { const b = box(ww, hh, dd, br); b.position.set(x, y, 0); t.add(b); }
       const glass = new THREE.Mesh(new THREE.BoxGeometry(w0 - 0.02, h0, d0 - 0.02), glassMat()); glass.position.y = h0 / 2 + 0.03; glass.renderOrder = 4; t.add(glass);
-      const f1 = P.fernPlant({ h: 0.26, seed: sd + 20, potR: 0.001, fronds: 9 }); f1.children.forEach((c, i) => { if (i < 3) c.visible = false; }); f1.position.set(-0.12, 0.04, 0); t.add(f1);
-      const f2 = P.succulent({ r: 0.06, seed: sd + 5, kind: 'white' }); f2.children.forEach((c, i) => { if (i < 3) c.visible = false; }); f2.position.set(0.14, 0.05, 0.02); t.add(f2);
+      const f1 = P.fernPlant({ h: 0.26, seed: sd + 20, fronds: 9, potless: true }); f1.position.set(-0.12, 0.075, 0); t.add(f1);
+      const f2 = P.succulent({ r: 0.06, seed: sd + 5, potless: true }); f2.position.set(0.14, 0.08, 0.02); t.add(f2);
       for (const [x, z, r] of [[-0.24, 0.05, 0.03], [0.04, -0.05, 0.035], [0.25, -0.04, 0.025]]) { const m = mesh(new THREE.SphereGeometry(r, 10, 7), M.plain(0x5a9a3e, 1)); m.scale.y = 0.55; m.position.set(x, 0.082, z); t.add(m); }
       api.place(t, 'N', a, 0.17, 0.92); }
 
@@ -107,7 +110,7 @@ export function build(ctx) {
     { const pq = dnaPlaque(); pq.position.set(DNA_POS[0], 0.33, DNA_POS[1] + 0.39); g.add(pq);
       const bt = labelButton(); bt.position.set(DNA_POS[0], 0.53, DNA_POS[1] + 0.395); g.add(bt); bt.userData.tap = { label: 'Buchstaben ein/aus', resolve: () => { const l = helix.userData.labels; l.visible = !l.visible; return { kind: 'say', who: 'Doppelhelix', text: l.visible ? T.dnaLabels.on : T.dnaLabels.off }; } }; }
     // Pult mit Legende und Staffelei mit Rosalind Franklin
-    const lect = buildLectern(); lect.position.set(-1.3, 0, 0.25); lect.rotation.y = 0.75; g.add(lect);
+    const lect = buildLectern(); lect.position.set(-1.7, 0, 0.1); lect.rotation.y = 0.8; g.add(lect);
     { const hb = hitBox(0.9, 1.0, 0.6, card(T.dnaLegend, { station: 'biologie-dna', label: 'Legende' })); hb.position.set(0, 0.95, 0.0); hb.rotation.x = 0.4; lect.add(hb); }
     const easel = buildEasel(); easel.position.set(1.7, 0, -1.6); easel.rotation.y = -0.45; easel.scale.setScalar(0.85); g.add(easel);
     { const fr = personFrame('franklin'); fr.position.set(1.7, 1.56, -1.6); fr.rotation.y = -0.45; fr.translateZ(0.02); g.add(fr); }
@@ -128,7 +131,6 @@ export function build(ctx) {
       const gl = new THREE.Mesh(new THREE.BoxGeometry(L - 0.04, 0.34, D - 0.04), glassMat()); gl.position.y = 0.97; gl.renderOrder = 3; table.add(gl);
       for (const [x, z, ww, dd] of [[0, D / 2 - 0.02, L, 0.024], [0, -D / 2 + 0.02, L, 0.024]]) { const b = box(ww, 0.02, dd, brass); b.position.set(x, 1.145, z); table.add(b); }
       for (const s of [-1, 1]) { const b = box(0.024, 0.02, D, brass); b.position.set(s * (L / 2 - 0.02), 1.145, 0); table.add(b); }
-      const lid = box(L - 0.04, 0.012, D - 0.04, M.plain(0xf0eadb, 0.7)); lid.visible = false; table.add(lid);
       const y0 = 0.8;
       const am = buildAmmonite({ size: 0.31 }); am.position.set(-0.55, y0, 0.0); am.rotation.y = 0.15; table.add(am);
       const stnd = box(0.12, 0.03, 0.1, woodDark(), { tile: 1 }); stnd.position.set(-0.55, y0 + 0.015, 0.0); table.add(stnd); am.position.y = y0 + 0.03;
@@ -206,11 +208,11 @@ export function build(ctx) {
     api.stations.length = 0;
     api.stations.push(
       eingang,
-      S0('regal', 'Regale und Dino-Buch', [-1.5, 1.6, -2.0], [-5, 1.9, -3.5], { catSpot: [-3.2, 0, -1.6] }),
+      S0('regal', 'Regale und Dino-Buch', [-2.2, 1.6, -2.0], [-5, 1.9, -3.5], { catSpot: [-3.2, 0, -1.6] }),
       S0('dna', 'Doppelhelix', [1.4, 1.6, 2.0], [0, 1.75, -0.9], { catSpot: [-1.0, 0, 2.4] }),
       S0('fossilien', 'Fossilien und T. rex', [-1.3, 1.6, 1.3], [-4.6, 1.45, -0.2], { catSpot: [-2.0, 0, -1.8] }),
       S0('mikroskop', 'Mikroskop', [1.9, 1.6, 2.8], [4.5, 1.25, 1.0], { catSpot: [2.9, 0, 3.6] }),
-      S0('herbar', 'Herbar und Lehrtafeln', [1.7, 1.6, -3.6], [4.9, 2.3, -1.4], { catSpot: [3.0, 0, -3.2] }),
+      S0('herbar', 'Herbar und Lehrtafeln', [2.6, 1.6, -3.6], [4.9, 2.3, -1.4], { catSpot: [3.0, 0, -3.2] }),
       S0('stammbaum', 'Stammbaum des Lebens', [0.2, 1.6, -2.7], [0.2, 2.2, -6], { catSpot: [-1.8, 0, -3.8] }),
       S0('schmetterlinge', 'Schmetterlinge', [2.9, 1.6, 2.9], [3.3, 1.85, 6], { catSpot: [1.2, 0, 4.6] }),
       S0('kabinett', 'Skarabäus und Vogelnest', [-3.0, 1.6, 3.0], [-3.3, 1.75, 6], { catSpot: [-1.2, 0, 4.6] }),

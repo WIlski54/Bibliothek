@@ -21,16 +21,16 @@ export const T = {
     paras: [
       'T. rex wurde etwa 12 Meter lang und 5 bis 8 Tonnen schwer. Er lebte vor etwa 68 bis 66 Millionen Jahren in Nordamerika.',
       'Sein Kopf war riesig und der Biss gewaltig. Die Arme waren kurz und hatten nur zwei Finger. Auf den starken Hinterbeinen konnte er gut laufen.',
-      'Dieses Papierschnitt-Bild stammt aus dem Großen Dinosaurier-Popup-Buch. Dort kannst du T. rex im Kreide-Wald besuchen.',
+      'Dieses Papierschnitt-Bild stammt aus dem Großen Dinosaurier-Popup-Buch. Dort triffst du ihn bei den „Königen der Kreide“.',
     ],
     fact: 'T. rex lebte zeitlich näher an uns als am Stegosaurus: Zwischen Stegosaurus und T. rex liegen etwa 84 Millionen Jahre, zwischen T. rex und heute rund 66 Millionen.',
     src: 'Wie T. rex genau aussah, ist nicht ganz sicher: Hautabdrücke zeigen kleine Schuppen, manche Verwandte hatten Federn. Die Farben sind ausgedacht.',
   },
   ichthyo: {
-    title: 'Ein Fischsaurier an der Wand', sub: 'Meeresreptil aus dem Jura · gefunden von Mary Anning und ihren Nachfolgern',
+    title: 'Ein Fischsaurier an der Wand', sub: 'Ein Meeresreptil aus dem Jura',
     paras: [
       'Ichthyosaurier sahen aus wie Delfine, sind aber Reptilien. Sie atmeten Luft und lebten im Meer. Dinosaurier waren sie nicht, nur entfernte Verwandte.',
-      'Mary Anning fand an den Klippen von Lyme Regis in England zusammen mit ihrem Bruder Joseph ein fast vollständiges Skelett eines Ichthyosauriers. Das brachte sie schon als junges Mädchen bekannt.',
+      'Mary Anning fand an den Klippen von Lyme Regis in England zusammen mit ihrem Bruder Joseph ein fast vollständiges Skelett eines Ichthyosauriers: Joseph den Schädel, Mary den Rest. Das machte sie schon als junges Mädchen bekannt.',
       'Das Bild zeigt einen Ophthalmosaurus aus dem Oberjura. Seine Augen waren riesig, so konnte er auch im dunklen Wasser jagen.',
     ],
     fact: 'Ichthyosaurier brachten ihre Jungen lebend im Wasser zur Welt.',

@@ -39,6 +39,7 @@ const REG = {
   charts: () => { const g = new THREE.Group(); Object.keys(CHARTS).forEach((k, i) => { const f = chartFrame(k); f.position.set((i % 2) * 1.8 - 0.9, 2.4 - Math.floor(i / 2) * 1.3, 0); g.add(f); }); return g; },
   pair: () => { const g = new THREE.Group(); const t = new THREE.CanvasTexture(pairDiagram()); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4 * 430 / 960), new THREE.MeshBasicMaterial({ map: t })); m.position.y = 1.5; g.add(m); return g; },
   legend: () => { const g = new THREE.Group(); const t = new THREE.CanvasTexture(legendCanvas()); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4 * 540 / 768), new THREE.MeshBasicMaterial({ map: t })); m.position.y = 1.5; g.add(m); return g; },
+  beetle: () => { const g = new THREE.Group(); const b = SC.buildScarab({ s: 3 }); b.position.y = 0.5; g.add(b); return g; },
   plants: () => { const g = new THREE.Group(); const add = (o, x, z) => { o.position.set(x, 0, z); g.add(o); }; add(P.palmPlant({ h: 2.0 }), -1.6, 0); add(P.monsteraPlant({ h: 1.2 }), -0.6, 0); add(P.fernPlant({ h: 0.9 }), 0.4, 0); add(P.bushPlant({ h: 1.2 }), 1.4, 0); add(P.succulent({ r: 0.12 }), 2.1, 0); add(P.cactus({}), 2.5, 0); add(P.grassTuft({}), 3.0, 0); const hp = P.hangingPlant({}); hp.position.set(0, 2.4, 1.2); g.add(hp); return g; },
 };
 window.__v = {

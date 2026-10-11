@@ -6,28 +6,31 @@ import { fbm, mulberry32, TAU } from '../../../lib/util.js';
 import { canvas, texOf, memo, woodDark } from './style.js';
 import { Leaves } from './plants.js';
 
-const shell = () => mat('scarab-shell', () => new THREE.MeshStandardMaterial({ color: 0x15201d, roughness: 0.26, metalness: 0.6 }));
-const legMat = () => mat('scarab-leg', () => new THREE.MeshStandardMaterial({ color: 0x241a14, roughness: 0.45, metalness: 0.3 }));
+const shell = () => mat('scarab-shell', () => new THREE.MeshStandardMaterial({ color: 0x1e3030, roughness: 0.32, metalness: 0.45 }));
+const legMat = () => mat('scarab-leg', () => new THREE.MeshStandardMaterial({ color: 0x2c221c, roughness: 0.5, metalness: 0.2 }));
 
-// Käfer, Blick von +x (er läuft nach +x). Länge etwa 0.14 m (vergrößert).
+// Käfer (Heiliger Pillendreher), läuft nach +x. Länge etwa 0,14 m (stark vergrößert). Breiter, gewölbter Körper, Kopfschild mit sechs Zähnen,
+// kräftige Vorderbeine mit gezähnten Schienen, schlanke Mittel- und Hinterbeine.
 export function buildScarab({ s = 1 } = {}) {
-  const g = new THREE.Group(), sh = shell(), lg = legMat();
-  const ell = (rx, ry, rz, x, y, z, m = sh) => { const e = new THREE.Mesh(new THREE.SphereGeometry(1, 22, 14), m); e.scale.set(rx, ry, rz); e.position.set(x, y, z); return e; };
-  g.add(ell(0.052, 0.03, 0.034, -0.03, 0.05, 0));                                   // Flügeldecken (länglich)
-  { const gr = box(0.1, 0.002, 0.002, lg); gr.position.set(-0.03, 0.082, 0); g.add(gr); for (const sz of [-1, 1]) for (const o of [0.012, 0.024]) { const l2 = box(0.085, 0.0015, 0.0015, lg); l2.position.set(-0.03, 0.078, sz * o); l2.rotation.z = 0.0; g.add(l2); } }
-  g.add(ell(0.032, 0.024, 0.036, 0.028, 0.05, 0));                                  // Halsschild
-  g.add(ell(0.02, 0.014, 0.026, 0.062, 0.043, 0));                                  // Kopf
-  // Kopfschild mit sechs Zähnen (halbrund, gezackt)
-  { const shp = new THREE.Shape(); const n = 6, R = 0.028; shp.moveTo(0, -R); for (let i = 0; i <= n; i++) { const a = -Math.PI / 2 + (i / n) * Math.PI; shp.lineTo(Math.cos(a - 0.0) * R * 0.78 * 0 + 0, 0); } }
-  { const shp = new THREE.Shape(), R = 0.03; shp.moveTo(0, -R); for (let i = 0; i < 6; i++) { const a0 = -Math.PI / 2 + (i / 6) * Math.PI, a1 = -Math.PI / 2 + ((i + 1) / 6) * Math.PI, am = (a0 + a1) / 2; shp.lineTo(Math.cos(a0 + 0.0) * R * 0.86, Math.sin(a0) * R * 0.86 * 1.0); shp.lineTo(Math.cos(am) * R * 1.12, Math.sin(am) * R * 1.12); } shp.lineTo(0, R); shp.closePath();
-    const geo = new THREE.ExtrudeGeometry(shp, { depth: 0.008, bevelEnabled: true, bevelSize: 0.002, bevelThickness: 0.002, bevelSegments: 1, curveSegments: 4 }); geo.rotateX(Math.PI / 2); geo.rotateY(Math.PI / 2); geo.rotateX(Math.PI); geo.scale(1, 1, 1);
-    const cl = new THREE.Mesh(geo, sh); cl.rotation.set(0, 0, 0); cl.position.set(0.078, 0.04, 0); cl.scale.set(0.8, 1, 1); g.add(cl); }
-  for (const sz of [-1, 1]) { g.add(ell(0.006, 0.006, 0.006, 0.06, 0.056, sz * 0.02, lg)); }
-  // Fühler mit Keule
-  for (const sz of [-1, 1]) { const a = mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.04, 5), lg); a.position.set(0.085, 0.055, sz * 0.022); a.rotation.set(sz * 0.9, 0, 0.5); g.add(a); for (let i = 0; i < 3; i++) { const p = box(0.002, 0.012, 0.007, lg); p.position.set(0.098 + i * 0.001, 0.067, sz * (0.034 + i * 0.0035)); p.rotation.set(sz * 0.5, 0, 0.3); g.add(p); } }
-  // Beine: Vorderbeine mit gezähnten Schienen, mittlere, lange Hinterbeine
-  const leg = (x, sz, spread, len, flat) => { const p0 = new THREE.Vector3(x, 0.034, sz * 0.026), p1 = new THREE.Vector3(x + spread * 0.5, 0.042, sz * (0.062 + len * 0.3)), p2 = new THREE.Vector3(x + spread, 0.004, sz * (0.07 + len)); const seg = (a, b, r) => { const d = b.clone().sub(a), c = mesh(new THREE.CylinderGeometry(r, r * 0.8, d.length(), 6), lg); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); g.add(c); }; seg(p0, p1, 0.0045); if (flat) { const t = box(0.014, 0.006, 0.04 + len * 0.3, lg); t.position.copy(p1).lerp(p2, 0.5); t.lookAt(p2.clone().setY(t.position.y)); g.add(t); for (let i = 0; i < 3; i++) { const tt = box(0.004, 0.004, 0.008, lg); tt.position.copy(p1).lerp(p2, 0.3 + i * 0.25); tt.position.x += 0.008; g.add(tt); } } else seg(p1, p2, 0.0035); const ft = box(0.006, 0.003, 0.012, lg); ft.position.copy(p2); g.add(ft); };
-  for (const sz of [-1, 1]) { leg(0.036, sz, 0.045, 0.02, true); leg(0.0, sz, 0.0, 0.03, false); leg(-0.05, sz, -0.05, 0.04, false); }
+  const g = new THREE.Group(), sh = shell(), lg = legMat(), U = 0.14;                  // U = Körperlänge in Metern
+  const E = (rx, ry, rz, x, y, z, m = sh, seg = [24, 16]) => { const e = new THREE.Mesh(new THREE.SphereGeometry(1, seg[0], seg[1]), m); e.scale.set(rx * U, ry * U, rz * U); e.position.set(x * U, y * U, z * U); return e; };
+  g.add(E(0.40, 0.19, 0.31, -0.12, 0.2, 0));                                         // Flügeldecken und Hinterleib
+  g.add(E(0.18, 0.13, 0.32, 0.27, 0.19, 0));                                         // Halsschild
+  g.add(E(0.11, 0.07, 0.2, 0.46, 0.15, 0));                                          // Kopf
+  // Kopfschild: sechs Zähne am Vorderrand
+  for (let i = 0; i < 6; i++) { const a = -0.78 + (i / 5) * 1.56, c = mesh(new THREE.ConeGeometry(0.028 * U, 0.1 * U, 6), sh); c.rotation.z = -Math.PI / 2; c.rotation.y = 0; c.position.set((0.52 + Math.cos(a) * 0.1) * U, 0.13 * U, Math.sin(a) * 0.19 * U); c.rotation.set(0, -a * 0.9, -Math.PI / 2); g.add(c); }
+  // Längsfurchen auf den Flügeldecken (dünne Röhren, folgen der Wölbung)
+  for (const zz of [0, 0.1, 0.2, -0.1, -0.2]) { const pts = []; for (let i = 0; i <= 14; i++) { const t = -1 + (i / 14) * 2, x = -0.12 + 0.4 * t * 0.97, k = 1 - Math.pow((x + 0.12) / 0.4, 2) - Math.pow(zz / 0.31, 2); if (k <= 0.02) continue; pts.push(new THREE.Vector3(x * U, (0.2 + 0.19 * Math.sqrt(k) + 0.002) * U, zz * U)); } if (pts.length > 3) g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.004 * U, 4), lg)); }
+  // Augen und Fühlerkeule
+  for (const sz of [-1, 1]) { g.add(E(0.03, 0.03, 0.03, 0.5, 0.2, sz * 0.16, lg, [8, 6])); for (let i = 0; i < 3; i++) { const p = box(0.012 * U, 0.1 * U, 0.04 * U, lg); p.position.set((0.6 + i * 0.012) * U, 0.17 * U, sz * (0.2 + i * 0.015) * U); g.add(p); } }
+  // Beine: Hüfte unter dem Körper, Oberschenkel nach außen, Schiene nach unten
+  const seg = (a, b, r0, r1) => { const d = b.clone().sub(a), c = mesh(new THREE.CylinderGeometry(r1 * U, r0 * U, d.length(), 7), lg); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); g.add(c); const j = mesh(new THREE.SphereGeometry(r1 * U * 1.15, 8, 6), lg); j.position.copy(b); g.add(j); };
+  const legs = [[0.27, 0.1, 0.16, 0, 0.46], [0.0, -0.02, -0.03, 0, 0.5], [-0.28, -0.12, -0.18, 0, 0.52]];     // x, Vorschub des Knies, ... Fußpunkt, Länge
+  legs.forEach(([x, dkx, dfx, _a, reach], i) => { for (const sz of [-1, 1]) {
+    const hip = new THREE.Vector3(x * U, 0.09 * U, sz * 0.2 * U), knee = new THREE.Vector3((x + dkx) * U, 0.15 * U, sz * (reach * 0.86) * U), foot = new THREE.Vector3((x + dfx + dkx) * U, 0.005 * U, sz * (reach + 0.05) * U);
+    seg(hip, knee, 0.055, 0.045); seg(knee, foot, 0.045, i === 0 ? 0.05 : 0.03);
+    if (i === 0) { const t = box(0.08 * U, 0.03 * U, 0.22 * U, lg); t.position.copy(knee).lerp(foot, 0.6); t.lookAt(foot.clone().setY(t.position.y)); g.add(t); for (let k = 0; k < 3; k++) { const th = mesh(new THREE.ConeGeometry(0.018 * U, 0.05 * U, 5), lg); th.rotation.x = Math.PI / 2 * -sz; th.position.copy(knee).lerp(foot, 0.35 + k * 0.22); th.position.x += 0.05 * U; g.add(th); } }
+    const ft = box(0.05 * U, 0.02 * U, 0.06 * U, lg); ft.position.copy(foot); g.add(ft); } });
   g.scale.setScalar(s); return g;
 }
 export function dungBall({ r = 0.05, seed = 4 } = {}) {
