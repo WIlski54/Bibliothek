@@ -1,4 +1,5 @@
-// Kontaktbogen-Skript: node tools/cat-sheet.mjs <script.js>   (BOOK_HTML = Bündel von tools/cat-sheet-entry.js)
+// Führt ein Skript in der Posen-Szene aus und speichert ein Bild: node tools/cat-sheet.mjs <script.js>
+// (BOOK_HTML = Bündel von tools/cat-pose-entry.js, W/H = Bildgröße, NAME = Dateiname; das Skript nutzt window.__t, siehe cat-pose-entry.js)
 import { open, ready, out } from './harness.mjs';
 import fs from 'node:fs';
 const W = +(process.env.W || 1400), H = +(process.env.H || 800);
