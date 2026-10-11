@@ -40,7 +40,7 @@ function tri(a, b, c, uvAxis, tile) {
 // Liefert Group: Front (Schnitt) zeigt nach +z, Unterkante y=0, Mitte x=0, Tiefe nach -z. height = Gesamthöhe des Schnitts (m)
 export function pyramidModel({ height = 0.66 } = {}) {
   const g = new THREE.Group();
-  const pc = paperCut('pyramide_schnitt', { height, thickness: 0.02, border: 0.006, ppu: 1500, maxTex: 1024, name: 'gesch:pyr' });
+  const pc = paperCut('pyramide_schnitt', { height, thickness: 0.02, border: 0.006, ppu: 1500, maxTex: 896, name: 'gesch:pyr' });
   const ws = pc.ws, s = 2.9 * ws, G = 0.9 * ws, Hh = 3.6 * ws, bx = 3.75 * ws, zf = -0.02;
   pc.mesh.userData.keep = true; g.add(pc.mesh);
   const A = [0, G + Hh, zf], B1 = [-s, G, zf], B2 = [s, G, zf], B3 = [-s, G, zf - s], B4 = [s, G, zf - s];

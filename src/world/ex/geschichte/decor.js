@@ -73,19 +73,19 @@ export function friezeMat() {
 // ---------------------------------------------------------------- Nischenwände (Samt mit Goldborte)
 export function nicheMat(kind) {
   return memo('niche' + kind, () => {
-    const W = 1024, H = 1024, [c, g] = cv(W, H), r = mulberry32(kind === 'lapis' ? 3 : 8);
+    const W = 512, H = 512, [c, g] = cv(W, H), r = mulberry32(kind === 'lapis' ? 3 : 8);
     const base = kind === 'lapis' ? ['#1f3f86', '#142a5e', '#0d1d44'] : ['#2c5546', '#1f3f35', '#142a24'];
     const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, base[0]); gr.addColorStop(0.55, base[1]); gr.addColorStop(1, base[2]); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     // Samtfalten (senkrechte weiche Streifen)
-    for (let x = 0; x < W; x += 32) { const a = 0.05 + 0.04 * Math.sin(x * 0.07); g.fillStyle = `rgba(255,255,255,${a})`; g.fillRect(x, 0, 14, H); g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(x + 16, 0, 16, H); }
-    for (let i = 0; i < 4000; i++) { g.fillStyle = r() < 0.5 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.06)'; g.fillRect(r() * W, r() * H, 1 + r() * 2, 1 + r() * 2); }
+    for (let x = 0; x < W; x += 16) { const a = 0.05 + 0.04 * Math.sin(x * 0.14); g.fillStyle = `rgba(255,255,255,${a})`; g.fillRect(x, 0, 7, H); g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(x + 8, 0, 8, H); }
+    for (let i = 0; i < 1500; i++) { g.fillStyle = r() < 0.5 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.06)'; g.fillRect(r() * W, r() * H, 1 + r() * 2, 1 + r() * 2); }
     const star = (x, y, rad, col) => { g.fillStyle = col; g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i / 10) * TAU, rr = i % 2 ? rad * 0.42 : rad; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); };
-    if (kind === 'lapis') { for (let i = 0; i < 70; i++) star(60 + r() * (W - 120), 70 + r() * (H - 140), 5 + r() * 9, `rgba(240,200,100,${0.55 + r() * 0.4})`); }
+    if (kind === 'lapis') { for (let i = 0; i < 40; i++) star(30 + r() * (W - 60), 35 + r() * (H - 70), 3 + r() * 5, `rgba(240,200,100,${0.55 + r() * 0.4})`); }
     else { // goldene Lorbeerblätter in Reihen
-      g.fillStyle = 'rgba(217,176,88,.5)'; for (let y = 90; y < H - 60; y += 96) for (let x = 64 + ((y / 96) % 2) * 48; x < W - 40; x += 96) { g.save(); g.translate(x, y); g.rotate(0.6); g.beginPath(); g.ellipse(0, 0, 8, 20, 0, 0, TAU); g.fill(); g.rotate(-1.2); g.beginPath(); g.ellipse(0, 0, 8, 20, 0, 0, TAU); g.fill(); g.restore(); }
+      g.fillStyle = 'rgba(217,176,88,.5)'; for (let y = 45; y < H - 30; y += 48) for (let x = 32 + ((y / 48) % 2) * 24; x < W - 20; x += 48) { g.save(); g.translate(x, y); g.rotate(0.6); g.beginPath(); g.ellipse(0, 0, 4, 10, 0, 0, TAU); g.fill(); g.rotate(-1.2); g.beginPath(); g.ellipse(0, 0, 4, 10, 0, 0, TAU); g.fill(); g.restore(); }
     }
     // Goldborte
-    g.strokeStyle = '#d9b058'; g.lineWidth = 10; g.strokeRect(14, 14, W - 28, H - 28); g.lineWidth = 3; g.strokeRect(34, 34, W - 68, H - 68);
+    g.strokeStyle = '#d9b058'; g.lineWidth = 6; g.strokeRect(8, 8, W - 16, H - 16); g.lineWidth = 2; g.strokeRect(18, 18, W - 36, H - 36);
     const t = tex(c); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, metalness: 0 });
   });
 }

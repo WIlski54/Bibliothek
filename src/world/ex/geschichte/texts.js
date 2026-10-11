@@ -103,7 +103,7 @@ export const PIN_CARDS = {
   },
   machu: {
     ...T, title: 'Machu Picchu in Peru', sub: 'Eine Inka-Stadt in den Wolken',
-    paras: ['Die Inka bauten Machu Picchu um 1450 hoch in den Anden, auf etwa 2400 Metern Höhe. Die Mauern sind so genau gefügt, dass kaum ein Blatt dazwischenpasst.', 'Die Inka hatten keine Schrift wie wir. Zum Zählen und Merken benutzten sie Schnüre mit Knoten.'],
+    paras: ['Die Inka bauten Machu Picchu um 1450 hoch in den Anden, auf etwa 2400 Metern Höhe. Die Steine sind so genau aufeinander gepasst, dass man kaum eine Fuge sieht.', 'Die Inka hatten keine Schrift wie wir. Zum Zählen und Merken benutzten sie Schnüre mit Knoten.'],
     fact: 'Machu Picchu blieb lange vor den Spaniern verborgen. Die Welt erfuhr erst im 20. Jahrhundert davon.',
     src: 'Das Baujahr ist geschätzt (um 1450). Die Bewohner kannten den Ort immer; für die Forschung wurde er 1911 bekannt.',
   },

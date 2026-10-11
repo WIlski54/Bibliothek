@@ -7,7 +7,8 @@ import { M, box, mesh, hitBox, framedPicture, globe, armchair, chair, deskLamp, 
 import { wallpaperTex } from '../tex.js';
 import { personFrame } from '../portraits.js';
 import { paperCut, shadowFor, cardImage } from '../ex/geschichte/figs.js';
-import { renderMap, PINS } from '../ex/geschichte/worldmap.js';
+import { renderMap, mapSize, PINS } from '../ex/geschichte/worldmap.js';
+import { globeTexture } from '../ex/worldmap.js';
 import { renderClockFace } from '../ex/geschichte/clockface.js';
 import { EXHIBITS, MAP_CARD, PIN_CARDS, EPOCHS, CLOCK_CARD, FURNITURE } from '../ex/geschichte/texts.js';
 import { W, tex, brassPlate, wallSign, glow, friezeMat, nicheMat, rug, floorLamp, pictureLight, gildedFrame, showcase } from '../ex/geschichte/decor.js';
@@ -15,7 +16,7 @@ import { pyramidModel, tableCase, legendPlate } from '../ex/geschichte/pyramid.j
 import { mapTable, printingPress, sunDisc, bibelSeiteCanvas } from '../ex/geschichte/props.js';
 
 const TAU = Math.PI * 2;
-const MAP_W = 2048, MAP_H = 936;
+const MS = mapSize(2048, 44), MAP_W = MS.w, MAP_H = MS.h;
 
 // Papierschnitt-Teile leuchten leicht von selbst (sonst wirken sie in der Vitrine zu dunkel)
 function lit(pc, k = 0.32) { for (const m of [].concat(pc.mesh.material)) if (m.map) { m.emissive = new THREE.Color(0xffffff); m.emissiveMap = m.map; m.emissiveIntensity = k; } return pc; }
@@ -55,7 +56,7 @@ function extras(api, ctx) {
   const retarget = (u, station) => { const hp = u.children.find((c) => c.userData.tap?.kind === 'goto'); if (hp) hp.userData.tap.station = station; };
   for (const u of units) {
     const w = u.userData.wall;
-    retarget(u, w === 'N' ? 'geschichte-schaetze' : w === 'S' ? 'geschichte-schrift' : w === 'E' ? 'geschichte-tuer' : u.userData.a < 0 ? 'geschichte-regal-W' : 'geschichte-karte');
+    retarget(u, w === 'N' ? (u.userData.a > 0 ? 'geschichte-regal-N' : 'geschichte-schaetze') : w === 'S' ? (u.userData.a > 0 ? 'geschichte-regal-S' : 'geschichte-schrift') : w === 'E' ? 'geschichte-tuer' : u.userData.a < 0 ? 'geschichte-regal-W' : 'geschichte-karte');
   }
 
   // ---------------------------------------------------------------- Licht (höchstens 4 echte Lichter)
@@ -79,10 +80,10 @@ function extras(api, ctx) {
   }
 
   // ---------------------------------------------------------------- Weltkarte an der Stirnwand (West)
-  const mapW = 5.2, mapH = mapW * MAP_H / MAP_W, mapY = 2.52;
+  const mapW = 4.9, mapH = mapW * MAP_H / MAP_W, mapY = 2.52;
   const mc = document.createElement('canvas'); mc.width = MAP_W; mc.height = MAP_H; const mi = renderMap(mc);
   const mapTex = tex(mc);
-  const mapMat = new THREE.MeshStandardMaterial({ map: mapTex, roughness: 0.85, emissive: 0xffffff, emissiveMap: mapTex, emissiveIntensity: 0.3 });
+  const mapMat = new THREE.MeshStandardMaterial({ map: mapTex, roughness: 0.85, emissive: 0xffffff, emissiveMap: mapTex, emissiveIntensity: 0.2 });
   const mapMesh = new THREE.Mesh(new THREE.PlaneGeometry(mapW, mapH), mapMat);
   const pinAt = (hit) => { // Nadel unter dem Finger?
     if (!hit?.uv) return null; const px = hit.uv.x * MAP_W, py = (1 - hit.uv.y) * MAP_H; let best = null, bd = 64;
@@ -98,6 +99,7 @@ function extras(api, ctx) {
       return card;
     },
   };
+  mapMesh.userData.pins = PINS.map((p) => { const [x, y] = mi.P(p.lon, p.lat); return { id: p.id, x, y }; }); mapMesh.userData.size = [MAP_W, MAP_H];
   place(mapMesh, 'W', 0, 0.03, mapY);
   place(gildedFrame(mapW, mapH, { fw: 0.15, depth: 0.1 }), 'W', 0, 0.0, mapY);
   place(pictureLight(2.4), 'W', 0, 0.02, mapY + mapH / 2 + 0.3);
@@ -122,6 +124,9 @@ function extras(api, ctx) {
   sign('S', -3.67, 'Mittelalter', 'Burgen, Klöster, Städte', EPOCHS.mittelalter, 'geschichte-schrift');
   sign('S', 3.67, 'Neuzeit', 'Entdecker und Erfinder', EPOCHS.neuzeit, 'geschichte-schrift');
   for (const [wl, a] of [['N', -3.67], ['N', 3.67], ['S', -3.67], ['S', 3.67]]) place(glow(3.0, 0.6, 0xffc880, 0.16), wl, a, 0.02, 3.5);
+
+  // kleine Schilder über den übrigen Regalen (Stirnwand und Türwand)
+  for (const [wl, a, text, sub] of [['W', -3.6, 'Popup-Bücher', 'Zum Aufklappen und Staunen'], ['W', 3.6, 'Reisen und Karten', 'Atlanten und Entdecker'], ['E', -4.2, 'Nachschlagewerke', 'Lexika und Jahreszahlen'], ['E', 4.2, 'Buchdruck', 'Wie Bücher entstehen']]) place(wallSign(text, sub, 1.5, 0.3, null, { size: 0.46, subSize: 0.2 }), wl, a, 0.012, 3.1);
 
   // ---------------------------------------------------------------- Schaukästen
   const exhibit = (key, wl, a, cfg) => {
@@ -187,16 +192,16 @@ function extras(api, ctx) {
     model.position.set(0, 0.02, 0.04); model.rotation.y = 0.38; tc.userData.inner.add(model); cc.add(tc);
     const lg = legendPlate(0.9, 0.15); lg.position.set(0, 0.82 - 0.2, 1.05 / 2 - 0.1 + 0.029); tc.add(lg);
     const pl = brassPlate(EXHIBITS.pyramide.label, 0.56, 0.12, { sub: 'aufgeschnitten', size: 0.4, subSize: 0.22 }); pl.position.set(0, 0.82 + 0.06, 1.05 / 2 - 0.14); pl.rotation.x = -0.95; tc.add(pl);
-    const card = { ...EXHIBITS.pyramide, image: cardImage(model.children[0].material[0].map.image, 640), wide: true, alt: 'Querschnitt der Cheops-Pyramide', station: 'geschichte-pyramide' };
+    const card = { ...EXHIBITS.pyramide, image: cardImage(model.children[0].material[0].map.image, 520), wide: true, alt: 'Querschnitt der Cheops-Pyramide', station: 'geschichte-pyramide' };
     const hb = hitBox(1.6, 1.95, 1.15, { ...card, label: EXHIBITS.pyramide.label }); hb.position.set(0, 0.97, 0); tc.add(hb);
     cc.rotation.y = Math.PI / 2; cc.position.set(1.3, 0, 1.4); g.add(cc);
   }
 
   // ---------------------------------------------------------------- Zeituhr an der Türwand (Nordseite der Tür)
-  const clock = new THREE.Group(); let hourHand, minHand, secHand;
+  const clock = new THREE.Group(); let hourHand, minHand, secHand, globeSphere;
   {
     const CR = 0.76;
-    const fc = document.createElement('canvas'); fc.width = 1024; fc.height = 1024; renderClockFace(fc);
+    const fc = document.createElement('canvas'); fc.width = 768; fc.height = 768; renderClockFace(fc);
     const ft = tex(fc), fm = new THREE.MeshStandardMaterial({ map: ft, roughness: 0.7, emissive: 0xffffff, emissiveMap: ft, emissiveIntensity: 0.22 });
     const back = mesh(new THREE.CylinderGeometry(CR + 0.07, CR + 0.07, 0.1, 56), W(0x4a1e12, { planks: 1 }), { tile: 1 }); back.rotation.x = Math.PI / 2; back.position.z = 0.05; clock.add(back);
     const bez = mesh(new THREE.TorusGeometry(CR + 0.02, 0.05, 10, 72), M.brass()); bez.position.z = 0.1; clock.add(bez);
@@ -247,15 +252,14 @@ function extras(api, ctx) {
     const hb = hitBox(1.1, 0.95, 2.0, { ...FURNITURE.tisch, label: 'Kartentisch', station: 'geschichte-tisch' }); hb.position.set(0, 0.47, 0); mt.add(hb);
     const lamp = deskLamp({ light: false }); lamp.scale.setScalar(0.9); lamp.position.set(0.6, 0.8, 0.38); mt.add(lamp);
     at(chair({ seat: M.fabric(0x6a2230), wood: W(0x5a2a16) }), -4.45, 0, 1.45, Math.PI + 0.5);
-    const gc = document.createElement('canvas'); gc.width = 1024; gc.height = 512; renderMap(gc, { lat0: -90, lat1: 90, margin: 0, labels: false, pins: false, lines: false, ornaments: false, title: false, mtn: 0 });
-    const gl = globe({ r: 0.34, map: tex(gc) }); gl.userData.sphere.rotation.order = 'ZYX'; gl.userData.sphere.rotation.set(0, -0.45, 0.41);
+    const gl = globe({ r: 0.34, map: globeTexture() }); globeSphere = gl.userData.sphere; globeSphere.rotation.y = -0.2;
     at(gl, -4.8, 0, 2.15, 0); gl.scale.setScalar(1.08);
     const hg = hitBox(0.9, 1.5, 0.9, { ...FURNITURE.globus, label: 'Globus', station: 'geschichte-tisch' }); hg.position.set(0, 0.8, 0); gl.add(hg);
     // Leseecke an der Nordseite der Mittelachse
     at(armchair({ color: 0x6a2230 }), 2.0, 0, -2.7, -1.15);
     const st = at(readingTable({ r: 0.3, h: 0.58, wood: W(0x6a3a20) }), 2.35, 0, -1.55);
     const dl = deskLamp({ light: false }); dl.position.set(0, 0.6, 0); dl.scale.setScalar(0.75); st.add(dl);
-    for (const [x, z] of [[-5.2, -2.3], [2.7, -3.6], [5.0, 4.2]]) {
+    for (const [x, z] of [[-5.2, -2.3], [1.4, -2.0]]) {
       at(floorLamp(), x, 0, z);
       const gp = glow(1.8, 1.8, 0xffc070, 0.16); gp.rotation.x = -Math.PI / 2; gp.position.set(x, 0.03, z); g.add(gp);
     }
@@ -272,16 +276,18 @@ function extras(api, ctx) {
   const st = (id, name, pos, look, extra = {}) => stations.push({ id: `geschichte-${id}`, room: 'geschichte', name: `Geschichte: ${name}`, pos, look, ...extra });
   st('eingang', 'Eingang', [4.4, 1.6, 0.0], [-6, 2.15, 0], { catSpot: [2.0, 0, 2.7] });
   st('regal-W', 'Popup-Bücher', [-3.7, 1.6, 3.35], [-5.8, 1.35, 3.6], { catSpot: [-3.0, 0, 2.4] });
+  st('regal-N', 'Regale Altertum', [3.6, 1.6, -1.7], [3.6, 2.2, -5], { catSpot: [1.8, 0, -1.2] });
+  st('regal-S', 'Regale Neuzeit', [-3.6, 1.6, 1.7], [-3.6, 2.2, 5], { catSpot: [-2.1, 0, 2.6] });
+  st('schaetze', 'Schätze der Pharaonen', [0.0, 1.6, -1.6], [0, 2.15, -5], { catSpot: [2.6, 0, -3.5] });
+  st('schrift', 'Schrift und Buch', [0.0, 1.6, 1.6], [0, 2.15, 5], { catSpot: [-2.4, 0, 3.4] });
+  st('pyramide', 'Cheops-Pyramide', [3.2, 1.55, 1.4], [1.3, 1.0, 1.4], { catSpot: [2.8, 0, 0.1] });
   st('karte', 'Weltkarte', [-2.6, 1.6, 0.0], [-6, 2.25, 0], { catSpot: [-4.5, 0.8, -0.7] });
   st('tisch', 'Kartentisch und Globus', [-2.1, 1.6, -0.2], [-4.9, 0.95, 0.7], { catSpot: [-2.9, 0, -2.4] });
-  st('schaetze', 'Schätze der Pharaonen', [0.0, 1.6, -1.6], [0, 2.15, -5], { catSpot: [2.6, 0, -3.5] });
-  st('pyramide', 'Cheops-Pyramide', [3.0, 1.6, 1.4], [1.3, 1.05, 1.4], { catSpot: [2.8, 0, 0.1] });
-  st('schrift', 'Schrift und Buch', [0.0, 1.6, 1.6], [0, 2.15, 5], { catSpot: [-2.4, 0, 3.4] });
   st('uhr', 'Zeituhr', [3.9, 1.6, -2.5], [6, 2.65, -2.5], { catSpot: [4.8, 0, -0.5] });
   st('presse', 'Gutenberg und der Buchdruck', [2.7, 1.6, 2.5], [6, 1.7, 2.45], { catSpot: [4.9, 0, 0.9] });
   st('tuer', 'Ausgang', [-3.0, 1.6, 0.0], [6, 1.9, 0], { catSpot: [-1.2, 0, -1.6] });
 
   // ---------------------------------------------------------------- Animation: Uhrzeiger
   let acc = 0;
-  return { update(dt) { acc += dt; if (acc > 0.25) { acc = 0; tickClock(); } } };
+  return { update(dt) { acc += dt; if (globeSphere) globeSphere.rotation.y += dt * 0.12; if (acc > 0.25) { acc = 0; tickClock(); } } };
 }

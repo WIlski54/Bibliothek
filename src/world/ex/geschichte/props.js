@@ -1,9 +1,9 @@
-// Möbel und Requisiten für den Raum Geschichte: Kartentisch (Karte, Zirkel, Lineal, Lupe, Tintenfass), Gutenberg-Presse mit Setzkasten,
+// Möbel und Requisiten für den Raum Geschichte: Kartentisch (Karte, Zirkel, Lineal, Lupe, Tintenfass), Gutenberg-Presse,
 // Sonnenscheibe als Hintergrund für die Maske, Papierstapel. Alles aus einfachen Formen; statisch -> wird in world.js zusammengefasst.
 import * as THREE from 'three';
 import { M, box, mesh } from '../../kit.js';
 import { cv, tex, W } from './decor.js';
-import { renderMap } from './worldmap.js';
+import { renderCrop } from './worldmap.js';
 import { mulberry32 } from '../../../lib/util.js';
 
 const TAU = Math.PI * 2;
@@ -42,9 +42,9 @@ export function mapTable() {
   for (const x of [-0.45, 0.45]) { const kn = mesh(new THREE.SphereGeometry(0.02, 10, 8), br); kn.position.set(x, H - 0.14, D / 2 - 0.065); g.add(kn); }
   const stretch = box(L - 0.4, 0.04, 0.05, wd, { tile: 1 }); stretch.position.set(0, 0.18, 0); g.add(stretch);
   // Karte (Mittelmeer und Nil) auf Papierunterlage
-  const [mc] = (() => { const c = document.createElement('canvas'); c.width = 1024; c.height = 560; renderMap(c, { lon0: -12, lon1: 50, lat0: 20, lat1: 53, margin: 22, labels: false, pins: false, ornaments: false, title: false, mtn: 12, seed: 3 }); return [c]; })();
+  const mcv = document.createElement('canvas'); mcv.width = 768; mcv.height = 420; renderCrop(mcv); const mc = mcv;
   const sheet = box(1.54, 0.005, 0.86, M.plain(0xf1e3bd, 1), { tile: 0 }); sheet.position.y = H + 0.0025; g.add(sheet);
-  const map = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5 * 560 / 1024), new THREE.MeshStandardMaterial({ map: tex(mc), roughness: 0.85 }));
+  const map = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5 * 420 / 768), new THREE.MeshStandardMaterial({ map: tex(mc), roughness: 0.85 }));
   map.rotation.x = -Math.PI / 2; map.position.y = H + 0.0058; g.add(map);
   // Zirkel
   const comp = new THREE.Group(); const mt = M.brass();
@@ -96,19 +96,6 @@ export function printingPress() {
   const standB = box(0.4, 0.04, 0.5, wd, { tile: 1 }); standB.position.set(-0.52, 0.59, 0.35); g.add(standB);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const l = box(0.04, 0.57, 0.04, wd, { tile: 1 }); l.position.set(-0.52 + sx * 0.17, 0.285, 0.35 + sz * 0.2); g.add(l); }
   g.userData.size = { w: 1.3, d: 1.0, h: 1.55 };
-  return g;
-}
-
-// Setzkasten (Schrägpult mit Fächern voller Lettern)
-export function typeCase() {
-  const g = new THREE.Group(); const wd = W(0x5a2f18, { planks: 2, seed: 6 });
-  const [c, gg] = cv(512, 384); gg.fillStyle = '#4a2a16'; gg.fillRect(0, 0, 512, 384);
-  const r = mulberry32(12), letters = 'abcdefghijklmnopqrstuvwxyzäöüß';
-  for (let j = 0; j < 8; j++) for (let i = 0; i < 12; i++) { const x = 10 + i * 41, y = 10 + j * 46; gg.fillStyle = '#2a170c'; gg.fillRect(x, y, 37, 42); gg.fillStyle = '#9aa0a8'; for (let k = 0; k < 4; k++) gg.fillRect(x + 4 + (k % 2) * 15, y + 4 + Math.floor(k / 2) * 18, 10, 14); gg.fillStyle = '#d9d9d4'; gg.font = `bold 14px ${SERIF}`; gg.textAlign = 'center'; gg.fillText(letters[(i + j * 12 + Math.floor(r() * 3)) % letters.length], x + 18, y + 38); }
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.05, 0.54), [wd, wd, new THREE.MeshStandardMaterial({ map: tex(c), roughness: 0.6 }), wd, wd, wd]); top.rotation.x = 0.4; top.position.y = 0.88; g.add(top);
-  for (const sx of [-1, 1]) { const leg = box(0.05, 0.84, 0.05, wd, { tile: 1 }); leg.position.set(sx * 0.33, 0.42, -0.1); g.add(leg); const leg2 = box(0.05, 0.62, 0.05, wd, { tile: 1 }); leg2.position.set(sx * 0.33, 0.31, 0.2); g.add(leg2); }
-  const rail = box(0.7, 0.03, 0.04, wd, { tile: 1 }); rail.position.set(0, 0.45, 0.03); g.add(rail);
-  g.userData.size = { w: 0.75, d: 0.6, h: 1.0 };
   return g;
 }
 

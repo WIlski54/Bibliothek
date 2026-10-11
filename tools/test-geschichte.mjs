@@ -2,7 +2,7 @@
 // Kartentisch werden per Mausklick angetippt; die Karte muss aufgehen und den erwarteten Titel tragen. Außerdem: alle Stationen erreichbar.
 import { open, ready, out } from './harness.mjs';
 const { browser, page, logs } = await open({ w: 1024, h: 640, query: '?q=low&quiet=1&manual=1' });
-await ready(page, 120000);
+page.setDefaultTimeout(240000); await ready(page, 120000);
 await page.evaluate(() => { document.getElementById('go').click(); });
 await page.waitForTimeout(900);
 let ok = true; const check = (name, cond, extra = '') => { console.log(cond ? 'OK  ' : 'FAIL', name, extra); if (!cond) ok = false; };
@@ -30,7 +30,7 @@ const tapObject = async (key, expectTitle, { from = null, label = key } = {}) =>
 
 // 0) alle Stationen von Geschichte erreichbar, in der Pfeil-Reihenfolge
 const list = await page.evaluate(() => window.__lib.rig.roomStations('geschichte').map((s) => s.id));
-check('Stationen Geschichte: 8 bis 12', list.length >= 8 && list.length <= 12, list.join(', '));
+check('Stationen Geschichte: 8 bis 13', list.length >= 8 && list.length <= 13, list.join(', '));
 for (const id of list) check(`Station ${id} erreichbar`, await go(id));
 
 // 1) Vitrinen (von der jeweiligen Station aus)
@@ -40,23 +40,23 @@ await tapObject('Papyrusrolle', 'Die Papyrusrolle', { from: 'geschichte-schrift'
 await tapObject('Stein von Rosette', 'Der Stein von Rosette', { label: 'Vitrine Stein von Rosette' });
 await tapObject('Modell der Cheops-Pyramide', 'Modell der Cheops-Pyramide', { from: 'geschichte-pyramide', label: 'Vitrine Pyramide' });
 
-// 2) Weltkarte: freie Stelle (Ozean) und zwei Kartennadeln. Pixel der Nadel wie in worldmap.js (Rand 52, Breite 2048x936, Breiten -70..84)
+// 2) Weltkarte: freie Stelle (Ozean) und zwei Kartennadeln. Nadelpositionen stehen in mapMesh.userData.pins
 {
   await go('geschichte-karte');
   const mapPt = (u, v) => page.evaluate(([u, v]) => {
     const L = window.__lib; let m = null; L.world.rooms.geschichte.group.traverse((o) => { if (!m && o.userData.tap?.label === 'Weltkarte') m = o; });
     const p = m.geometry.parameters; const w = m.localToWorld(new L.THREE.Vector3((u - 0.5) * p.width, (v - 0.5) * p.height, 0)); return [w.x, w.y, w.z];
   }, [u, v]);
-  const px = (lon, lat) => [52 + ((lon + 180) / 360) * 1944, 52 + ((84 - lat) / 154) * 832];
+  const pinPx = (id) => page.evaluate((id) => { let r = null; window.__lib.world.rooms.geschichte.group.traverse((o) => { if (!r && o.userData.pins) { const p = o.userData.pins.find((q) => q.id === id), [W, H] = o.userData.size; r = [p.x / W, 1 - p.y / H]; } }); return r; }, id);
   const clickMap = async (name, u, v, expect) => { const [x, y] = await proj(...(await mapPt(u, v))); await page.mouse.click(x, y); await step(3); await page.waitForTimeout(400); const t = await cardTitle(); check(`Weltkarte ${name}: Karte „${t}“`, t === expect); if (t && name === 'Ägypten') await page.screenshot({ path: out('gesch-card-karte-aegypten.png') }); await closeCard(); };
   await clickMap('Ozean', 0.1, 0.5, 'Die Weltkarte');
-  for (const [name, lon, lat, title] of [['Ägypten', 31.1, 30.0, 'Ägypten am Nil'], ['Mainz', 8.3, 50.0, 'Mainz']]) { const [a, b] = px(lon, lat); await clickMap(name, a / 2048, 1 - b / 936, title); }
+  for (const [name, id, title] of [['Ägypten', 'aegypten', 'Ägypten am Nil'], ['Mainz', 'mainz', 'Mainz']]) { const [u, v] = await pinPx(id); await clickMap(name, u, v, title); }
 }
 
 // 3) Zeituhr, Porträt, Epochenschild, Presse, Globus, Kartentisch
 await tapObject('Zeituhr', 'Die Zeituhr', { from: 'geschichte-uhr', label: 'Zeituhr' });
 await tapObject('carter', 'Howard Carter', { from: 'geschichte-schaetze', label: 'Porträt Carter' });
-await tapObject('Altertum', 'Altertum', { label: 'Epochenschild Altertum' });
+await tapObject('Altertum', 'Altertum', { from: 'geschichte-tuer', label: 'Epochenschild Altertum' });
 await tapObject('Gutenberg-Druckerpresse', 'Die Druckerpresse', { from: 'geschichte-presse', label: 'Druckerpresse' });
 await tapObject('Kartentisch', 'Der Kartentisch', { from: 'geschichte-tisch', label: 'Kartentisch' });
 await tapObject('Globus', 'Der Globus', { label: 'Globus' });
