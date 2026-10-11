@@ -25,7 +25,7 @@ export const MAT = {
   ceramic: () => memo('ceramic', () => new THREE.MeshStandardMaterial({ color: 0xf3f2ec, roughness: 0.18, metalness: 0 })),
   // Glas: durchsichtig, beidseitig; an den Rändern (streifender Blick) dichter und heller (Fresnel), das gibt Glas seine Kontur
   glass: () => memo('glass', () => {
-    const m = new THREE.MeshStandardMaterial({ color: 0xdff1f8, emissive: 0x16262e, emissiveIntensity: 0.5, transparent: true, opacity: 0.1, roughness: 0.05, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
+    const m = new THREE.MeshStandardMaterial({ color: 0xdff1f8, emissive: 0x16262e, emissiveIntensity: 0.5, transparent: true, opacity: 0.13, roughness: 0.05, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
     m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `
       float chF = pow(1.0 - clamp(abs(dot(normalize(normal), normalize(vViewPosition))), 0.0, 1.0), 2.2);
       outgoingLight += vec3(0.62, 0.8, 0.9) * chF * 0.55; diffuseColor.a = clamp(opacity + chF * 0.62, 0.0, 0.92);
@@ -33,6 +33,11 @@ export const MAT = {
     m.customProgramCacheKey = () => 'chemie-glass'; return m;
   }),
   liquid: (c, k = 0.9) => memo(`liq${c}|${k}`, () => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.22, roughness: 0.12, metalness: 0, transparent: k < 1, opacity: k, depthWrite: k >= 1 })),
+  // Flüssigkeiten mit Vertexfarben: alle Farben teilen sich EIN Material (ein Zeichenaufruf statt einem je Farbe); Farbe über Batch.add({ color })
+  liquidVC: (k = 1) => memo(`liqvc${k}`, () => {
+    const m = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.12, metalness: 0, transparent: k < 1, opacity: k, depthWrite: k >= 1 });
+    m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * 0.22;'); }; m.customProgramCacheKey = () => 'chemie-liquid'; return m;
+  }),
   solid: (c, rough = 0.7, metal = 0) => memo(`solid${c}|${rough}|${metal}`, () => new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal })),
   emissive: (c, i = 1.5) => memo(`em${c}|${i}`, () => new THREE.MeshStandardMaterial({ color: 0x222222, emissive: c, emissiveIntensity: i })),
 };
@@ -43,13 +48,14 @@ const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _p = new THREE.Vector
 export class Batch {
   constructor() { this.map = new Map(); }
   // r = Euler (x,y,z; Reihenfolge YXZ), s = Skalierung (Zahl oder [x,y,z])
-  add(geo, mat, { p = [0, 0, 0], r = [0, 0, 0], s = 1, m = null, tile = 0 } = {}) {
+  add(geo, mat, { p = [0, 0, 0], r = [0, 0, 0], s = 1, m = null, tile = 0, color = null } = {}) {
     const g = geo.clone();
     if (m) g.applyMatrix4(m); else { _e.set(r[0], r[1], r[2], 'YXZ'); _q.setFromEuler(_e); _p.set(p[0], p[1], p[2]); if (Array.isArray(s)) _s.set(s[0], s[1], s[2]); else _s.setScalar(s); _m.compose(_p, _q, _s); g.applyMatrix4(_m); }
     if (tile) worldUV(g, tile);
     if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
     if (!g.attributes.normal) g.computeVertexNormals();
-    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv') g.deleteAttribute(k);
+    if (color != null) { const c = new THREE.Color(color), n = g.attributes.position.count, arr = new Float32Array(n * 3); for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(arr, 3)); }
+    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv' && k !== 'color') g.deleteAttribute(k);
     let list = this.map.get(mat); if (!list) this.map.set(mat, (list = [])); list.push(g); return this;
   }
   box(mat, w, h, d, x = 0, y = 0, z = 0, ry = 0, o = {}) { return this.add(new THREE.BoxGeometry(w, h, d), mat, { p: [x, y, z], r: [o.rx || 0, ry, o.rz || 0], tile: o.tile || 0 }); }
@@ -63,7 +69,7 @@ export class Batch {
     _q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); _m.compose(A.clone().add(B).multiplyScalar(0.5), _q, _s.set(1, 1, 1)); return this.add(g, mat, { m: _m.clone() });
   }
   // Drehkörper aus Profil [[radius, y], ...]
-  lathe(mat, pts, x = 0, y = 0, z = 0, o = {}) { return this.add(new THREE.LatheGeometry(pts.map((q) => new THREE.Vector2(q[0], q[1])), o.seg || 24), mat, { p: [x, y, z], r: [o.rx || 0, o.ry || 0, o.rz || 0], s: o.s || 1 }); }
+  lathe(mat, pts, x = 0, y = 0, z = 0, o = {}) { return this.add(new THREE.LatheGeometry(pts.map((q) => new THREE.Vector2(q[0], q[1])), o.seg || 24), mat, { p: [x, y, z], r: [o.rx || 0, o.ry || 0, o.rz || 0], s: o.s || 1, color: o.color ?? null }); }
   // Rohrleitung entlang eines Streckenzugs mit gerundeten Ecken (Radius R); Ecken müssen achsparallel sein
   pipe(mat, pts, r, R = 0.07, seg = 12) {
     const P = pts.map((q) => new THREE.Vector3(...q)); let cur = P[0].clone();

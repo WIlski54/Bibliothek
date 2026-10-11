@@ -137,3 +137,23 @@ export function makeLightPatch(w = 2.4, d = 3.4) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ map: lightPatchTex(), color: new THREE.Color(0.5, 0.42, 0.26), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; m.renderOrder = 2; return m;
 }
+
+// Läufer (Teppich) in Blaugrün mit Borte und Rauten, einmal aufgespannt (Seitenverhältnis wie die Fläche)
+export function makeRunner(w = 6.6, d = 1.9) {
+  const px = 1320, ph = Math.round(px * d / w), [c, g] = canvas(px, ph); g.fillStyle = '#1b5560'; g.fillRect(0, 0, px, ph);
+  const r = mulberry32(8); for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,240,210'},${0.03 + r() * 0.05})`; g.fillRect(r() * px, r() * ph, 1 + r() * 3, 1); }
+  const frame = (ins, lw, col) => { g.strokeStyle = col; g.lineWidth = lw; g.strokeRect(ins, ins, px - 2 * ins, ph - 2 * ins); };
+  frame(14, 12, '#d8cbae'); frame(34, 4, '#b98a34'); frame(50, 22, '#7a3526'); frame(80, 3, '#b98a34'); frame(92, 8, '#d8cbae');
+  const n = 5, step = (px - 260) / (n - 1);
+  for (let i = 0; i < n; i++) { const x = 130 + i * step, y = ph / 2, s = ph * 0.3; g.fillStyle = i % 2 ? '#7a3526' : '#d8cbae'; g.beginPath(); g.moveTo(x, y - s); g.lineTo(x + s * 1.2, y); g.lineTo(x, y + s); g.lineTo(x - s * 1.2, y); g.closePath(); g.fill(); g.fillStyle = '#1b5560'; g.beginPath(); g.moveTo(x, y - s * 0.62); g.lineTo(x + s * 0.74, y); g.lineTo(x, y + s * 0.62); g.lineTo(x - s * 0.74, y); g.closePath(); g.fill(); g.fillStyle = '#b98a34'; g.beginPath(); g.arc(x, y, s * 0.2, 0, TAU); g.fill(); if (i < n - 1) { g.fillStyle = '#d8cbae'; g.beginPath(); g.arc(x + step / 2, y, 9, 0, TAU); g.fill(); } }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: texOf(c), roughness: 0.96 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.012; return m;
+}
+// Gebotszeichen "Augenschutz benutzen": blaue Scheibe, weiße Schutzbrille
+export function makeGogglesSign(d = 0.26) {
+  const [c, g] = canvas(256, 256); g.fillStyle = '#f2efe4'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#1757a8'; g.beginPath(); g.arc(128, 128, 112, 0, TAU); g.fill();
+  g.strokeStyle = '#fff'; g.fillStyle = '#fff'; g.lineWidth = 11; g.lineCap = 'round';
+  for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(128 + sx * 36, 118, 31, 24, 0, 0, TAU); g.stroke(); }
+  g.beginPath(); g.moveTo(100, 112); g.quadraticCurveTo(128, 96, 156, 112); g.stroke(); g.beginPath(); g.moveTo(66, 112); g.lineTo(44, 106); g.moveTo(190, 112); g.lineTo(212, 106); g.stroke();
+  g.font = 'bold 26px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText('Schutzbrille', 128, 192);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(d, d), new THREE.MeshStandardMaterial({ map: texOf(c), roughness: 0.5 })); return m;
+}

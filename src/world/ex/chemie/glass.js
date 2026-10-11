@@ -25,11 +25,11 @@ export const PROFILE = {
 export const levelOf = (pr, frac) => { const top = pr[pr.length - 1][1]; return Math.max(0.01, top * frac); };
 
 // ---------------------------------------------------------------- Bausteine (position x,y,z = Mitte des Bodens)
-export function addVessel(b, pr, x, y, z, { liquid = null, level = 0.4, opacity = 0.9, seg = 24, rot = [0, 0, 0] } = {}) {
+export function addVessel(b, pr, x, y, z, { liquid = null, level = 0.4, opacity = 1, seg = 24, rot = [0, 0, 0] } = {}) {
   b.lathe(MAT.glass(), pr, x, y, z, { seg, rx: rot[0], ry: rot[1], rz: rot[2] });
   const top = pr[pr.length - 1];
   b.torus(MAT.glass(), top[0], 0.0017, x, y + top[1], z, { rx: Math.PI / 2, ts: Math.max(12, seg - 6), rs: 5 }); // Glasrand
-  if (liquid != null) b.lathe(MAT.liquid(liquid, opacity), fillProfile(pr, levelOf(pr, level)), x, y, z, { seg: Math.max(12, seg - 6) });
+  if (liquid != null) b.lathe(MAT.liquidVC(opacity), fillProfile(pr, levelOf(pr, level)), x, y, z, { seg: Math.max(12, seg - 6), color: liquid });
 }
 export const erlenmeyer = (b, x, y, z, o = {}) => addVessel(b, PROFILE.erlenmeyer(o.k || 1), x, y, z, o);
 export const becher = (b, x, y, z, o = {}) => addVessel(b, PROFILE.becher(o.R, o.H), x, y, z, o);
@@ -55,7 +55,7 @@ export function reagenzglasstaender(b, wood, x, y, z) {
   b.add(geo, wood, { p: [x, y + h - 0.012, z] });                                                // Lochplatte
   for (let i = 0; i < n; i++) { const tx = x - len / 2 + 0.02 + pitch * (i + 0.5);
     reagenzglas(b, tx, y + 0.014, z + 0.026, { L: 0.17, liquid: RAINBOW[i], level: 0.5, r: 0.0135 });
-    reagenzglas(b, tx, y + 0.014, z - 0.026, { L: 0.17, liquid: i % 3 === 1 ? 0xbfe3f0 : null, level: 0.3, r: 0.0135, opacity: 0.55 });
+    reagenzglas(b, tx, y + 0.014, z - 0.026, { L: 0.17, liquid: i % 3 === 1 ? 0xbfe3f0 : null, level: 0.3, r: 0.0135, opacity: 0.6 });
   }
   return { len, dep, h };
 }

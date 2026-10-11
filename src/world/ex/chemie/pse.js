@@ -89,7 +89,8 @@ export function createPeriodicTable({ ctx, station = 'chemie-periodensystem', w 
     });
     // gewähltes Feld / gewählte Kategorie zuletzt (liegt über den Nachbarn)
     if (selCat) { for (const e of ELEMENTS) if (e.cat === selCat) drawOutline(cellRect(e.col, e.row)); PLACEHOLDERS.forEach((p) => { if (p.cat === selCat) drawOutline(cellRect(p.col, p.row)); }); }
-    if (selZ) { const e = BY_Z(selZ), r = cellRect(e.col, e.row), k = 1.2, big = { x: r.x - (r.w * (k - 1)) / 2, y: r.y - (r.h * (k - 1)) / 2, w: r.w * k, h: r.h * k }; drawCell(big, { cat: e.cat, sym: e.sym, num: e.z, name: e.name, state: e.state, hi: true }); }
+    if (selZ) { g.fillStyle = 'rgba(8,16,20,.42)'; g.fillRect(10, 10, PSE_W - 20, PSE_H - 20); }   // Scheinwerfer: alles andere wird gedämpft
+    if (selZ) { const e = BY_Z(selZ), r = cellRect(e.col, e.row), k = 1.38, big = { x: r.x - (r.w * (k - 1)) / 2, y: r.y - (r.h * (k - 1)) / 2, w: r.w * k, h: r.h * k }; drawCell(big, { cat: e.cat, sym: e.sym, num: e.z, name: e.name, state: e.state, hi: true }); }
     tex.needsUpdate = true;
   }
   function drawOutline(r) { g.save(); g.strokeStyle = '#ffffff'; g.lineWidth = 5; rr(r.x + 2, r.y + 2, r.w - 4, r.h - 4, 10); g.stroke(); g.restore(); }

@@ -6,10 +6,10 @@ import { M, placeWall, wallPos, hitBox, pottedPlant } from '../kit.js';
 import { tileTex, plasterTex } from '../tex.js';
 import { personFrame } from '../portraits.js';
 import { Batch, MAT, signMesh } from '../ex/chemie/util.js';
-import { addFrieze, makeWindow, addPipe, addValve, makeGauge, addCeiling, makeLamp, makeLightPatch } from '../ex/chemie/room.js';
+import { addFrieze, makeWindow, addPipe, addValve, makeGauge, addCeiling, makeLamp, makeLightPatch, makeRunner, makeGogglesSign } from '../ex/chemie/room.js';
 import { createPeriodicTable, makePseFrame } from '../ex/chemie/pse.js';
 import { makeCards } from '../ex/chemie/cards.js';
-import { LAB, makeCounter, makeSideboard, makeStool } from '../ex/chemie/furniture.js';
+import { LAB, makeCounter, makeCounterDecor, makeSideboard, makeStool } from '../ex/chemie/furniture.js';
 import { buildLab } from '../ex/chemie/lab.js';
 import { makeNaCl, makeCuSO4, makeNatron, makeDisplayTable, labelStand } from '../ex/chemie/crystals.js';
 import { makeAtom } from '../ex/chemie/atom.js';
@@ -77,12 +77,14 @@ export function build(ctx) {
     { const sb = makeSideboard(); placeWall(sb, room, 'E', 0, 0.0, 0.0); g.add(sb); }
     { const pf = personFrame('mendelejew'); pf.userData.tap.station = ST.periodensystem; placeWall(pf, room, 'E', 3.65, 0.0, 1.95); g.add(pf); }
 
+    { const ru = makeRunner(6.6, 1.9); ru.position.x = -0.9; ru.position.z = -0.35; g.add(ru); }
+    { const sg = makeGogglesSign(0.26); placeWall(sg, room, 'W', -1.7, 0.012, 1.55); g.add(sg); }
     // ---- Labortisch mit Geräten
     buildLab(g, cards, upd);
     for (const [x, z, ry] of [[-2.0, 2.45, 0.4], [-0.3, 2.5, 2.2], [1.4, 2.45, 1.0], [-3.25, 0.5, 0.0]]) { const s = makeStool(); s.position.set(x, 0, z); s.rotation.y = ry; g.add(s); }
 
     // ---- Fensterfront: Arbeitsplatte mit Spüle, Waage (Lavoisier), Gewichtskasten, Standflaschen, Porträts
-    { const ct = makeCounter(); placeWall(ct, room, 'S', 0, 0, 0); g.add(ct); }
+    { const ct = makeCounter(); placeWall(ct, room, 'S', 0, 0, 0); g.add(ct); const dc = makeCounterDecor(); placeWall(dc, room, 'S', 0, 0, 0.86); g.add(dc); }
     const scale = makeScale(); scale.group.scale.setScalar(1.4); placeWall(scale.group, room, 'S', 1.95, 0.31, 0.86); g.add(scale.group); upd.push((dt, t) => scale.update(t));
     { const t = hitBox(0.92, 0.95, 0.42, cards.waage); placeWall(t, room, 'S', 1.95, 0.31, 0.86 + 0.46); g.add(t); }
     { const wbx = makeWeightBox(); placeWall(wbx, room, 'S', 1.3, 0.28, 0.86); wbx.scale.setScalar(1.25); wbx.position.x += 0.0; g.add(wbx); }
@@ -126,8 +128,8 @@ export function build(ctx) {
     // ---- Porträts der Porträtwand (Westwand neben der Tür)
     for (const [id, a] of [['curie', 2.3], ['hodgkin', -2.3]]) { const pf = personFrame(id); pf.userData.tap.station = ST.portraets; placeWall(pf, room, 'W', a, 0.0, 1.85); g.add(pf); }
     // Bunsen: kleines Bild auf dem Tisch hinter den Brennern
-    { const pf = personFrame('bunsen', { w: 0.26, h: 0.34 }); pf.userData.tap.station = ST.labortisch; pf.position.set(0.5, LAB.H + 0.3, 1.74); pf.rotation.y = Math.PI; pf.rotation.x = -0.12; g.add(pf);
-      const sb = new Batch(); sb.tube(M.wood(0x3a2214, { planks: 1 }), [0.5, LAB.H + 0.3, 1.74 + 0.05], [0.5, LAB.H + 0.0, 1.74 + 0.2], 0.012, 6); g.add(sb.build({ name: 'staender' })); }
+    { const pf = personFrame('bunsen', { w: 0.2, h: 0.27 }); pf.userData.tap.station = ST.labortisch; pf.position.set(-0.72, LAB.H + 0.24, 1.74); pf.rotation.y = Math.PI; pf.rotation.x = -0.12; g.add(pf);
+      const sb = new Batch(); sb.tube(M.wood(0x3a2214, { planks: 1 }), [-0.72, LAB.H + 0.24, 1.74 + 0.05], [-0.72, LAB.H + 0.0, 1.74 + 0.18], 0.012, 6); g.add(sb.build({ name: 'staender' })); }
 
     // ---- Lichter (max. 4): über Tisch Ost und West, Nordzone, Periodensystem
     api.lights.length = 0;

@@ -56,16 +56,30 @@ export function makeSideboard({ w = 4.3, depth = 0.5, h = 0.88 } = {}) {
   const n = 5, pw = w / n;
   for (let i = 0; i < n; i++) { const x = -w / 2 + pw * (i + 0.5); b.box(fr, pw - 0.05, h - 0.16, 0.022, x, (h - 0.04) / 2 + 0.05, depth - 0.02, 0, T); b.box(dk, pw - 0.15, h - 0.28, 0.004, x, (h - 0.04) / 2 + 0.05, depth - 0.008, 0, T); b.cyl(brass, 0.006, 0.006, 0.1, x + (i % 2 ? -1 : 1) * (pw / 2 - 0.09), h - 0.3, depth - 0.004, { seg: 6 }); }
   // Standflaschen (braunes Apothekerglas) mit Korken und Etikett
-  const rnd = mulberry32(17), glass = new THREE.MeshStandardMaterial({ color: 0x8c4d16, roughness: 0.18, metalness: 0, emissive: 0x2a1204, emissiveIntensity: 0.55 });
-  const lab = MAT.paper(), cork = MAT.cork();
-  for (let i = 0; i < 9; i++) {
-    const x = -1.9 + i * 0.4 + (rnd() - 0.5) * 0.06, hh = 0.16 + rnd() * 0.12, r = 0.04 + rnd() * 0.015, z = 0.2 + (rnd() - 0.5) * 0.12, y0 = h;
-    b.lathe(glass, [[0, 0], [r - 0.004, 0], [r, 0.006], [r, hh * 0.72], [r * 0.7, hh * 0.9], [0.017, hh * 0.98], [0.017, hh + 0.04], [0.021, hh + 0.045]], x, y0, z, { seg: 18 });
-    b.cyl(cork, 0.016, 0.014, 0.03, x, y0 + hh + 0.03, z, { seg: 10 }); b.cyl(lab, r + 0.0015, r + 0.0015, hh * 0.38, x, y0 + hh * 0.38, z, { seg: 18 }); b.cyl(MAT.solid(0x2d3a3a, 0.9), r + 0.0018, r + 0.0018, 0.012, x, y0 + hh * 0.5, z, { seg: 18 });
-  }
+  const rnd = mulberry32(17);
+  for (let i = 0; i < 9; i++) bottle(b, -1.9 + i * 0.4 + (rnd() - 0.5) * 0.06, h, 0.2 + (rnd() - 0.5) * 0.12, 0.16 + rnd() * 0.12, 0.04 + rnd() * 0.015);
   // Mörser mit Stößel
   b.lathe(MAT.ceramic(), [[0, 0.0], [0.04, 0], [0.06, 0.02], [0.085, 0.07], [0.09, 0.075], [0.08, 0.075], [0.055, 0.04], [0.0, 0.025]], 1.95, h, 0.28, { seg: 22 }); b.tube(MAT.ceramic(), [1.96, h + 0.05, 0.27], [2.06, h + 0.15, 0.2], 0.012, 10, 0.017);
   g.add(b.build({ name: 'schrank' })); return g;
+}
+
+
+// braune Standflasche: Ursprung = Boden, hh = Höhe des Körpers, r = Radius
+const AMBER = () => new THREE.MeshStandardMaterial({ color: 0x8c4d16, roughness: 0.18, metalness: 0, emissive: 0x2a1204, emissiveIntensity: 0.55 });
+let amberMat = null;
+export function bottle(b, x, y0, z, hh, r) {
+  amberMat ||= AMBER();
+  b.lathe(amberMat, [[0, 0], [r - 0.004, 0], [r, 0.006], [r, hh * 0.72], [r * 0.7, hh * 0.9], [0.017, hh * 0.98], [0.017, hh + 0.04], [0.021, hh + 0.045]], x, y0, z, { seg: 18 });
+  b.cyl(MAT.cork(), 0.016, 0.014, 0.03, x, y0 + hh + 0.03, z, { seg: 10 }); b.cyl(MAT.paper(), r + 0.0015, r + 0.0015, hh * 0.38, x, y0 + hh * 0.38, z, { seg: 18 }); b.cyl(MAT.solid(0x2d3a3a, 0.9), r + 0.0018, r + 0.0018, 0.012, x, y0 + hh * 0.5, z, { seg: 18 });
+}
+// Deko auf der Arbeitsplatte (lokal wie makeCounter: x entlang der Wand von links nach rechts von innen, z von der Wand in den Raum, y ab Plattenoberseite)
+export function makeCounterDecor() {
+  const g = new THREE.Group(), b = new Batch(), rnd = mulberry32(23);
+  for (let i = 0; i < 7; i++) bottle(b, -1.2 - i * 0.27 + (rnd() - 0.5) * 0.04, 0, 0.17 + (rnd() - 0.5) * 0.08, 0.15 + rnd() * 0.11, 0.038 + rnd() * 0.012);
+  for (let i = 0; i < 3; i++) { const x = -3.5 - i * 0.2, hh = 0.1 + i * 0.03; b.cyl(MAT.ceramic(), 0.055, 0.055, hh, x, hh / 2, 0.2, { seg: 18 }); b.cyl(MAT.ceramic(), 0.058, 0.058, 0.02, x, hh + 0.01, 0.2, { seg: 18 }); b.sph(MAT.ceramic(), 0.014, x, hh + 0.03, 0.2, { w: 8, h: 6 }); b.box(MAT.solid(0x2d6a6a, 0.8), 0.05, 0.04, 0.003, x, hh * 0.5, 0.2 + 0.056); }
+  // Stapel Laborjournale am westlichen Ende
+  for (const [i, c] of [[0, 0x7b1f26], [1, 0x2c4a6e], [2, 0x2f6a4a], [3, 0x8a5a2b]]) { b.box(MAT.solid(c, 0.8), 0.24, 0.028, 0.17, 5.0 + (i % 2) * 0.01, 0.014 + i * 0.03, 0.22, i * 0.15); b.box(MAT.paper(), 0.225, 0.02, 0.16, 5.0 + (i % 2) * 0.01, 0.014 + i * 0.03, 0.225, i * 0.15); }
+  g.add(b.build({ name: 'arbeitsplatte-deko' })); return g;
 }
 
 // Laborhocker: runde Sitzfläche auf drei Beinen mit Fußring

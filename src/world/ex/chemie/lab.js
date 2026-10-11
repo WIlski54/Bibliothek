@@ -22,7 +22,7 @@ export function buildLab(g, cards, upd) {
   korkring(gl, -1.58, H, 1.14); rundkolben(gl, -1.58, H + 0.016, 1.14, { liquid: 0xf2d33a, level: 0.28 });
   erlenmeyer(gl, -1.2, H, 1.12, { k: 0.9, liquid: 0x4cc15c, level: 0.32 });
   becher(gl, -1.95, H, 1.55, { R: 0.045, H: 0.11, liquid: 0xe04646, level: 0.5 });
-  becher(gl, -1.62, H, 1.57, { R: 0.035, H: 0.08, liquid: 0xbfe3f0, level: 0.4, opacity: 0.55 });
+  becher(gl, -1.62, H, 1.57, { R: 0.035, H: 0.08, liquid: 0xbfe3f0, level: 0.4, opacity: 0.6 });
   becher(gl, -1.28, H, 1.54, { R: 0.05, H: 0.13, liquid: 0xf08a2e, level: 0.55 });
   messzylinder(gl, -0.98, H, 1.5, { liquid: 0x9fd8ee, level: 0.42, opacity: 0.6 });
   g.add(gl.build({ name: 'glasgeraete' }));

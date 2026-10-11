@@ -27,21 +27,21 @@ function stand(b, x, z, h, clampY, cx, ringR, axis = [0, 1, 0]) {
 
 export function makeDistillation() {
   const grp = new THREE.Group(), b = new Batch(), glass = MAT.glass();
-  // ---- Hebebühne und Heizpilz
-  b.box(MAT.darkSteel(), 0.17, 0.075, 0.17, 0, 0.0375, 0); b.box(MAT.steel(), 0.2, 0.012, 0.2, 0, 0.081, 0);
-  b.cyl(MAT.black(), 0.012, 0.012, 0.03, 0.1, 0.04, 0.0, { rz: Math.PI / 2, seg: 8 });
-  b.cyl(MAT.darkSteel(), 0.09, 0.092, 0.105, 0, 0.1395, 0, { seg: 28 }); b.torus(MAT.steel(), 0.09, 0.005, 0, 0.192, 0, { rx: Math.PI / 2, ts: 28, rs: 6 });
-  b.lathe(MAT.solid(0xb9ab8c, 0.97), [[0, 0.124], [0.034, 0.128], [0.058, 0.146], [0.074, 0.17], [0.078, 0.19]], 0, 0, 0, { seg: 26 });           // Heizpilz-Mulde (Glasfasergewebe)
-  b.box(MAT.black(), 0.075, 0.055, 0.045, 0, 0.12, -0.11); b.cyl(MAT.steel(), 0.013, 0.013, 0.02, -0.017, 0.122, -0.14, { rx: Math.PI / 2, seg: 14 }); b.box(MAT.steel(), 0.003, 0.016, 0.004, -0.017, 0.122, -0.151);
-  b.sph(MAT.emissive(0xff3322, 2.2), 0.005, 0.021, 0.14, -0.134, { w: 8, h: 6 });
-  b.pipe(MAT.black(), [[0.03, 0.11, -0.11], [0.03, 0.02, -0.11], [0.18, 0.012, -0.11], [0.3, 0.012, 0.15]], 0.004, 0.03, 6);                // Netzkabel
+  // ---- Hebebühne und Heizpilz (flach, damit die obere Kolbenhälfte frei sichtbar bleibt)
+  b.box(MAT.darkSteel(), 0.17, 0.028, 0.17, 0, 0.014, 0); b.box(MAT.steel(), 0.2, 0.012, 0.2, 0, 0.034, 0);
+  b.cyl(MAT.black(), 0.012, 0.012, 0.03, 0.1, 0.02, 0.0, { rz: Math.PI / 2, seg: 8 });
+  b.cyl(MAT.darkSteel(), 0.09, 0.092, 0.105, 0, 0.0925, 0, { seg: 28 }); b.torus(MAT.steel(), 0.09, 0.005, 0, 0.145, 0, { rx: Math.PI / 2, ts: 28, rs: 6 });
+  b.lathe(MAT.solid(0xb9ab8c, 0.97), [[0, 0.077], [0.034, 0.081], [0.058, 0.099], [0.074, 0.123], [0.078, 0.143]], 0, 0, 0, { seg: 26 });           // Heizpilz-Mulde (Glasfasergewebe)
+  b.box(MAT.black(), 0.075, 0.055, 0.045, 0, 0.073, -0.11); b.cyl(MAT.steel(), 0.013, 0.013, 0.02, -0.017, 0.075, -0.14, { rx: Math.PI / 2, seg: 14 }); b.box(MAT.steel(), 0.003, 0.016, 0.004, -0.017, 0.075, -0.151);
+  b.sph(MAT.emissive(0xff3322, 2.2), 0.005, 0.021, 0.093, -0.134, { w: 8, h: 6 });
+  b.pipe(MAT.black(), [[0.03, 0.065, -0.11], [0.03, 0.02, -0.11], [0.18, 0.012, -0.11], [0.3, 0.012, 0.15]], 0.004, 0.03, 6);                // Netzkabel
 
   // ---- Siedekolben mit Siedesteinen und Gemisch; Boden liegt in der Mulde
-  const F0 = 0.125, flask = PROFILE.rund(0.062, 0.017, 0.11);
+  const F0 = 0.078, flask = PROFILE.rund(0.062, 0.017, 0.157);
   addVessel(b, flask, 0, F0, 0, { liquid: 0xb0283c, level: 0.34, opacity: 0.82, seg: 28 });
   for (const [x, z, r, c] of [[0.012, 0.01, 0.007, 0xe2dccb], [-0.018, -0.006, 0.006, 0xcfc8b4], [0.003, -0.02, 0.0065, 0xe8e2d0], [-0.006, 0.022, 0.006, 0xd9d2bf], [0.028, -0.012, 0.0055, 0xe0d9c6]]) b.sph(MAT.solid(c, 0.95), r, x, F0 + 0.012 + r * 0.4, z, { w: 7, h: 5 });
   // ---- Destillationsaufsatz: senkrechtes Rohr (Schliff auf dem Kolbenhals), Thermometerstutzen oben, Seitenrohr zum Kühler
-  const yTopFlask = F0 + 0.1216 + 0.11;                 // Oberkante Kolbenhals
+  const yTopFlask = F0 + 0.1216 + 0.157;                // Oberkante Kolbenhals (0.357)
   b.cyl(glass, 0.0235, 0.0235, 0.04, 0, yTopFlask - 0.006, 0, { seg: 20 });  // Schliffhülse
   b.cyl(glass, 0.0195, 0.0195, 0.15, 0, 0.415, 0, { seg: 20 });             // senkrechtes Rohr  (0.34 .. 0.49)
   b.cyl(glass, 0.0135, 0.0135, 0.04, 0, 0.505, 0, { seg: 16 });             // Thermometerstutzen

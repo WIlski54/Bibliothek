@@ -24,7 +24,7 @@ export function makeScale() {
     const g = new THREE.Group(); g.position.set(side * A, -0.012, 0); g.userData.dynamic = true; const pb = new Batch(), drop = 0.27;
     for (let k = 0; k < 3; k++) { const a = (k * 2 * Math.PI) / 3 + 0.4; pb.tube(brass, [0, 0, 0], [Math.cos(a) * 0.085, -drop, Math.sin(a) * 0.085], 0.0017, 5); }
     pb.lathe(brass, [[0.0, -drop - 0.012], [0.05, -drop - 0.01], [0.088, -drop], [0.094, -drop + 0.006]], 0, 0, 0, { seg: 26 });
-    if (side < 0) { addVessel(pb, PROFILE.erlenmeyer(0.62), 0, -drop - 0.002, 0, { liquid: 0xb9d6e4, level: 0.2, opacity: 0.55, seg: 24 }); pb.cyl(MAT.cork(), 0.0125, 0.0105, 0.02, 0, -drop + 0.113 + 0.006, 0, { seg: 12 }); }
+    if (side < 0) { addVessel(pb, PROFILE.erlenmeyer(0.62), 0, -drop - 0.002, 0, { liquid: 0xb9d6e4, level: 0.2, opacity: 0.6, seg: 24 }); pb.cyl(MAT.cork(), 0.0125, 0.0105, 0.02, 0, -drop + 0.113 + 0.006, 0, { seg: 12 }); }
     else { for (const [x, z, r, h] of [[-0.03, 0.0, 0.024, 0.026], [0.03, 0.015, 0.018, 0.02], [0.0, -0.03, 0.014, 0.016], [0.035, -0.025, 0.01, 0.012]]) { pb.cyl(brass, r, r, h, x, -drop + h / 2 - 0.0, z, { seg: 14 }); pb.sph(brass, r * 0.35, x, -drop + h + r * 0.2, z, { w: 8, h: 6 }); } }
     g.add(pb.build({ name: 'waageschale' })); return g;
   };
