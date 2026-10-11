@@ -27,9 +27,9 @@ function putAbout(n, qx, qy, a, rz = 0, dx = 0, dy = 0, sx = 1, sy = 1) {
 }
 
 export class Archimedes {
-  constructor(ctx) {
+  constructor(ctx, opts = {}) {
     this.ctx = ctx; this.rig = ctx.rig; this.cam = ctx.rig.camera;
-    this.group = new THREE.Group(); this.group.name = 'archimedes'; this.group.userData.dynamic = true; this.group.userData.tap = { kind: 'cat', label: 'Archimedes' };
+    this.group = opts.group || new THREE.Group(); this.group.name = 'archimedes'; this.group.userData.dynamic = true; this.group.userData.tap = { kind: 'cat', label: 'Archimedes' };
     // bbf: gedreht zur Kamera und gespiegelt (Profil nach links/rechts); bbn: nur gedreht (Symbole); sh: Schattenhalter
     this.bbf = new THREE.Group(); this.bbn = new THREE.Group(); this.sh = new THREE.Group();
     for (const g of [this.bbf, this.bbn, this.sh]) g.userData.dynamic = true;
@@ -40,7 +40,9 @@ export class Archimedes {
     this.zs = [0, 1, 2].map(() => { const m = symbolMesh('z', 0.1); m.visible = false; this.bbn.add(m); return m; });
     this.pop = symbolMesh('bulb', 0.13); this.pop.visible = false; this.bbn.add(this.pop);
     this.poses = {};
-    this.space = new Space({ world: ctx.world, rig: this.rig });
+    this.space = opts.space || new Space({ world: ctx.world, rig: this.rig });
+    // Dauer der Abschnitte (Unterklassen dürfen sie an ihre Animationen anpassen)
+    this.dur = { wake: 0.26, groom: 4.6, stretch: 1.9, sleepin: 0.9 };
     // Zustand
     this.pos = new THREE.Vector3(...TABLE_SPOT); this.ground = TABLE_SPOT[1]; this.lift = 0;
     this.pose = 'sleep'; this.mode = 'sleep'; this.modeT = 0; this.clock = 0; this.face = 1; this.yaw = 0;
@@ -48,10 +50,12 @@ export class Archimedes {
     this.speed = 0; this.phase = 0; this.heading = new THREE.Vector3(1, 0, 0);
     this.visited = new Set(['foyer']); this.tipped = new Set(['foyer']); this.lineIdx = {}; this.lineOrder = {}; this.wakeLines = 0;
     this.t = { blink: rr(1.5, 3), ear: rr(2, 5), look: rr(2, 5), wag: rr(6, 12), groom: rr(18, 30), sleep: rr(70, 100), stretch: rr(30, 50), blinkT: -1, blinkLen: 0.13, dbl: false, earT: -1, earSide: 0, wagT: -1, lookX: 0, lookTo: 0 };
-    this.getPose('sleep'); this.showPose('sleep');
+    this.initFigure();
     this.apply();
     this.scheduleWarm();
   }
+  // Figur (Papierlagen) aufbauen; Unterklassen ersetzen das
+  initFigure() { this.getPose('sleep'); this.showPose('sleep'); }
 
   // ------------------------------------------------------------ Posen bauen (leicht verzögert im Hintergrund)
   getPose(name) {
@@ -105,7 +109,8 @@ export class Archimedes {
     if (L < 0.35) { this.pos.copy(target); this.ground = target.y; return; }
     let T = Math.max(0.7, dur * 0.86 - delay - (wasSleeping ? 0.3 : 0)); T = Math.max(T, L / (0.83 * 6.5));
     this.travel = { path, lens, L, T, t: 0, s: 0, useCam: !!rt, lead: 0.6 / Math.max(1, dur), delay, delay0: delay, stretchPrep: wasSleeping, startY: this.pos.y, endY: target.y, target, jumpAt: Math.max(0.05, (lens[1] || 0.7) - 0.55), lastSeg: lens[lens.length - 1] - lens[lens.length - 2], upF: 0 };
-    this.goFace = this.faceFor(new THREE.Vector3(path[1].x - this.pos.x, 0, path[1].z - this.pos.z));
+    this.goDir = new THREE.Vector3(path[1].x - this.pos.x, 0, path[1].z - this.pos.z).normalize();
+    this.goFace = this.faceFor(this.goDir);
     if (wasSleeping) { this.mode = 'wake'; this.modeT = 0; this.wakeNext = 'go'; } else { this.mode = 'prep'; this.modeT = 0; this.switchPose('walk', false, this.goFace); }
   }
   arrive(stationId) {
@@ -173,7 +178,7 @@ export class Archimedes {
     const old = this.pos.clone();
     this.pos.x = lerp(a.x, b.x, f); this.pos.z = lerp(a.z, b.z, f);
     // Höhe: erst vom Möbelstück herunterspringen, am Ziel gegebenenfalls hinaufspringen (catSpot mit y > 0)
-    const jl = tr.jumpAt, jf = clamp((s - jl) / 0.6); let gr = tr.startY > 0.1 ? lerp(tr.startY, 0, smooth(jf)) : 0, lf = tr.startY > 0.1 && jf > 0 && jf < 1 ? 0.16 * Math.sin(Math.PI * jf) : 0;
+    const jl = tr.jumpAt, jf = clamp((s - jl) / 0.6); tr.jf = jf; let gr = tr.startY > 0.1 ? lerp(tr.startY, 0, smooth(jf)) : 0, lf = tr.startY > 0.1 && jf > 0 && jf < 1 ? 0.16 * Math.sin(Math.PI * jf) : 0;
     if (tr.endY > 0.05) { const ul = Math.min(0.9, tr.lastSeg), uf = clamp((s - (tr.L - ul)) / ul); if (uf > 0) { gr = Math.max(gr, tr.endY * smooth(uf)); lf = uf < 1 ? Math.max(lf, 0.14 * Math.sin(Math.PI * uf)) : lf; } tr.upF = uf; }
     this.ground = gr; this.lift = lf;
     this.pos.y = this.ground + this.lift;
@@ -191,6 +196,10 @@ export class Archimedes {
     if (this.teleport) { this.teleport.t += dt; if (this.teleport.t >= this.teleport.at) this.finishTeleport(); }
     if (this.travel) this.stepTravel(dt);
     this.runMode(dt, calm);
+    this.updateFigure(dt, calm);
+  }
+  // Figur fortschreiben (Papierlagen): Wenden, Blickrichtung, Pose, Zusatzlagen
+  updateFigure(dt, calm) {
     this.runFlip(dt);
     this.face_();
     const a = this['anim_' + this.pose]; if (a) a.call(this, dt, calm);
@@ -211,7 +220,7 @@ export class Archimedes {
     switch (this.mode) {
       case 'sleep': break;
       case 'wake': { // Augen auf, kleiner Schreck, dann weiter
-        if (this.modeT > 0.26) {
+        if (this.modeT > this.dur.wake) {
           if (this.wakeNext === 'go') { this.mode = 'prep'; this.modeT = 0; this.switchPose('walk', false, this.goFace); }
           else { this.setSit(); this.t.blinkT = 0; this.t.blinkLen = 0.3; }
         }
@@ -226,9 +235,9 @@ export class Archimedes {
         else if (T.sleep <= 0 && !this.react && !this.speakT) { this.mode = 'sleepin'; this.modeT = 0; }
         break;
       }
-      case 'groom': { if (this.modeT > 4.6 || calm) { this.mode = 'sit'; this.modeT = 0; } break; }
-      case 'sleepin': { if (this.modeT > 0.9) { this.switchPose('sleep', false, this.sleepFace()); this.mode = 'sleep'; this.modeT = 0; } break; }
-      case 'stretch': { if (this.modeT > 1.9) { this.mode = 'sit'; this.modeT = 0; this.switchPose('sit'); } break; }
+      case 'groom': { if (this.modeT > this.dur.groom || calm) { this.mode = 'sit'; this.modeT = 0; } break; }
+      case 'sleepin': { if (this.modeT > this.dur.sleepin) { this.switchPose('sleep', false, this.sleepFace()); this.mode = 'sleep'; this.modeT = 0; } break; }
+      case 'stretch': { if (this.modeT > this.dur.stretch) { this.mode = 'sit'; this.modeT = 0; this.switchPose('sit'); } break; }
       default: break;
     }
   }

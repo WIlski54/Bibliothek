@@ -10,7 +10,7 @@ const entryArg = (process.argv.find((a) => a.startsWith('--entry=')) || '').slic
 const result = await build({
   entryPoints: [entryArg], bundle: true, write: false, format: 'iife',
   target: ['es2020', 'safari15'], minify: !dev, sourcemap: false, legalComments: 'none',
-  define: { 'process.env.NODE_ENV': '"production"' }, logLevel: 'warning', loader: { '.json': 'json' },
+  define: { 'process.env.NODE_ENV': '"production"' }, logLevel: 'warning', loader: { '.json': 'json', '.glb': 'binary' },
 });
 const js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const css = fs.readFileSync('src/style.css', 'utf8');
