@@ -131,7 +131,7 @@ export class Rig {
       tr.t += dt / tr.dur;
       if (tr.calm) { // 0..0.5 aus, Sprung, 0.5..1 ein
         this.fade = tr.t < 0.5 ? tr.t * 2 : Math.max(0, 2 - tr.t * 2);
-        if (tr.t >= 0.5 && !tr.jumped) { tr.jumped = true; const keep = tr.onDone; this.jump(tr.id); this.cur = null; tr.onDone = keep; }
+        if (tr.t >= 0.5 && !tr.jumped) { tr.jumped = true; const st = this.stations.get(tr.id); this.camera.position.copy(st.P); this.setBase(st.L.clone().sub(st.P)); this.yaw = this.yawT = this.pitch = this.pitchT = 0; this.zoomT = this.zoom = 1; }
         if (tr.t >= 1) { this.finish(tr); }
       } else {
         const u = smoother(clamp(tr.t, 0, 1));

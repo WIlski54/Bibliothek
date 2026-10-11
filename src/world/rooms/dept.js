@@ -63,8 +63,8 @@ export function buildDept(ctx, id, style = {}, extras = null) {
   stations.push({ id: `${id}-eingang`, room: id, name: `${DEPT_NAME[id]}: Eingang`, pos: [ip.x, 1.6, ip.z], look: [fp.x, 1.7, fp.z] });
   { const near = wallPos(room, far, 0, 3.0), dp = wallPos(room, doorWall, 0, 0); stations.push({ id: `${id}-tuer`, room: id, name: `${DEPT_NAME[id]}: Ausgang`, pos: [near.x, 1.6, near.z], look: [dp.x, 1.9, dp.z] }); }
   for (const wl of [far, ...sides]) {
-    const near = wallPos(room, wl, 0, 3.0), tgt = wallPos(room, wl, 0, 0);
-    stations.push({ id: `${id}-regal-${wl}`, room: id, name: `${DEPT_NAME[id]}: ${WALL_NAME[wl]}`, pos: [near.x, 1.6, near.z], look: [tgt.x, 1.7, tgt.z], wall: wl });
+    const near = wallPos(room, wl, 0, 3.3), tgt = wallPos(room, wl, 0, 0);
+    stations.push({ id: `${id}-regal-${wl}`, room: id, name: `${DEPT_NAME[id]}: ${WALL_NAME[wl]}`, pos: [near.x, 1.6, near.z], look: [tgt.x, 1.4, tgt.z], wall: wl });
   }
   const api = {
     id, R, room, doorWall, far, sides, st, g, stations, lights, blockers, units, ctx,

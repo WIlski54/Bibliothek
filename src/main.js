@@ -30,6 +30,7 @@ const ctx = { books, counts };
 const world = new World(renderer, scene, rig, ctx);
 const ambient = new Ambient();
 let ui, showcase;
+const fadeEl = document.getElementById('fade');
 let paused = qs.has('manual');
 
 function size() {
@@ -131,7 +132,7 @@ let last = performance.now(), frames = 0, acc = 0;
 function frame(now) {
   requestAnimationFrame(frame); if (paused) return;
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  rig.update(dt); world.update(dt); showcase.update(dt);
+  rig.update(dt); world.update(dt); showcase.update(dt); if (fadeEl.style.opacity !== String(rig.fade)) fadeEl.style.opacity = rig.fade;
   const f = document.getElementById('gl'); void f;
   renderer.render(scene, camera);
   // Automatische Qualität: bei dauerhaft langsamen Bildern eine Stufe tiefer
@@ -144,7 +145,7 @@ function frame(now) {
   world.cat?.place?.('foyer-eingang'); rig.jump('foyer-eingang'); ui.setWhere('foyer', rig.stations.get('foyer-eingang').name);
   rig.onTravel = (from, to, fr, tr) => { ambient.whoosh(); if (tr && tr !== fr) setTimeout(() => ambient.setRoom(tr), 900); world.cat?.follow(from, to, rig.travel?.route); };
   requestAnimationFrame((t) => { last = t; frame(t); });
-  ui.ready(() => { if (!qs.has('quiet')) setTimeout(() => ui.say('Miau! Ich bin Archimedes. Komm, ich zeige dir die Bibliothek. Tippe auf eine Tür oder auf die Knöpfe unten.', { ms: 9000 }), 700); });
+  ui.ready(() => { if (!qs.has('quiet')) setTimeout(() => { if (world.cat?.greet) world.cat.greet(); else ui.say('Miau! Ich bin Archimedes. Komm, ich zeige dir die Bibliothek. Tippe auf eine Tür oder auf die Knöpfe unten.', { ms: 9000 }); }, 700); });
   window.__lib = { rig, world, ui, showcase, THREE, renderer, scene, camera, goStation, goRoom, handleTap, setTier, ctx, step: (dt, n = 1) => { for (let i = 0; i < n; i++) { rig.update(dt); world.update(dt); showcase.update(dt); } renderer.render(scene, camera); } };
   window.__bookReady = true;
 })();

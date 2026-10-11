@@ -203,9 +203,19 @@ export class Space {
     const key = id + '|' + Math.round(this.aspect() * 3);
     if (!force && this.spots.has(key)) return this.spots.get(key).clone();
     let res;
-    if (st.catSpot) res = new THREE.Vector3(st.catSpot[0], st.catSpot[1] || 0, st.catSpot[2]);
+    if (st.catSpot && this.catSpotOk(st)) res = new THREE.Vector3(st.catSpot[0], st.catSpot[1] || 0, st.catSpot[2]);
     else res = this.autoSpot(st);
     this.spots.set(key, res); return res.clone();
+  }
+  // Raumbauer-Vorschlag (catSpot) nur übernehmen, wenn die Katze dort im Bild sitzt und nicht in Möbeln steckt; sonst automatisch wählen
+  catSpotOk(st) {
+    this.ensure(); const [x, y0, z] = st.catSpot, y = y0 || 0, cam = this.camFor(st.P, st.L), v = new THREE.Vector3(), nd = (px, py, pz) => { v.set(px, py, pz).project(cam); return [v.x, v.y, v.z]; };
+    if (y < 0.1 && !this.free(x, z, CAT_R)) return false;
+    const feet = nd(x, y, z), top = nd(x, y + 0.46, z); if (feet[2] > 1 || top[2] > 1 || feet[2] < -1) return false;
+    if (Math.abs(feet[0]) > 0.85 || feet[1] < -0.97 || top[1] > 0.25) return false;
+    const bar = this.hud().bar; if (feet[0] > bar.x0 - 0.05 && feet[0] < bar.x1 + 0.05 && feet[1] < bar.y1 + 0.02) return false;
+    if (this.occluded(st.P, x, y + 0.3, z)) return false;
+    return true;
   }
   autoSpot(st) {
     this.ensure(); const P = st.P, L = st.L; const f = new THREE.Vector3(L.x - P.x, 0, L.z - P.z); if (f.lengthSq() < 1e-6) f.set(0, 0, -1); f.normalize();
@@ -221,7 +231,8 @@ export class Space {
       if (feet[2] > 1 || top[2] > 1 || feet[2] < -1) return null;
       const fy = Math.max(feet[1], -0.97), r = { x0: Math.min(s1[0], s2[0]), x1: Math.max(s1[0], s2[0]), y0: fy, y1: top[1] };
       if (r.x0 < -0.96 || r.x1 > 0.96 || r.y1 > 0.25) return null;
-      const vis = (top[1] - fy) / Math.max(1e-3, top[1] - feet[1]); if (vis < (relax ? 0.2 : 0.4)) return null;
+      if (relax === 2 && top[1] < -0.9) return null;
+      const vis = (top[1] - fy) / Math.max(1e-3, top[1] - feet[1]); if (vis < (relax === 2 ? 0.08 : relax ? 0.2 : 0.4)) return null;
       const cx = (r.x0 + r.x1) / 2, hgt = r.y1 - r.y0;
       let cost = Math.abs(Math.abs(cx) - 0.66) * 2.2 + Math.abs(feet[1] + 0.82) * 0.8 + Math.max(0, d - 2.6) * 0.3 + Math.max(0, 0.3 - hgt) * 6 + (l < 0 ? 0.35 : 0) + (1 - vis) * 3;
       if (hit(r, bar)) { if (!relax) return null; cost += 3; }
@@ -230,8 +241,8 @@ export class Space {
       if (this.occluded(P, x, 0.3, z) || this.occluded(P, x, 0.08, z)) { if (!relax) return null; cost += 4; }
       return { x, z, cost };
     };
-    for (const relax of [false, true]) {
-      for (let d = 1.6; d <= 5.2; d += 0.2) for (let l = -3.4; l <= 3.4; l += 0.2) { const e = eval1(d, l, relax); if (e && (!best || e.cost < best.cost)) best = e; }
+    for (const relax of [false, true, 2]) { // 2: nur Kopf und Ohren schauen unten ins Bild (Stationen, an denen der Boden kaum sichtbar ist)
+      for (let d = relax === 2 ? 1.2 : 1.6; d <= 5.2; d += 0.2) for (let l = -3.4; l <= 3.4; l += 0.2) { const e = eval1(d, l, relax); if (e && (!best || e.cost < best.cost)) best = e; }
       if (best) break;
     }
     if (!best) { const nf = this.nearestFree(P.x + f.x * 3 + right.x * 1.2, P.z + f.z * 3 + right.z * 1.2); best = { x: nf[0], z: nf[1] }; }
