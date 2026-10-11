@@ -32,7 +32,7 @@ export function buildDept(ctx, id, style = {}, extras = null) {
   // ---------------- Regalwände: Gegenwand und beide Seitenwände voll, an der Türwand je ein Regal neben der Tür
   const far = OPP[doorWall], sides = doorWall === 'N' || doorWall === 'S' ? ['E', 'W'] : ['N', 'S'];
   const units = [];
-  const addUnit = (wl, a) => { const s = shelfUnit({ w: 1.6, h: 2.7, d: 0.4, shelves: 5, wood: st.shelfWood, back: st.shelfBack }); placeWall(s, room, wl, a, 0.2); g.add(s); s.userData.wall = wl; s.userData.a = a; s.userData.seed = units.length + 1; s.userData.taken = []; s.userData.tap = { kind: 'goto', station: `${id}-regal-${wl}`, label: 'Regal' }; units.push(s); return s; };
+  const addUnit = (wl, a) => { const s = shelfUnit({ w: 1.6, h: 2.7, d: 0.4, shelves: 5, wood: st.shelfWood, back: st.shelfBack }); placeWall(s, room, wl, a, 0.2); g.add(s); s.userData.wall = wl; s.userData.a = a; s.userData.seed = units.length + 1; s.userData.taken = []; { const hp = hitPlane(1.5, 2.6, { kind: 'goto', station: `${id}-regal-${wl}`, label: 'Regal' }); hp.position.set(0, 1.4, -0.17); s.add(hp); } units.push(s); return s; };
   const run = (wl) => { const n = Math.max(2, Math.floor((WALL_LEN(R, wl) - 1.0) / 1.7)), pitch = (WALL_LEN(R, wl) - 1.0) / n; for (let i = 0; i < n; i++) addUnit(wl, (i - (n - 1) / 2) * pitch); };
   run(far); sides.forEach(run);
   for (const sg of [-1, 1]) { const a = sg * (DOOR.w / 2 + 0.4 + 0.9); if (Math.abs(a) + 0.8 <= WALL_LEN(R, doorWall) / 2 - 0.1) addUnit(doorWall, a); }

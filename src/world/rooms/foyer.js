@@ -60,7 +60,7 @@ export function build(ctx) {
     return s;
   };
   const shelves = [shelfAt('S', -3.0, 1), shelfAt('S', -4.7, 2), shelfAt('S', 3.0, 3), shelfAt('S', 4.7, 4), shelfAt('W', -4.4, 5), shelfAt('W', 4.4, 6), shelfAt('E', -4.4, 7), shelfAt('E', 4.4, 8)];
-  for (const s of shelves) s.userData.tap = { kind: 'info', title: 'Katalog und Nachschlagewerke', sub: 'Das Foyer-Regal', paras: ['Hier stehen Bücher, die jeder braucht: Lexika, Atlanten, Wörterbücher. Die Popup-Bücher selbst findest du in den Fachräumen.', 'Geh durch eine der drei Türen und stöbere in den Regalen der Abteilungen.'] };
+  for (const s of shelves) { const hp = hitPlane(1.5, 2.6, { kind: 'info', label: 'Regal', title: 'Katalog und Nachschlagewerke', sub: 'Das Foyer-Regal', paras: ['Hier stehen Bücher, die jeder braucht: Lexika, Atlanten, Wörterbücher. Die Popup-Bücher selbst findest du in den Fachräumen.', 'Geh durch eine der drei Türen und stöbere in den Regalen der Abteilungen.'] }); hp.position.set(0, 1.4, -0.17); s.add(hp); }
 
   // ---------------- Norden: Lageplan und Hausherr (Archimedes) an der Wand
   const plan = framedPicture(planTex({ counts: ctx.counts }), { w: 1.5, h: 1.07, name: 'Lageplan', sub: 'Wo geht es wohin?' });

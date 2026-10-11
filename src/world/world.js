@@ -8,9 +8,11 @@ import * as geschichte from './rooms/geschichte.js';
 import * as biologie from './rooms/biologie.js';
 import * as chemie from './rooms/chemie.js';
 import { createCat } from './cat.js';
+import { mergeStatic } from './merge.js';
 
 const MODS = { foyer, geschichte, biologie, chemie };
 const DEPTS = ['geschichte', 'biologie', 'chemie'];
+const EYE_Y = 1.6;
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
 export class World {
@@ -28,6 +30,8 @@ export class World {
       const r = MODS[id].build(this.ctx); const off = ROOMS[id].offset; r.group.position.set(off[0], off[1], off[2]); r.offset = new THREE.Vector3(...off); this.scene.add(r.group); this.rooms[id] = r;
       for (const s of r.stations) this.rig.addStation({ ...s, pos: [s.pos[0] + off[0], s.pos[1], s.pos[2] + off[2]], look: [s.look[0] + off[0], s.look[1], s.look[2] + off[2]], catSpot: s.catSpot && [s.catSpot[0] + off[0], s.catSpot[1], s.catSpot[2] + off[2]] });
       r.group.updateMatrixWorld(true);
+      for (const b of r.blockers) mergeStatic(b);
+      r.merged = mergeStatic(r.group, { exclude: r.blockers });
       r.group.traverse((o) => { if (o.userData.tap) this.pickRoots.push(o); });
       for (const b of r.blockers) b.traverse((o) => { if (o.isMesh) this.blockerMeshes.add(o); });
       progress?.(++n / ids.length); await nextFrame();
@@ -64,8 +68,17 @@ export class World {
     for (const d of DEPTS) { const fd = FOYER_DOORS[d]; const to = new THREE.Vector3(fd.world[0] - p.x, 0, fd.world[2] - p.z); const dist = to.length(); to.normalize(); const sc = f.dot(to) - dist * 0.012; if (sc > bs) { bs = sc; best = d; } }
     return best || this.want || 'geschichte';
   }
+  // Nur sichtbare Räume zeichnen: der Raum, in dem die Kamera steht, plus Nachbarräume, deren Tür im Blickfeld liegt
+  updateVisibility() {
+    const cam = this.rig.camera, p = cam.position, here = this.roomAt(p);
+    const f = new THREE.Vector3(0, 0, -1).applyEuler(cam.rotation), vf = (cam.fov * Math.PI) / 180 / 2, th = Math.tan(vf), half = Math.atan(Math.sqrt(th * th + th * th * cam.aspect * cam.aspect)) + 0.3;
+    const seen = (d) => { const fd = FOYER_DOORS[d]; const to = new THREE.Vector3(fd.world[0] - p.x, EYE_Y - p.y, fd.world[2] - p.z); const dist = to.length(); return dist < 4.5 || f.dot(to.normalize()) > Math.cos(Math.min(half, 3.0)); };
+    const vis = { foyer: here === 'foyer', geschichte: false, biologie: false, chemie: false }; vis[here] = true;
+    if (here === 'foyer') for (const d of DEPTS) vis[d] = seen(d); else vis.foyer = seen(here);
+    for (const id of this.roomsOrder) { const g = this.rooms[id].group; if (g.visible !== vis[id]) g.visible = vis[id]; }
+  }
   update(dt) {
-    this.t += dt; this.cat?.update(dt, this.t);
+    this.t += dt; this.updateVisibility(); this.cat?.update(dt, this.t);
     for (const id of this.roomsOrder || []) this.rooms[id].update?.(dt, this.t, this);
     this.acc = (this.acc || 0) + dt;
     if (this.acc > 0.12) { this.acc = 0; this.setWant(this.chooseRoom()); }

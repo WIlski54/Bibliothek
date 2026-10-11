@@ -121,18 +121,17 @@ export function fillBooks(slot, { seed = 1, density = 0.9, skip = [], palette = 
     col.setHex(palette[Math.floor(rnd() * palette.length)]); col.offsetHSL((rnd() - 0.5) * 0.03, (rnd() - 0.5) * 0.1, (rnd() - 0.5) * 0.08);
     const lean = rnd() < 0.05 ? (rnd() - 0.5) * 0.3 : 0;
     const body = new THREE.BoxGeometry(bw, bh, bd); body.translate(0, bh / 2, 0);
-    const pages = new THREE.BoxGeometry(bw * 0.86, bh * 0.96, 0.012); pages.translate(0, bh / 2, -bd / 2 + 0.002);
     const bands = [];
     const nb = 1 + Math.floor(rnd() * 3); const gold = new THREE.Color(0xd9b45a);
-    for (let k = 0; k < nb; k++) { const bg = new THREE.BoxGeometry(bw * 1.02, 0.008 + rnd() * 0.006, 0.006); bg.translate(0, bh * (0.2 + 0.6 * (k + rnd() * 0.5) / (nb + 0.5)), bd / 2 + 0.002); bands.push(bg); }
-    const parts = [[body, col.clone()], [pages, pageC]]; for (const b of bands) parts.push([b, gold]);
+    for (let k = 0; k < nb; k++) { const bg = new THREE.PlaneGeometry(bw * 1.01, 0.008 + rnd() * 0.006); bg.translate(0, bh * (0.2 + 0.6 * (k + rnd() * 0.5) / (nb + 0.5)), bd / 2 + 0.002); bands.push(bg); }
+    const parts = [[body, col.clone()]]; for (const b of bands) parts.push([b, gold]);
     const m = new THREE.Matrix4().makeRotationZ(lean); const tr = new THREE.Matrix4().makeTranslation(x + bw / 2, slot.y, slot.z);
     for (const [gg, c] of parts) { gg.applyMatrix4(m); gg.applyMatrix4(tr); push(gg, c); }
     x += bw + 0.003 + (lean ? Math.abs(Math.sin(lean)) * bh * 0.5 : 0);
   }
   if (!geos.length) return null;
   const merged = mergeGeometries(geos, false); merged.computeVertexNormals();
-  const m = new THREE.Mesh(merged, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0.05 })); m.receiveShadow = true; return m;
+  const m = new THREE.Mesh(merged, mat('fillbooks', () => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0.05 }))); m.receiveShadow = true; return m;
 }
 
 // ---------------------------------------------------------------- Möbel und Zierrat
