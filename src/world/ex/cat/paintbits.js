@@ -43,9 +43,9 @@ export function eyeFront(c, x, y, { r = 3.4, lid = 0.3, side = 1, tilt = -0.1, p
   ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(X + R * 0.34, Y + R * 0.42, R * 0.11, 0, 6.2832); ctx.fill();
   ctx.restore();
   // Lidkante und Lidstrich
-  ctx.save(); ctx.strokeStyle = C.dark; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(1.5, R * 0.15);
+  ctx.save(); ctx.strokeStyle = C.dark; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(1.5, R * 0.1);
   ctx.beginPath();
-  if (lid > 0.02) { ctx.moveTo(X0 - R * 1.04, yb + (side > 0 ? ti : -ti)); ctx.lineTo(X0 + R * 1.04, yb + (side > 0 ? -ti : ti)); }
+  if (lid > 0.02) { ctx.moveTo(X0 - R * 0.98, yb + (side > 0 ? ti : -ti)); ctx.lineTo(X0 + R * 0.98, yb + (side > 0 ? -ti : ti)); }
   else ctx.arc(X0, Y0, R * 1.02, 3.4, 6.0);
   ctx.stroke();
   // Lidstrich-Schwung nach außen (wie bei der ägyptischen Katze)

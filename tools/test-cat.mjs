@@ -19,7 +19,10 @@ const catInfo = () => page.evaluate(() => {
   const p = a.pos;
   const body = proj(p.x, p.y + 0.2, p.z), top = proj(p.x, p.y + 0.44, p.z), feet = proj(p.x, p.y, p.z);
   const rooms = Object.fromEntries(Object.entries(window.__lib.world.rooms).map(([k, r]) => [k, [r.offset.x, r.offset.z]]));
-  return { mode: a.mode, pose: a.pose, pos: [p.x, p.y, p.z], body, top, feet, clearance: c.space.clearance(p.x, p.z), room: L.rig.room, cur: L.rig.cur, calm: L.rig.calm, tips: a.tipped.size, rooms };
+  // Schnitt mit den Regal-Klickflächen (Hitplanes): Katzenmitte +-0.3 m um die Fläche
+  let shelfHit = null; const B = new L.THREE.Box3();
+  for (const r of Object.values(L.world.rooms)) r.group.traverse((o) => { if (o.userData.tap?.label === 'Regal' && o.isMesh) { B.setFromObject(o).expandByVector(new V(0.3, 0, 0.3)); if (p.x > B.min.x && p.x < B.max.x && p.z > B.min.z && p.z < B.max.z && p.y < B.max.y) shelfHit = [B.min.x, B.min.z, B.max.x, B.max.z]; } });
+  return { mode: a.mode, pose: a.pose, pos: [p.x, p.y, p.z], body, top, feet, clearance: c.space.clearance(p.x, p.z), room: L.rig.room, cur: L.rig.cur, calm: L.rig.calm, tips: a.tipped.size, rooms, shelfHit };
 });
 const sizes = { foyer: [14, 12], geschichte: [12, 10], biologie: [10, 12], chemie: [12, 10] };
 const lines = {}; // aus talk.js, in der Seite gelesen
@@ -43,6 +46,18 @@ check('Antippen (schlafend): Sprechblase', !B.hidden && /Mrrau|Hm\?|Miau/.test(B
 I = await catInfo(); check('Antippen (schlafend): sitzt danach', I.mode === 'sit' || I.mode === 'wake', I.mode);
 await step(10);
 
+// ---- Hausherr-Gemälde an der Foyer-Nordwand antippen: Karte
+{
+  const [x, y] = await page.evaluate(() => { const L = window.__lib, v = new L.THREE.Vector3(-4.75, 1.75, -5.95).project(L.camera); const r = document.getElementById('gl').getBoundingClientRect(); return [(v.x + 1) / 2 * r.width + r.left, (1 - v.y) / 2 * r.height + r.top]; });
+  await page.mouse.click(x, y); await step(2);
+  const card = await page.evaluate(() => ({ open: !document.getElementById('card').hidden, text: document.querySelector('#card .body')?.textContent || '', imgs: document.querySelectorAll('#card img').length }));
+  check('Gemälde „Archimedes, Hausherr“: Karte geht auf', card.open && /Archimedes/.test(card.text) && /Heureka/.test(card.text) && card.imgs === 1, card.text.slice(0, 60));
+  await page.waitForTimeout(500);
+  const imgOk = await page.evaluate(() => { const i = document.querySelector('#card img'); return !!i && i.complete && i.naturalWidth > 100; });
+  check('Gemälde-Karte: Bild geladen', imgOk);
+  await page.screenshot({ path: out('cat-portrait-card.png') });
+  await page.keyboard.press('Escape'); await step(1);
+}
 // ---- Rundgang
 const tour = [['geschichte-eingang', 'geschichte'], ['biologie-eingang', 'biologie'], ['chemie-eingang', 'chemie'], ['foyer-tuer-chemie', 'foyer']];
 const seenTips = {};
@@ -61,6 +76,7 @@ for (const [id, room] of tour) {
   const dx = Math.abs(I.pos[0] - off[0]), dz = Math.abs(I.pos[2] - off[1]);
   check(`${id}: Abstand zu Wänden/Regalen (>= 0.7 m von der Wand)`, dx <= sz[0] / 2 - 0.7 && dz <= sz[1] / 2 - 0.7, `dx ${dx.toFixed(2)} dz ${dz.toFixed(2)} im Raum ${I.room}`);
   check(`${id}: frei von Möbeln (Raster)`, I.clearance >= 0.22, `Abstand ${I.clearance.toFixed(2)} m`);
+  check(`${id}: kein Schnitt mit Regal-Klickflächen`, !I.shelfHit, JSON.stringify(I.shelfHit));
   // Sichtbarkeit: der Strahl durch den Körper trifft zuerst die Katze
   const hit = await page.evaluate(() => { const L = window.__lib, a = L.world.cat.cat, v = a.bodyCenter().project(L.camera), h = L.world.pick(v.x, v.y); return h ? h.tap.kind : null; });
   check(`${id}: Katze ist antippbar (nicht verdeckt)`, hit === 'cat', String(hit));
@@ -92,11 +108,13 @@ const all = await page.evaluate(() => {
     L.rig.jump(st.id); L.world.cat.place(st.id); L.step(0.2, 3);
     const a = L.world.cat.cat, p = a.pos, pr = (y) => { const v = new V(p.x, p.y + y, p.z).project(L.camera); return v; };
     const c = pr(0.2), t = pr(0.44), f = pr(0.0), sp = L.world.cat.space;
-    res.push({ id: st.id, body: [c.x, c.y], top: t.y, feet: f.y, clr: sp.clearance(p.x, p.z), pos: [p.x, p.z] });
+    let shelfHit = false; const B = new L.THREE.Box3();
+    for (const r of Object.values(L.world.rooms)) r.group.traverse((o) => { if (o.userData.tap?.label === 'Regal' && o.isMesh) { B.setFromObject(o).expandByVector(new V(0.3, 0, 0.3)); if (p.x > B.min.x && p.x < B.max.x && p.z > B.min.z && p.z < B.max.z) shelfHit = true; } });
+    res.push({ id: st.id, body: [c.x, c.y], top: t.y, feet: f.y, clr: sp.clearance(p.x, p.z), pos: [p.x, p.z], shelfHit });
   }
   return res;
 });
-for (const r of all) { const vis = Math.abs(r.body[0]) < 0.97 && r.top > -0.97 && r.top < 0.9 && r.body[1] < 0.5; const clr = r.clr >= 0.2; if (!vis || !clr) bad.push(`${r.id} (ndc ${r.body.map((v) => v.toFixed(2))} top ${r.top.toFixed(2)} clr ${r.clr.toFixed(2)})`); }
+for (const r of all) { const vis = Math.abs(r.body[0]) < 0.97 && r.top > -0.97 && r.top < 0.9 && r.body[1] < 0.5; const clr = r.clr >= 0.2 && !r.shelfHit; if (!vis || !clr) bad.push(`${r.id} (ndc ${r.body.map((v) => v.toFixed(2))} top ${r.top.toFixed(2)} clr ${r.clr.toFixed(2)})`); }
 check(`Katzenplatz an allen ${all.length} Stationen sichtbar und frei`, bad.length === 0, bad.join('; '));
 // ---- Ruhiger Modus: kein Laufen, Teleport
 {

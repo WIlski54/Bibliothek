@@ -56,5 +56,5 @@ export const PORTRAIT_CARD = {
     'Er ist neugierig, hält sich für sehr klug und hat meistens recht. Tippe ihn an, dann sagt er dir etwas.',
   ],
   fact: 'Der echte Archimedes lebte um 287 bis 212 v. Chr. in Syrakus auf Sizilien. Wer ins Wasser taucht, wird leichter: um das Gewicht des Wassers, das er verdrängt. Das nennt man Auftrieb. In der Badewanne soll ihm das eingefallen sein, und er soll „Heureka!“ gerufen haben, „Ich hab’s gefunden!“.',
-  src: 'Die Badewannen-Geschichte ist eine Überlieferung des römischen Baumeisters Vitruv, aufgeschrieben rund 200 Jahre nach Archimedes. Ob es genau so war, weiß niemand sicher.',
+  src: 'Die Badewannen-Geschichte ist eine Überlieferung des römischen Baumeisters Vitruv, aufgeschrieben fast 200 Jahre nach Archimedes. Ob es genau so war, weiß niemand sicher.',
 };

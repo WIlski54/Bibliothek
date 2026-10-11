@@ -40,8 +40,9 @@ function faceDeco(v) {
     K.paintPoly(c, [[0, 31.0], [4.8, 30.0], [6.8, 27.6], [4.9, 24.6], [0, 23.4], [-4.9, 24.6], [-6.8, 27.6], [-4.8, 30.0]], C.white, 1, 2);
     K.fur(c, { x0: -5 * 0.01, y0: 24.5 * 0.01, w: 10 * 0.01, h: 5 * 0.01 }, 'rgba(160,168,182,.8)', 8, 1.5, 0.12, { seed: 11, alpha: 0.4, ang: Math.PI / 2 });
     for (const s of [-1, 1]) for (const [x, y] of [[2.6, 28.2], [3.9, 27.4], [2.4, 26.2], [4.1, 29.2]]) K.paintBlob(c, s * x, y, 0.2, 0.2, 0, '#6a6f7d', 0.7);
+    for (const s of [-1, 1]) K.paintBlob(c, s * 9.4, 29.4, 2.4, 1.3, s * 0.15, '#f4a0a6', 0.3);   // Bäckchen
     const ex = 5.6, ey = 34.6;
-    if (v.eyes === 'open') { eyeFront(c, -ex, ey, { r: 3.7, lid: 0.15, side: -1, pup: 0.34 }); eyeFront(c, ex, ey, { r: 3.7, lid: 0.15, side: 1, pup: 0.34 }); }
+    if (v.eyes === 'open') { eyeFront(c, -ex, ey, { r: 3.8, lid: 0.12, side: -1, pup: 0.4 }); eyeFront(c, ex, ey, { r: 3.8, lid: 0.12, side: 1, pup: 0.4 }); }
     else if (v.eyes === 'wide') { eyeFront(c, -ex, ey, { r: 3.9, lid: 0, side: -1, pup: 0.45 }); eyeFront(c, ex, ey, { r: 3.9, lid: 0, side: 1, pup: 0.45 }); }
     else if (v.eyes === 'closed') { eyeClosed(c, -ex, ey, { r: 3.7, side: -1 }); eyeClosed(c, ex, ey, { r: 3.7, side: 1 }); }
     else if (v.eyes === 'happy') { eyeClosed(c, -ex, ey, { r: 3.7, side: -1, happy: true }); eyeClosed(c, ex, ey, { r: 3.7, side: 1, happy: true }); }

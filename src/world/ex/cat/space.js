@@ -167,7 +167,7 @@ export class Space {
         const ni = i + di, nj = j + dj; if (!inGrid(ni, nj)) continue; const nk = nj * NX + ni; if (closed[nk]) continue;
         const cl = this.dist[nk]; if (cl < 0.2) continue;
         const cost = w * CELL * (1 + pen[nk] + Math.max(0, 0.55 - cl) * 5);
-        const ng = G[k] + cost; if (ng < G[nk]) { G[nk] = ng; P[nk] = k; push(nk, ng + Math.hypot(ni - gi, nj - gj) * CELL); }
+        const ng = G[k] + cost; if (ng < G[nk]) { G[nk] = ng; P[nk] = k; push(nk, ng + Math.hypot(ni - gi, nj - gj) * CELL * 1.5); }
       }
     }
     let pts = [];

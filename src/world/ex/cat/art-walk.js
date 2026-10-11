@@ -33,7 +33,7 @@ function headFace(v) {
     K.fur(c, { x0: (HX + 3) * 0.01, y0: (HY - 7) * 0.01, w: 9 * 0.01, h: 6 * 0.01 }, 'rgba(160,168,182,.8)', 7, 1.4, 0.12, { seed: 5, alpha: 0.4, ang: 0 });
     // Augen: nahes (links) und fernes (rechts, kleiner)
     const e1 = [HX - 0.6, HY + 1.8], e2 = [HX + 6.4, HY + 1.7];
-    if (v.eyes === 'open') { eyeFront(c, e1[0], e1[1], { r: 3.5, lid: 0.15, side: -1, pup: 0.34 }); eyeFront(c, e2[0], e2[1], { r: 2.8, lid: 0.15, side: 1, pup: 0.34 }); }
+    if (v.eyes === 'open') { eyeFront(c, e1[0], e1[1], { r: 3.5, lid: 0.12, side: -1, pup: 0.4 }); eyeFront(c, e2[0], e2[1], { r: 2.8, lid: 0.12, side: 1, pup: 0.4 }); }
     else if (v.eyes === 'wide') { eyeFront(c, e1[0], e1[1], { r: 3.7, lid: 0, side: -1, pup: 0.45 }); eyeFront(c, e2[0], e2[1], { r: 3.0, lid: 0, side: 1, pup: 0.45 }); }
     else { const hp = v.eyes === 'happy'; eyeClosed(c, e1[0], e1[1], { r: 3.5, side: -1, happy: hp }); eyeClosed(c, e2[0], e2[1], { r: 2.8, side: 1, happy: hp }); }
     // Nase vorn an der Schnauze, Mund

@@ -240,10 +240,11 @@ export class Archimedes {
 
   // ------------------------------------------------------------ Animation je Pose
   headVariantSit() {
-    const T = this.t, speakOpen = this.speakT > 0 && Math.sin(this.clock * 17) > 0;
+    const calmNow = !!this.rig.calm, T = this.t, speakOpen = this.speakT > 0 && Math.sin(this.clock * 17) > 0;
     if (this.mode === 'groom') return SH.happy;
     if (T.blinkT >= 0) return SH.closed;
-    if (this.react && this.react.t < 0.35) return SH.wide;
+    if (this.react && this.react.t < 0.3) return SH.wide;                 // erschrocken, dann Miau-Pose, dann Sprechen
+    if (this.react && this.react.t < 0.85 && !calmNow) return SH.meow;
     if (speakOpen) return SH.speak;
     if (this.mode === 'wake') return SH.wide;
     return SH.open;
