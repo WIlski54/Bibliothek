@@ -1,11 +1,19 @@
 // Archimedes, die Bibliothekskatze. SCHNITTSTELLE (siehe main.js/world.js):
 //   createCat(ctx) -> { group, update(dt, t), place(stationId), follow(fromId, toId, route), arrive(stationId), poke() }
 //   ctx: { rig, world, ui, books }.  group.userData.tap = { kind: 'cat', label: 'Archimedes' }
-// STAND: Platzhalter ohne Figur. Der Katzen-Bauer ersetzt die Datei.
-import * as THREE from 'three';
+// Zusätzlich: greet() (Foyer-Begrüßung als Sprechblase), tipFor(room), screenAnchor() (Kopf in NDC, z. B. für eine Sprechblase), space (Belegungsraster), cat (Zustand für Tests).
+// Katzenplatz je Station: `catSpot` der Station (Weltkoordinaten), sonst automatisch aus der echten Raumgeometrie (siehe ex/cat/space.js).
+// Die Figur steckt in src/world/ex/cat/ (Papierschnitt-Lagen, Verhalten, Wegsuche, Texte).
+import { Archimedes } from './ex/cat/archimedes.js';
+import { portrait } from './ex/cat/portrait.js';
+
 export function createCat(ctx) {
-  const group = new THREE.Group(); group.name = 'archimedes';
-  return { group, update() {}, place() {}, follow() {}, arrive() {}, poke() { ctx.ui.say('Miau!'); } };
+  const a = new Archimedes(ctx);
+  return {
+    group: a.group, cat: a, space: a.space,
+    update: (dt, t) => a.update(dt, t), place: (id) => a.place(id), follow: (from, to, route) => a.follow(from, to, route), arrive: (id) => a.arrive(id), poke: () => a.poke(),
+    greet: () => a.greet(), tipFor: (room) => a.tipFor(room), screenAnchor: () => a.screenAnchor(),
+  };
 }
-// Gerahmtes Bild des Hausherrn für die Foyer-Nordwand (THREE.Group aus framedPicture, 0.9 x 1.2 m Bild) oder null
-export function catPortrait() { return null; }
+// Gerahmtes Bild des Hausherrn für die Foyer-Nordwand (THREE.Group aus framedPicture, 0.9 x 1.2 m Bild)
+export function catPortrait() { return portrait(); }
