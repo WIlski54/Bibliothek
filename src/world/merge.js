@@ -9,7 +9,7 @@ export function mergeStatic(root, { exclude = [] } = {}) {
   root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const groups = new Map(); const skip = new Set(exclude);
   const visit = (o) => {
-    if (skip.has(o) || KEEP(o) || o.isLight) return;
+    if (skip.has(o) || KEEP(o) || o.isLight || o.visible === false) return;
     if (o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && !Array.isArray(o.material) && o.material && o.material.visible !== false && !o.material.transparent && o.geometry?.attributes?.position) {
       let g = groups.get(o.material); if (!g) groups.set(o.material, (g = [])); g.push(o);
     }
