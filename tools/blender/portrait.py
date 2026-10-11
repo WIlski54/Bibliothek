@@ -14,7 +14,10 @@ def mat(name, color, rough=0.6, metal=0.0, sheen=0.0, tex=None, emit=None):
     m = bpy.data.materials.new(name); m.use_nodes = True
     b = m.node_tree.nodes['Principled BSDF']
     b.inputs['Base Color'].default_value = (*color, 1); b.inputs['Roughness'].default_value = rough; b.inputs['Metallic'].default_value = metal
-    if sheen: b.inputs['Sheen Weight'].default_value = sheen; b.inputs['Sheen Roughness'].default_value = 0.5
+    if sheen:
+        b.inputs['Sheen Weight'].default_value = sheen; b.inputs['Sheen Roughness'].default_value = 0.5
+        try: b.inputs['Sheen Tint'].default_value = (*color, 1)
+        except Exception: pass
     if tex:
         n = m.node_tree.nodes.new('ShaderNodeTexImage'); n.image = bpy.data.images.load(tex); n.image.colorspace_settings.name = 'sRGB'
         m.node_tree.links.new(n.outputs['Color'], b.inputs['Base Color'])
@@ -83,14 +86,14 @@ def build_scene(res, work, out_path, samples=96):
     for n in ('forePawL', 'forePawR', 'foreLowL', 'spine2'):
         print('[portrait]', n, [round(v * 100, 1) for v in arm.pose.bones[n].head], [round(v * 100, 1) for v in arm.pose.bones[n].tail])
     # ---------------- Sessel (Sitzfläche bei z = 0, Katze sitzt auf dem Kissen, schaut nach -y)
-    velvet = mat('Samt', srgb('#8f2234'), 0.92, sheen=1.0); velvet2 = mat('SamtDunkel', srgb('#5f1626'), 0.95, sheen=1.0)
+    velvet = mat('Samt', srgb('#85202f'), 0.95, sheen=0.5); velvet2 = mat('SamtDunkel', srgb('#4d1020'), 0.97, sheen=0.4)
     wood = mat('Holz', srgb('#4a2a18'), 0.45); brass = mat('Messing', srgb('#d6a640'), 0.3, metal=1.0)
     box('Sitz', (0, 0.02, -0.055), (0.62, 0.62, 0.11), velvet, 0.035)
     box('Sockel', (0, 0.02, -0.19), (0.66, 0.66, 0.17), velvet2, 0.02)
-    box('Lehne', (0, 0.34, 0.30), (0.66, 0.15, 0.66), velvet, 0.06, rot=(math.radians(-6), 0, 0))
+    box('Lehne', (0, 0.34, 0.27), (0.66, 0.15, 0.60), velvet, 0.07, rot=(math.radians(-6), 0, 0))
     for sx in (-1, 1):
-        box('Armlehne', (sx * 0.34, 0.02, 0.14), (0.10, 0.62, 0.28), velvet, 0.04)
-        box('ArmlehneOben', (sx * 0.34, 0.0, 0.30), (0.14, 0.60, 0.065), velvet, 0.03)
+        box('Armlehne', (sx * 0.34, 0.02, 0.14), (0.10, 0.62, 0.28), velvet2, 0.04)
+        box('ArmlehneOben', (sx * 0.34, 0.0, 0.30), (0.14, 0.60, 0.065), velvet2, 0.03)
         for fy in (-0.26, 0.30):
             box('Fuss', (sx * 0.31, fy, -0.34), (0.07, 0.07, 0.16), wood, 0.01)
     for k in range(5):                                           # Messingnieten an der Lehne
@@ -139,8 +142,20 @@ def build_scene(res, work, out_path, samples=96):
     wd = bpy.data.worlds.new('w'); wd.use_nodes = True; bg = wd.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (0.09, 0.07, 0.07, 1); bg.inputs['Strength'].default_value = 0.35; sc.world = wd
     # ---------------- Kamera
     cd = bpy.data.cameras.new('cam'); cd.lens = 62; cam = bpy.data.objects.new('cam', cd); sc.collection.objects.link(cam); sc.camera = cam
-    cam.location = (0.0, -1.72, 0.62); cam.rotation_euler = (mathutils.Vector((0, 0.0, 0.36)) - mathutils.Vector(cam.location)).to_track_quat('-Z', 'Y').to_euler()
+    cam.location = (0.0, -1.62, 0.60); cam.rotation_euler = (mathutils.Vector((0, 0.0, 0.345)) - mathutils.Vector(cam.location)).to_track_quat('-Z', 'Y').to_euler()
     for o in (fur, eyes, acc): o.hide_render = False
     sc.render.image_settings.file_format = 'PNG'; sc.render.filepath = out_path
     bpy.ops.render.render(write_still=True)
     return out_path
+
+
+def finish(path_in, path_out):
+    """Vignette, warmer Schleier, minimales Rauschen (Leinwand)"""
+    im = Image.open(path_in).convert('RGB'); a = np.asarray(im).astype(np.float32) / 255.0
+    h, w = a.shape[:2]; yy, xx = np.mgrid[0:h, 0:w]
+    r = np.hypot((xx - w / 2) / (w / 2), (yy - h * 0.46) / (h / 2))
+    vig = 1.0 - 0.38 * np.clip((r - 0.45) / 0.9, 0, 1) ** 1.6
+    a = a * vig[..., None]
+    a = a * np.array([1.03, 1.0, 0.95]) + np.array([0.012, 0.006, 0.0])
+    rng = np.random.RandomState(3); a += rng.normal(0, 0.006, a.shape[:2])[..., None]
+    Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).save(path_out, quality=90, subsampling=0, optimize=True)

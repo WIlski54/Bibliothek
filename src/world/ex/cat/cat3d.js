@@ -17,6 +17,7 @@ export function loadCatModel() {
   if (!modelPromise) {
     modelPromise = new Promise((resolve, reject) => {
       try {
+        if (typeof location !== 'undefined' && /[?&]cat=fail(&|$)/.test(location.search)) throw new Error('?cat=fail: Ladefehler zum Testen des Rückfalls');
         const buf = glb.buffer.slice(glb.byteOffset, glb.byteOffset + glb.byteLength);
         new GLTFLoader().parse(buf, '', resolve, reject);
       } catch (e) { reject(e); }
@@ -93,7 +94,12 @@ export class Archimedes3D extends Archimedes {
   tune(m) {
     const mat = m.material; if (!mat) return;
     mat.side = THREE.FrontSide;
-    if (mat.name === 'Fell') { mat.roughness = 0.9; mat.metalness = 0; mat.envMapIntensity = 0.55; if (mat.map) mat.map.anisotropy = 4; }
+    if (mat.name === 'Fell') {
+      // Fell: matt, mit weichem Schimmer am Rand (Sheen) wie bei Plüsch; die Farbkarte kommt aus dem Modell
+      if (mat.map) mat.map.anisotropy = 4;
+      const fur = new THREE.MeshPhysicalMaterial({ name: 'Fell', map: mat.map, roughness: 0.9, metalness: 0, sheen: 0.75, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xb4bfd4), envMapIntensity: 0.55 });
+      m.material = fur; mat.dispose(); return;
+    }
     else if (mat.name === 'Augen') { mat.emissive = new THREE.Color(0xffffff); mat.emissiveMap = mat.map; mat.emissiveIntensity = 0.55; mat.roughness = 0.35; mat.envMapIntensity = 0.7; }
     else { mat.envMapIntensity = 0.8; }
     mat.needsUpdate = true;

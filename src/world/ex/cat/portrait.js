@@ -1,5 +1,6 @@
 // Gerahmtes Bild des Hausherrn: Archimedes würdevoll im Sessel, ein Buch in den Pfoten, dahinter das Bücherregal.
-// Papierschnitt-Schichten mit weichen Schatten (gleiche Technik wie die Popup-Bücher), alles aus Code gemalt.
+// Standard: Render der 3D-Katze (tools/blender/archimedes.py --portrait, assets/cat/portrait.jpg, eingebettet als Data-URL).
+// Rückfall (?cat=paper): das frühere Gemälde aus Papierschnitt-Schichten mit weichen Schatten (gleiche Technik wie die Popup-Bücher), alles aus Code gemalt.
 import * as THREE from 'three';
 import ClipperLib from 'clipper-lib';
 import { unionPolys, offsetPaths, pathsToShapes, bboxOf, paintCut } from '../../../lib/papercut.js';
@@ -9,6 +10,7 @@ import { K, stripe } from './paintbits.js';
 import { C } from './palette.js';
 import { sitParts } from './art-sit.js';
 import { PORTRAIT_CARD } from './talk.js';
+import portraitJpg from '../../../../assets/cat/portrait.jpg';
 
 const W = 720, H = 960, PPM = 800;   // Pixel, Pixel, Pixel je Meter (0.9 x 1.2 m)
 const yc = (px) => (H - px) / 8;    // Bildpunkt -> cm von unten
@@ -123,6 +125,14 @@ function build() {
 }
 
 export function portrait() {
+  if (typeof location !== 'undefined' && /[?&]cat=paper(&|$)/.test(location.search)) return paperPortrait();
+  const tex = new THREE.TextureLoader().load(portraitJpg); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+  const f = framedPicture(tex, { w: 0.9, h: 1.2, name: 'Archimedes', sub: 'Hausherr der Bibliothek' });
+  f.userData.tap = { ...PORTRAIT_CARD, image: portraitJpg, alt: 'Gemälde: Archimedes, der Hausherr, im Sessel mit einem Buch', label: 'Archimedes, Hausherr' };
+  f.name = 'archimedes-portrait'; return f;
+}
+// Früheres Papierschnitt-Gemälde (Rückfall)
+export function paperPortrait() {
   const canvas = build();
   const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
   const f = framedPicture(tex, { w: 0.9, h: 1.2, name: 'Archimedes', sub: 'Hausherr der Bibliothek' });

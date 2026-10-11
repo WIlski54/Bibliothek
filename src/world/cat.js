@@ -18,8 +18,11 @@ export function createCat(ctx) {
   const swapToPaper = (old) => {
     for (const c of [...group.children]) group.remove(c);
     const p = new Archimedes(ctx, { group, space: old.space });
-    p.pos.copy(old.pos); p.ground = old.ground; p.placed = true; p.visited = old.visited; p.tipped = old.tipped;
-    if (old.mode === 'sleep') p.setSleep(); else p.setSit(true);
+    p.visited = old.visited; p.tipped = old.tipped;
+    if (old.placed) {                                    // schon hingesetzt: an derselben Stelle weitermachen (sonst setzt der erste place()-Aufruf sie auf den Lesetisch)
+      p.pos.copy(old.pos); p.ground = old.ground; p.placed = true;
+      if (old.mode === 'sleep') p.setSleep(); else p.setSit(true);
+    }
     a = p;
   };
   a = forcePaper ? new Archimedes(ctx, { group }) : new Archimedes3D(ctx, { group, onFail: swapToPaper });

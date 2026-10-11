@@ -228,6 +228,7 @@ def main():
     res = build_all(args, work)
     if args.save_blend: bpy.ops.wm.save_as_mainfile(filepath=args.save_blend)
     if not args.no_export: export(args, res)
+    if args.render: render_controls(args.render, res)
     if args.portrait: make_portrait(args, res, work)
     log('fertig in %.1f s' % (time.time() - t0))
 
@@ -331,8 +332,39 @@ def build_all(args, work):
     log('Knochen:', len(arm.data.bones))
     tris = len(fur.data.polygons) + len(eyes.data.polygons) + len(acc.data.polygons)
     log('Dreiecke gesamt:', tris)
-    np.savez(os.path.join(work, 'fur_data.npz'), V=V, T=T, W=Wfull, names=np.array(names), piece=piece, nfur=len(f.V))
     return dict(arm=arm, fur=fur, eyes=eyes, acc=acc, f=f)
+
+
+def render_controls(dirpath, res, samples=10):
+    """Kontrollbilder: Drehansichten und Posenbögen aller Clips (Cycles, CPU, klein) nach dirpath"""
+    import preview as P
+    os.makedirs(dirpath, exist_ok=True)
+    arm = res['arm']
+    if arm.animation_data: arm.animation_data.use_nla = False; arm.animation_data.action = None
+    sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'
+    P.setup_world(0.25); P.add_light((1.0, -1.2, 1.4), 120); P.add_light((-1.2, -0.8, 0.6), 40, color=(0.8, 0.9, 1.0)); P.standard_view(); sc.view_settings.exposure = -0.3
+    bpy.ops.mesh.primitive_plane_add(size=3); fl = bpy.context.object
+    fm = P.make_mat('Boden', (0.6, 0.45, 0.3), 0.9); fl.data.materials.append(fm)
+    nt = fm.node_tree; ch = nt.nodes.new('ShaderNodeTexChecker'); ch.inputs['Scale'].default_value = 20
+    ch.inputs['Color1'].default_value = (0.55, 0.42, 0.3, 1); ch.inputs['Color2'].default_value = (0.7, 0.55, 0.4, 1)
+    nt.links.new(ch.outputs['Color'], nt.nodes['Principled BSDF'].inputs['Base Color'])
+    rig = R.Rig(arm)
+    V = {'front': ((0, -1.1, 0.30), (0, 0, 0.22)), 'q3': ((0.9, -0.9, 0.42), (0, 0, 0.20)), 'side': ((1.25, 0, 0.24), (0, 0, 0.16)), 'back': ((-0.5, 1.2, 0.38), (0, 0, 0.2)), 'top': ((0.01, -0.3, 1.1), (0, 0, 0.15)),
+         'face': ((0, -0.55, 0.33), (0, 0, 0.30)), 'gait': ((1.25, 0, 0.26), (0, 0, 0.14))}
+    AN.Pose().apply(rig)
+    paths = [P.render_view(os.path.join(dirpath, f'ansicht-{k}.png'), V[k][0], target=V[k][1], res=(360, 420), samples=samples * 2, lens=60) for k in ('front', 'q3', 'side', 'back', 'top', 'face')]
+    P.sheet(paths, os.path.join(dirpath, 'drehansichten.png'), cols=6)
+    groups = [['sit_idle', 'blink', 'talk', 'meow'], ['scared', 'groom', 'stretch', 'wake'], ['walk', 'trot', 'run', 'sleep_idle'], ['jump_up', 'jump_down']]
+    fns = {n: f for n, f, d, l in AN.CLIPS}
+    for gi, group in enumerate(groups):
+        paths = []
+        for name in group:
+            for u in (0.0, 0.25, 0.5, 0.75):
+                fns[name](u).apply(rig); bpy.context.view_layer.update()
+                v = V['gait'] if name in ('walk', 'trot', 'run', 'jump_up', 'jump_down', 'stretch') else V['q3']
+                paths.append(P.render_view(os.path.join(dirpath, f'clip-{name}-{int(u * 100):02d}.png'), v[0], target=v[1], res=(300, 300), samples=samples, lens=60))
+        P.sheet(paths, os.path.join(dirpath, f'clips-{gi}.png'), cols=4)
+    log('Kontrollbilder:', dirpath)
 
 
 def make_portrait(args, res, work):
@@ -341,10 +373,9 @@ def make_portrait(args, res, work):
     if arm.animation_data: arm.animation_data.use_nla = False; arm.animation_data.action = None
     png = os.path.join(work, 'portrait.png')
     PO.build_scene(res, work, png, samples=args.portrait_samples)
-    im = Image.open(png).convert('RGB')
     os.makedirs(os.path.dirname(os.path.abspath(args.portrait)), exist_ok=True)
-    im.save(args.portrait, quality=90, subsampling=0, optimize=True)
-    log('Gemälde:', args.portrait, f'{os.path.getsize(args.portrait) / 1024:.0f} KB', im.size)
+    PO.finish(png, args.portrait)
+    log('Gemälde:', args.portrait, f'{os.path.getsize(args.portrait) / 1024:.0f} KB')
 
 
 def export(args, res):
