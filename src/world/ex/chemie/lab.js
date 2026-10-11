@@ -36,7 +36,7 @@ export function buildLab(g, cards, upd) {
   const blue = makeBurner({ open: true }); blue.group.position.set(-0.4, H, 1.14); g.add(blue.group);
   const tri = makeTripod({ withBeaker: true, h: 0.34 }); tri.position.set(-0.4, H, 1.14); g.add(tri);
   const yel = makeBurner({ open: false }); yel.group.position.set(0.22, H, 1.14); g.add(yel.group);
-  upd.push((dt, t) => { blue.update(t); yel.update(t + 1.3); });
+  upd.push((dt, tm, t) => { blue.update(t); yel.update(t + 1.3); });
   { const t = hitBox(0.3, 0.52, 0.3, cards.bunsen); t.position.set(-0.4, H + 0.26, 1.2); g.add(t); const t2 = hitBox(0.17, 0.42, 0.17, cards.bunsen); t2.position.set(0.22, H + 0.21, 1.14); g.add(t2); }
   { // Schutzbrille: zwei Gläser mit Gummiband, liegt vorn am Tischrand
     const sb = new Batch(), fr = MAT.black(), lens = MAT.glass(), x0 = -0.08, z0 = 0.99;

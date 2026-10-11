@@ -1,8 +1,8 @@
 // Das große Periodensystem als Wandtafel: Canvas 2048x1024, alle 118 Elemente, Antippen per tap.resolve(hit) (UV -> Feld),
 // Hervorhebung des angetippten Feldes (Canvas wird nur beim Tippen neu gezeichnet), Legende zum Antippen (hebt eine ganze Kategorie hervor).
 import * as THREE from 'three';
-import { ELEMENTS, BY_Z, CATS, STATES, PLACEHOLDERS, elementCard, massText } from '../../../data/elements.js';
-import { Batch, MAT, canvas, texOf, signMesh } from './util.js';
+import { ELEMENTS, BY_Z, CATS, PLACEHOLDERS, elementCard, massText } from '../../../data/elements.js';
+import { Batch, canvas, texOf, signMesh } from './util.js';
 import { M } from '../../kit.js';
 
 export const PSE_W = 2048, PSE_H = 1024;

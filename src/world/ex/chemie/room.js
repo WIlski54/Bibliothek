@@ -1,6 +1,6 @@
 // Raumschmuck des Chemielabors: Fliesenbordüre, Sprossenfenster, Kupferrohre, Deckenbalken, Pendelleuchten, Lichtflecken.
 import * as THREE from 'three';
-import { placeWall, wallPos } from '../../kit.js';
+import { placeWall } from '../../kit.js';
 import { mulberry32, TAU } from '../../../lib/util.js';
 import { Batch, MAT, canvas, texOf } from './util.js';
 
@@ -134,10 +134,10 @@ export function makeLamp({ drop = 1.1 } = {}) {
 }
 // Sonnenflecken auf dem Boden (additiv, weich), pro Fenster einer
 export function makeLightPatch(w = 2.4, d = 3.4) {
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ map: lightPatchTex(), color: new THREE.Color(0.5, 0.42, 0.26), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+  const mat = once('patchMat', () => new THREE.MeshBasicMaterial({ map: lightPatchTex(), color: new THREE.Color(0.5, 0.42, 0.26), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
   m.rotation.x = -Math.PI / 2; m.renderOrder = 2; return m;
 }
-
 // Läufer (Teppich) in Blaugrün mit Borte und Rauten, einmal aufgespannt (Seitenverhältnis wie die Fläche)
 export function makeRunner(w = 6.6, d = 1.9) {
   const px = 1320, ph = Math.round(px * d / w), [c, g] = canvas(px, ph); g.fillStyle = '#1b5560'; g.fillRect(0, 0, px, ph);

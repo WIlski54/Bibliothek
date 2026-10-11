@@ -43,10 +43,6 @@ const closeCard = async () => { await page.keyboard.press('Escape'); await step(
 check('Fahrt vom Foyer ins Labor (durch die Tür)', await goto('chemie-eingang'));
 // (2) Felder des Periodensystems
 check('Station Periodensystem erreichbar', await goto('chemie-periodensystem'));
-const cellScreen = (z) => page.evaluate((z) => {
-  const L = window.__lib, b = L.world.rooms.chemie.group.getObjectByName('periodensystem'), P = b.userData.pse; const el = L.ctx.__els?.[z];
-  return null;
-}, z);
 const clickCell = async (sym) => {
   const e = BY_SYM[sym];
   const pt = await page.evaluate(([col, row]) => {
