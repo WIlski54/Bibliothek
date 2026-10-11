@@ -10,7 +10,7 @@ export async function open({ w = 1280, h = 720, url, touch = false, query = '' }
       '--autoplay-policy=no-user-gesture-required', '--no-sandbox', '--disable-dev-shm-usage', '--enable-webgl'],
   });
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, deviceScaleFactor: 1 });
-  const page = await ctx.newPage();
+  const page = await ctx.newPage(); page.setDefaultTimeout(240000);
   const logs = [];
   page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
   page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack || ''}`));

@@ -21,9 +21,11 @@ await page.mouse.click(x, y); await step(80); check('Tür zurück -> Foyer', awa
 await page.evaluate(() => window.__lib.goStation('foyer-neu')); await step(60);
 const bp = await page.evaluate(() => { const L = window.__lib; let p = null; L.world.rooms.foyer.group.traverse((o) => { if (o.userData.tap?.kind === 'book' && !p) { const v = new L.THREE.Vector3(); o.getWorldPosition(v); p = [v.x, v.y + 0.3, v.z]; } }); return p; });
 [x, y] = await proj(...bp); await page.mouse.click(x, y); await step(1);
-check('Buchkarte offen', await page.evaluate(() => !document.getElementById('card').hidden));
-await page.screenshot({ path: out('card-book.png') });
-await page.keyboard.press('Escape'); check('Karte schließt mit Esc', await page.evaluate(() => document.getElementById('card').hidden));
+check('Buch angetippt -> Buch-Auftritt', await page.evaluate(() => window.__lib.showcase.active));
+await step(30, 0.1); await page.screenshot({ path: out('card-book.png') });
+check('Leiste mit Titel', await page.evaluate(() => !document.getElementById('bookbar').hidden && document.getElementById('bb-title').textContent.length > 3));
+await page.keyboard.press('Escape'); await step(40, 0.1);
+check('Esc bringt das Buch zurück', await page.evaluate(() => !window.__lib.showcase.active && window.__lib.rig.cur === 'foyer-neu'));
 // 4) Lageplan tippen -> Karte mit Karte
 await page.evaluate(() => window.__lib.goStation('foyer-plan')); await step(60);
 [x, y] = await proj(4.75, 1.7 + 0.5, -5.95); await page.mouse.click(x, y); await step(1);
